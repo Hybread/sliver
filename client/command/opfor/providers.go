@@ -51,8 +51,8 @@ func (target resolvedTarget) id() string {
 	if target.session != nil {
 		return target.session.ID
 	}
-	if target.beacon != nil {
-		return target.beacon.ID
+	if target.pulse != nil {
+		return target.pulse.ID
 	}
 	return ""
 }
@@ -61,8 +61,8 @@ func (target resolvedTarget) capabilities() uint64 {
 	if target.session != nil {
 		return target.session.Capabilities
 	}
-	if target.beacon != nil {
-		return target.beacon.Capabilities
+	if target.pulse != nil {
+		return target.pulse.Capabilities
 	}
 	return 0
 }
@@ -71,8 +71,8 @@ func (target resolvedTarget) arch() string {
 	if target.session != nil {
 		return target.session.Arch
 	}
-	if target.beacon != nil {
-		return target.beacon.Arch
+	if target.pulse != nil {
+		return target.pulse.Arch
 	}
 	return ""
 }
@@ -153,7 +153,7 @@ func (manager *Manager) preparePulseExecution(
 	if err := ctx.Err(); err != nil {
 		return "", nil, err
 	}
-	targetID := request.BeaconID.String()
+	targetID := request.PulseID.String()
 	target, err := manager.resolveTarget(ctx, targetID)
 	if err != nil {
 		return "", nil, err
@@ -281,7 +281,7 @@ func invokeBOFOutputCallback(
 	information.Set("is_final", opforengine.Bool(isFinal))
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.BeaconID,
+		request.PulseID,
 		opforengine.BinaryString(record.GetData()),
 		opforengine.HashValue(information),
 	)
@@ -305,7 +305,7 @@ func invokeBOFLifecycleCallback(
 	}
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.BeaconID,
+		request.PulseID,
 		opforengine.BinaryString(result),
 		opforengine.HashValue(information),
 	)
@@ -397,8 +397,8 @@ func targetRequest(ctx context.Context, target resolvedTarget) *commonpb.Request
 	if target.session != nil {
 		request.SessionID = target.session.ID
 		request.Async = false
-	} else if target.beacon != nil {
-		request.BeaconID = target.beacon.ID
+	} else if target.pulse != nil {
+		request.PulseID = target.pulse.ID
 		request.Async = true
 	}
 	return request
