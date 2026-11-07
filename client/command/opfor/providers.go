@@ -153,7 +153,7 @@ func (manager *Manager) preparePulseExecution(
 	if err := ctx.Err(); err != nil {
 		return "", nil, err
 	}
-	targetID := request.PulseID.String()
+	targetID := request.BeaconID.String()
 	target, err := manager.resolveTarget(ctx, targetID)
 	if err != nil {
 		return "", nil, err
@@ -281,7 +281,7 @@ func invokeBOFOutputCallback(
 	information.Set("is_final", opforengine.Bool(isFinal))
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.PulseID,
+		request.BeaconID,
 		opforengine.BinaryString(record.GetData()),
 		opforengine.HashValue(information),
 	)
@@ -305,7 +305,7 @@ func invokeBOFLifecycleCallback(
 	}
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.PulseID,
+		request.BeaconID,
 		opforengine.BinaryString(result),
 		opforengine.HashValue(information),
 	)
