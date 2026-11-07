@@ -1,4 +1,4 @@
-package use
+package pulses
 
 /*
 	Sliver Implant Framework
@@ -21,24 +21,22 @@ package use
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/bishopfox/sliver/client/command/beacons"
 	"github.com/bishopfox/sliver/client/console"
 )
 
-// UseBeaconCmd - Change the active beacon
-func UseBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	beacon, err := beacons.SelectBeacon(con)
-	if beacon != nil {
-		con.ActiveTarget.Set(nil, beacon)
-		con.PrintInfof("Active beacon %s (%s)\n", beacon.Name, beacon.ID)
-	} else if err != nil {
-		switch err {
-		case beacons.ErrNoBeacons:
-			con.PrintErrorf("No beacon available\n")
-		case beacons.ErrNoSelection:
-			con.PrintErrorf("No beacon selected\n")
-		default:
-			con.PrintErrorf("%s\n", err)
-		}
+// PulsesRmCmd - Display/interact with pulses
+func PulsesRmCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+	pulse, err := SelectPulse(con)
+	if err != nil {
+		con.PrintErrorf("%s\n", err)
+		return
 	}
+	grpcCtx, cancel := con.GrpcContext(cmd)
+	defer cancel()
+	_, err = con.Rpc.RmPulse(grpcCtx, pulse)
+	if err != nil {
+		con.PrintErrorf("%s\n", err)
+		return
+	}
+	con.PrintInfof("Pulse removed (%s)\n", pulse.ID)
 }

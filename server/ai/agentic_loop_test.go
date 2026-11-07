@@ -31,7 +31,7 @@ func TestBuildAgenticToolParamsNormalizesStrictOpenAISchemas(t *testing.T) {
 					"type": "object",
 					"properties": map[string]any{
 						"session_id": map[string]any{"type": "string"},
-						"beacon_id":  map[string]any{"type": "string"},
+						"pulse_id":  map[string]any{"type": "string"},
 						"path":       map[string]any{"type": "string"},
 					},
 					"additionalProperties": false,
@@ -45,7 +45,7 @@ func TestBuildAgenticToolParamsNormalizesStrictOpenAISchemas(t *testing.T) {
 
 	parameters := params[0].OfFunction.Parameters
 	required := schemaRequiredSet(parameters["required"])
-	for _, field := range []string{"session_id", "beacon_id", "path"} {
+	for _, field := range []string{"session_id", "pulse_id", "path"} {
 		if !required[field] {
 			t.Fatalf("expected strict schema to require %q, got %#v", field, parameters["required"])
 		}
@@ -55,7 +55,7 @@ func TestBuildAgenticToolParamsNormalizesStrictOpenAISchemas(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected strict schema properties map, got %#v", parameters["properties"])
 	}
-	for _, field := range []string{"session_id", "beacon_id", "path"} {
+	for _, field := range []string{"session_id", "pulse_id", "path"} {
 		property, ok := properties[field].(map[string]any)
 		if !ok {
 			t.Fatalf("expected property %q to be a schema object, got %#v", field, properties[field])

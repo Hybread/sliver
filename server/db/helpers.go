@@ -1004,54 +1004,54 @@ func IOCByID(id string) (*clientpb.IOC, error) {
 	return ioc.ToProtobuf(), err
 }
 
-// BeaconByID - Select a Beacon by ID
-func BeaconByID(id string) (*models.Beacon, error) {
+// PulseByID - Select a Pulse by ID
+func PulseByID(id string) (*models.Pulse, error) {
 	if len(id) < 1 {
 		return nil, ErrRecordNotFound
 	}
-	beaconID := models.ParseUUIDOrNil(id)
-	if beaconID == models.NilUUID() {
+	pulseID := models.ParseUUIDOrNil(id)
+	if pulseID == models.NilUUID() {
 		return nil, ErrRecordNotFound
 	}
 
-	beacon := &models.Beacon{}
+	pulse := &models.Pulse{}
 	err := Session().Where(
-		&models.Beacon{ID: beaconID},
-	).First(beacon).Error
-	return beacon, err
+		&models.Pulse{ID: pulseID},
+	).First(pulse).Error
+	return pulse, err
 }
 
-// BeaconTasksByBeaconID - Get all tasks for a specific beacon
+// PulseTasksByPulseID - Get all tasks for a specific pulse
 // by default will not fetch the request/response columns since
 // these could be arbitrarily large.
-func BeaconTasksByBeaconID(beaconID string) ([]*clientpb.BeaconTask, error) {
-	if len(beaconID) < 1 {
+func PulseTasksByPulseID(pulseID string) ([]*clientpb.PulseTask, error) {
+	if len(pulseID) < 1 {
 		return nil, ErrRecordNotFound
 	}
-	id := models.ParseUUIDOrNil(beaconID)
+	id := models.ParseUUIDOrNil(pulseID)
 	if id == models.NilUUID() {
 		return nil, ErrRecordNotFound
 	}
-	beaconTasks := []*models.BeaconTask{}
+	pulseTasks := []*models.PulseTask{}
 	/*
 		Even though we are fetching the request/response columns here, we will not send
 		them back in the response
 		If we SELECT those columns out, that will bypass GORM's reflection-based field
 		to column mapping and can cause GORM not to map the created_at field correctly
 	*/
-	err := Session().Where(&models.BeaconTask{BeaconID: id}).Find(&beaconTasks).Error
+	err := Session().Where(&models.PulseTask{PulseID: id}).Find(&pulseTasks).Error
 
-	pbBeaconTasks := []*clientpb.BeaconTask{}
-	for _, beaconTask := range beaconTasks {
+	pbPulseTasks := []*clientpb.PulseTask{}
+	for _, pulseTask := range pulseTasks {
 		// Do not preserve the request and response columns
-		pbBeaconTasks = append(pbBeaconTasks, beaconTask.ToProtobuf(false))
+		pbPulseTasks = append(pbPulseTasks, pulseTask.ToProtobuf(false))
 	}
-	return pbBeaconTasks, err
+	return pbPulseTasks, err
 }
 
-// BeaconTaskByID - Select a specific BeaconTask by ID, this
+// PulseTaskByID - Select a specific PulseTask by ID, this
 // will fetch the full request/response
-func BeaconTaskByID(id string) (*clientpb.BeaconTask, error) {
+func PulseTaskByID(id string) (*clientpb.PulseTask, error) {
 	if len(id) < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -1059,9 +1059,9 @@ func BeaconTaskByID(id string) (*clientpb.BeaconTask, error) {
 	if err != nil || taskID == models.NilUUID() {
 		return nil, ErrRecordNotFound
 	}
-	task := &models.BeaconTask{}
+	task := &models.PulseTask{}
 	err = Session().Where(
-		&models.BeaconTask{ID: taskID},
+		&models.PulseTask{ID: taskID},
 	).First(task).Error
 	if err != nil {
 		return nil, err
@@ -1069,49 +1069,49 @@ func BeaconTaskByID(id string) (*clientpb.BeaconTask, error) {
 	return task.ToProtobuf(true), err
 }
 
-// ListBeacons - Select a Beacon by ID
-func ListBeacons() ([]*clientpb.Beacon, error) {
-	beacons := []*models.Beacon{}
-	err := Session().Where(&models.Beacon{}).Find(&beacons).Error
+// ListPulses - Select a Pulse by ID
+func ListPulses() ([]*clientpb.Pulse, error) {
+	pulses := []*models.Pulse{}
+	err := Session().Where(&models.Pulse{}).Find(&pulses).Error
 
-	pbBeacons := []*clientpb.Beacon{}
-	for _, beacon := range beacons {
-		pbBeacons = append(pbBeacons, beacon.ToProtobuf())
+	pbPulses := []*clientpb.Pulse{}
+	for _, pulse := range pulses {
+		pbPulses = append(pbPulses, pulse.ToProtobuf())
 	}
-	return pbBeacons, err
+	return pbPulses, err
 }
 
-// RenameBeacon - Rename a beacon
-func RenameBeacon(id string, name string) error {
+// RenamePulse - Rename a pulse
+func RenamePulse(id string, name string) error {
 	if len(id) < 1 {
 		return ErrRecordNotFound
 	}
-	beaconID := models.ParseUUIDOrNil(id)
-	if beaconID == models.NilUUID() {
+	pulseID := models.ParseUUIDOrNil(id)
+	if pulseID == models.NilUUID() {
 		return ErrRecordNotFound
 	}
-	err := Session().Where(&models.Beacon{
-		ID: beaconID,
-	}).Updates(models.Beacon{Name: name}).Error
+	err := Session().Where(&models.Pulse{
+		ID: pulseID,
+	}).Updates(models.Pulse{Name: name}).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// PendingBeaconTasksByBeaconID - Select a Beacon by ID, ordered by creation time
-func PendingBeaconTasksByBeaconID(id string) ([]*models.BeaconTask, error) {
+// PendingPulseTasksByPulseID - Select a Pulse by ID, ordered by creation time
+func PendingPulseTasksByPulseID(id string) ([]*models.PulseTask, error) {
 	if len(id) < 1 {
 		return nil, ErrRecordNotFound
 	}
-	beaconID := models.ParseUUIDOrNil(id)
-	if beaconID == models.NilUUID() {
+	pulseID := models.ParseUUIDOrNil(id)
+	if pulseID == models.NilUUID() {
 		return nil, ErrRecordNotFound
 	}
-	tasks := []*models.BeaconTask{}
+	tasks := []*models.PulseTask{}
 	err := Session().Where(
-		&models.BeaconTask{
-			BeaconID: beaconID,
+		&models.PulseTask{
+			PulseID: pulseID,
 			State:    models.PENDING,
 		},
 	).Order("created_at").Find(&tasks).Error
@@ -1119,37 +1119,37 @@ func PendingBeaconTasksByBeaconID(id string) ([]*models.BeaconTask, error) {
 	return tasks, err
 }
 
-// UpdateBeaconCheckinByID - Update the beacon's last / next checkin
-func UpdateBeaconCheckinByID(id string, next int64) error {
+// UpdatePulseCheckinByID - Update the pulse's last / next checkin
+func UpdatePulseCheckinByID(id string, next int64) error {
 	if len(id) < 1 {
 		return ErrRecordNotFound
 	}
-	beaconID := models.ParseUUIDOrNil(id)
-	if beaconID == models.NilUUID() {
+	pulseID := models.ParseUUIDOrNil(id)
+	if pulseID == models.NilUUID() {
 		return ErrRecordNotFound
 	}
-	err := Session().Where(&models.Beacon{
-		ID: beaconID,
-	}).Updates(models.Beacon{
+	err := Session().Where(&models.Pulse{
+		ID: pulseID,
+	}).Updates(models.Pulse{
 		LastCheckin: time.Now(),
 		NextCheckin: time.Now().Unix() + next,
 	}).Error
 	return err
 }
 
-// BeaconTasksByEnvelopeID - Select a (sent) BeaconTask by its envelope ID
-func BeaconTaskByEnvelopeID(beaconID string, envelopeID int64) (*clientpb.BeaconTask, error) {
-	if len(beaconID) < 1 {
+// PulseTasksByEnvelopeID - Select a (sent) PulseTask by its envelope ID
+func PulseTaskByEnvelopeID(pulseID string, envelopeID int64) (*clientpb.PulseTask, error) {
+	if len(pulseID) < 1 {
 		return nil, ErrRecordNotFound
 	}
-	beaconUUID := models.ParseUUIDOrNil(beaconID)
-	if beaconUUID == models.NilUUID() {
+	pulseUUID := models.ParseUUIDOrNil(pulseID)
+	if pulseUUID == models.NilUUID() {
 		return nil, ErrRecordNotFound
 	}
-	task := &models.BeaconTask{}
+	task := &models.PulseTask{}
 	err := Session().Where(
-		&models.BeaconTask{
-			BeaconID:   beaconUUID,
+		&models.PulseTask{
+			PulseID:   pulseUUID,
 			EnvelopeID: envelopeID,
 			State:      models.SENT,
 		},
@@ -1157,25 +1157,25 @@ func BeaconTaskByEnvelopeID(beaconID string, envelopeID int64) (*clientpb.Beacon
 	return task.ToProtobuf(true), err
 }
 
-// CountTasksByBeaconID - Select a (sent) BeaconTask by its envelope ID
-func CountTasksByBeaconID(beaconID string) (int64, int64, error) {
-	beaconUUID, _ := models.ParseUUID(beaconID)
-	if beaconUUID == models.NilUUID() {
+// CountTasksByPulseID - Select a (sent) PulseTask by its envelope ID
+func CountTasksByPulseID(pulseID string) (int64, int64, error) {
+	pulseUUID, _ := models.ParseUUID(pulseID)
+	if pulseUUID == models.NilUUID() {
 		return 0, 0, ErrRecordNotFound
 	}
 	allTasks := int64(0)
 	completedTasks := int64(0)
-	err := Session().Model(&models.BeaconTask{}).Where(
-		&models.BeaconTask{
-			BeaconID: beaconUUID,
+	err := Session().Model(&models.PulseTask{}).Where(
+		&models.PulseTask{
+			PulseID: pulseUUID,
 		},
 	).Count(&allTasks).Error
 	if err != nil {
 		return 0, 0, err
 	}
-	err = Session().Model(&models.BeaconTask{}).Where(
-		&models.BeaconTask{
-			BeaconID: beaconUUID,
+	err = Session().Model(&models.PulseTask{}).Where(
+		&models.PulseTask{
+			PulseID: pulseUUID,
 			State:    models.COMPLETED,
 		},
 	).Count(&completedTasks).Error
@@ -1556,7 +1556,7 @@ func SaveAIConversation(conversation *clientpb.AIConversation, operatorName stri
 	existing.ActiveTurnID = dbConversation.ActiveTurnID
 	existing.TurnState = dbConversation.TurnState
 	existing.TargetSessionID = dbConversation.TargetSessionID
-	existing.TargetBeaconID = dbConversation.TargetBeaconID
+	existing.TargetPulseID = dbConversation.TargetPulseID
 	existing.ContextInputTokens = dbConversation.ContextInputTokens
 	existing.ContextOutputTokens = dbConversation.ContextOutputTokens
 	existing.ContextTotalTokens = dbConversation.ContextTotalTokens

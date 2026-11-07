@@ -55,13 +55,13 @@ const file_rpcpb_services_proto_rawDesc = "" +
 	"\x12StartHTTPSListener\x12\x19.clientpb.HTTPListenerReq\x1a\x15.clientpb.ListenerJob\x12E\n" +
 	"\x11StartHTTPListener\x12\x19.clientpb.HTTPListenerReq\x1a\x15.clientpb.ListenerJob\x120\n" +
 	"\n" +
-	"GetBeacons\x12\x0f.commonpb.Empty\x1a\x11.clientpb.Beacons\x12/\n" +
-	"\tGetBeacon\x12\x10.clientpb.Beacon\x1a\x10.clientpb.Beacon\x12-\n" +
-	"\bRmBeacon\x12\x10.clientpb.Beacon\x1a\x0f.commonpb.Empty\x129\n" +
-	"\x0eGetBeaconTasks\x12\x10.clientpb.Beacon\x1a\x15.clientpb.BeaconTasks\x12B\n" +
-	"\x14GetBeaconTaskContent\x12\x14.clientpb.BeaconTask\x1a\x14.clientpb.BeaconTask\x12>\n" +
-	"\x10CancelBeaconTask\x12\x14.clientpb.BeaconTask\x1a\x14.clientpb.BeaconTask\x12N\n" +
-	" UpdateBeaconIntegrityInformation\x12\x19.clientpb.BeaconIntegrity\x1a\x0f.commonpb.Empty\x12*\n" +
+	"GetPulses\x12\x0f.commonpb.Empty\x1a\x11.clientpb.Pulses\x12/\n" +
+	"\tGetPulse\x12\x10.clientpb.Pulse\x1a\x10.clientpb.Pulse\x12-\n" +
+	"\bRmPulse\x12\x10.clientpb.Pulse\x1a\x0f.commonpb.Empty\x129\n" +
+	"\x0eGetPulseTasks\x12\x10.clientpb.Pulse\x1a\x15.clientpb.PulseTasks\x12B\n" +
+	"\x14GetPulseTaskContent\x12\x14.clientpb.PulseTask\x1a\x14.clientpb.PulseTask\x12>\n" +
+	"\x10CancelPulseTask\x12\x14.clientpb.PulseTask\x1a\x14.clientpb.PulseTask\x12N\n" +
+	" UpdatePulseIntegrityInformation\x12\x19.clientpb.PulseIntegrity\x1a\x0f.commonpb.Empty\x12*\n" +
 	"\aGetJobs\x12\x0f.commonpb.Empty\x1a\x0e.clientpb.Jobs\x122\n" +
 	"\aKillJob\x12\x14.clientpb.KillJobReq\x1a\x11.clientpb.KillJob\x127\n" +
 	"\vRestartJobs\x12\x17.clientpb.RestartJobReq\x1a\x0f.commonpb.Empty\x12O\n" +
@@ -255,9 +255,9 @@ var file_rpcpb_services_proto_goTypes = []any{
 	(*clientpb.WGListenerReq)(nil),            // 10: clientpb.WGListenerReq
 	(*clientpb.DNSListenerReq)(nil),           // 11: clientpb.DNSListenerReq
 	(*clientpb.HTTPListenerReq)(nil),          // 12: clientpb.HTTPListenerReq
-	(*clientpb.Beacon)(nil),                   // 13: clientpb.Beacon
-	(*clientpb.BeaconTask)(nil),               // 14: clientpb.BeaconTask
-	(*clientpb.BeaconIntegrity)(nil),          // 15: clientpb.BeaconIntegrity
+	(*clientpb.Pulse)(nil),                   // 13: clientpb.Pulse
+	(*clientpb.PulseTask)(nil),               // 14: clientpb.PulseTask
+	(*clientpb.PulseIntegrity)(nil),          // 15: clientpb.PulseIntegrity
 	(*clientpb.KillJobReq)(nil),               // 16: clientpb.KillJobReq
 	(*clientpb.RestartJobReq)(nil),            // 17: clientpb.RestartJobReq
 	(*clientpb.StagerListenerReq)(nil),        // 18: clientpb.StagerListenerReq
@@ -391,8 +391,8 @@ var file_rpcpb_services_proto_goTypes = []any{
 	(*clientpb.AIConversations)(nil),          // 146: clientpb.AIConversations
 	(*clientpb.AIConversationMessages)(nil),   // 147: clientpb.AIConversationMessages
 	(*clientpb.ListenerJob)(nil),              // 148: clientpb.ListenerJob
-	(*clientpb.Beacons)(nil),                  // 149: clientpb.Beacons
-	(*clientpb.BeaconTasks)(nil),              // 150: clientpb.BeaconTasks
+	(*clientpb.Pulses)(nil),                  // 149: clientpb.Pulses
+	(*clientpb.PulseTasks)(nil),              // 150: clientpb.PulseTasks
 	(*clientpb.Jobs)(nil),                     // 151: clientpb.Jobs
 	(*clientpb.KillJob)(nil),                  // 152: clientpb.KillJob
 	(*clientpb.StagerListener)(nil),           // 153: clientpb.StagerListener
@@ -517,13 +517,13 @@ var file_rpcpb_services_proto_depIdxs = []int32{
 	11,  // 21: rpcpb.SliverRPC.StartDNSListener:input_type -> clientpb.DNSListenerReq
 	12,  // 22: rpcpb.SliverRPC.StartHTTPSListener:input_type -> clientpb.HTTPListenerReq
 	12,  // 23: rpcpb.SliverRPC.StartHTTPListener:input_type -> clientpb.HTTPListenerReq
-	0,   // 24: rpcpb.SliverRPC.GetBeacons:input_type -> commonpb.Empty
-	13,  // 25: rpcpb.SliverRPC.GetBeacon:input_type -> clientpb.Beacon
-	13,  // 26: rpcpb.SliverRPC.RmBeacon:input_type -> clientpb.Beacon
-	13,  // 27: rpcpb.SliverRPC.GetBeaconTasks:input_type -> clientpb.Beacon
-	14,  // 28: rpcpb.SliverRPC.GetBeaconTaskContent:input_type -> clientpb.BeaconTask
-	14,  // 29: rpcpb.SliverRPC.CancelBeaconTask:input_type -> clientpb.BeaconTask
-	15,  // 30: rpcpb.SliverRPC.UpdateBeaconIntegrityInformation:input_type -> clientpb.BeaconIntegrity
+	0,   // 24: rpcpb.SliverRPC.GetPulses:input_type -> commonpb.Empty
+	13,  // 25: rpcpb.SliverRPC.GetPulse:input_type -> clientpb.Pulse
+	13,  // 26: rpcpb.SliverRPC.RmPulse:input_type -> clientpb.Pulse
+	13,  // 27: rpcpb.SliverRPC.GetPulseTasks:input_type -> clientpb.Pulse
+	14,  // 28: rpcpb.SliverRPC.GetPulseTaskContent:input_type -> clientpb.PulseTask
+	14,  // 29: rpcpb.SliverRPC.CancelPulseTask:input_type -> clientpb.PulseTask
+	15,  // 30: rpcpb.SliverRPC.UpdatePulseIntegrityInformation:input_type -> clientpb.PulseIntegrity
 	0,   // 31: rpcpb.SliverRPC.GetJobs:input_type -> commonpb.Empty
 	16,  // 32: rpcpb.SliverRPC.KillJob:input_type -> clientpb.KillJobReq
 	17,  // 33: rpcpb.SliverRPC.RestartJobs:input_type -> clientpb.RestartJobReq
@@ -718,13 +718,13 @@ var file_rpcpb_services_proto_depIdxs = []int32{
 	148, // 222: rpcpb.SliverRPC.StartDNSListener:output_type -> clientpb.ListenerJob
 	148, // 223: rpcpb.SliverRPC.StartHTTPSListener:output_type -> clientpb.ListenerJob
 	148, // 224: rpcpb.SliverRPC.StartHTTPListener:output_type -> clientpb.ListenerJob
-	149, // 225: rpcpb.SliverRPC.GetBeacons:output_type -> clientpb.Beacons
-	13,  // 226: rpcpb.SliverRPC.GetBeacon:output_type -> clientpb.Beacon
-	0,   // 227: rpcpb.SliverRPC.RmBeacon:output_type -> commonpb.Empty
-	150, // 228: rpcpb.SliverRPC.GetBeaconTasks:output_type -> clientpb.BeaconTasks
-	14,  // 229: rpcpb.SliverRPC.GetBeaconTaskContent:output_type -> clientpb.BeaconTask
-	14,  // 230: rpcpb.SliverRPC.CancelBeaconTask:output_type -> clientpb.BeaconTask
-	0,   // 231: rpcpb.SliverRPC.UpdateBeaconIntegrityInformation:output_type -> commonpb.Empty
+	149, // 225: rpcpb.SliverRPC.GetPulses:output_type -> clientpb.Pulses
+	13,  // 226: rpcpb.SliverRPC.GetPulse:output_type -> clientpb.Pulse
+	0,   // 227: rpcpb.SliverRPC.RmPulse:output_type -> commonpb.Empty
+	150, // 228: rpcpb.SliverRPC.GetPulseTasks:output_type -> clientpb.PulseTasks
+	14,  // 229: rpcpb.SliverRPC.GetPulseTaskContent:output_type -> clientpb.PulseTask
+	14,  // 230: rpcpb.SliverRPC.CancelPulseTask:output_type -> clientpb.PulseTask
+	0,   // 231: rpcpb.SliverRPC.UpdatePulseIntegrityInformation:output_type -> commonpb.Empty
 	151, // 232: rpcpb.SliverRPC.GetJobs:output_type -> clientpb.Jobs
 	152, // 233: rpcpb.SliverRPC.KillJob:output_type -> clientpb.KillJob
 	0,   // 234: rpcpb.SliverRPC.RestartJobs:output_type -> commonpb.Empty

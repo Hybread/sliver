@@ -103,7 +103,7 @@ func portForwardPayloadCases() []portForwardPayloadCase {
 }
 
 func (s *suite) exercisePortForward(target implantTarget, transport string) error {
-	if target.session == nil || target.beacon != nil {
+	if target.session == nil || target.pulse != nil {
 		return errors.New("forward port forwarding E2E requires a session target")
 	}
 
@@ -507,7 +507,7 @@ func (s *suite) exercisePortForwardIsolation(target implantTarget) (resultErr er
 }
 
 func (s *suite) startPortForward(target implantTarget, remoteAddress string, dialTimeout time.Duration) (*activePortForward, error) {
-	if target.session == nil || target.beacon != nil {
+	if target.session == nil || target.pulse != nil {
 		return nil, errors.New("start port forward requires a session target")
 	}
 	bindAddress := "127.0.0.1:0"

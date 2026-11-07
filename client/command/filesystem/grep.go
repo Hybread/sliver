@@ -83,8 +83,8 @@ func processFlags(searchPattern string, insensitive bool, exact bool) string {
 }
 
 func GrepCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -135,7 +135,7 @@ func GrepCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		return
 	}
 	if grep.Response != nil && grep.Response.Async {
-		con.AddBeaconCallback(grep.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(grep.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, grep)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

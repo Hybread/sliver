@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/bishopfox/sliver/client/command/beacons"
+	"github.com/bishopfox/sliver/client/command/pulses"
 	"github.com/bishopfox/sliver/client/command/flags"
 	"github.com/bishopfox/sliver/client/command/help"
 	"github.com/bishopfox/sliver/client/console"
@@ -16,7 +16,7 @@ import (
 func Commands(con *console.SliverClient) []*cobra.Command {
 	useCmd := &cobra.Command{
 		Use:   consts.UseStr,
-		Short: "Switch the active session or beacon",
+		Short: "Switch the active session or pulse",
 		Long:  help.GetHelpFor([]string{consts.UseStr}),
 		Run: func(cmd *cobra.Command, args []string) {
 			UseCmd(cmd, con, args)
@@ -26,7 +26,7 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 	flags.Bind("use", true, useCmd, func(f *pflag.FlagSet) {
 		f.Int64P("timeout", "t", flags.DefaultTimeout, "grpc timeout in seconds")
 	})
-	carapace.Gen(useCmd).PositionalCompletion(BeaconAndSessionIDCompleter(con))
+	carapace.Gen(useCmd).PositionalCompletion(PulseAndSessionIDCompleter(con))
 	registerUseIDCompletion(useCmd, con, true, true)
 
 	useSessionCmd := &cobra.Command{
@@ -41,17 +41,17 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 	registerUseIDCompletion(useSessionCmd, con, true, false)
 	useCmd.AddCommand(useSessionCmd)
 
-	useBeaconCmd := &cobra.Command{
-		Use:   consts.BeaconsStr,
-		Short: "Switch the active beacon",
-		Long:  help.GetHelpFor([]string{consts.UseStr, consts.BeaconsStr}),
+	usePulseCmd := &cobra.Command{
+		Use:   consts.PulsesStr,
+		Short: "Switch the active pulse",
+		Long:  help.GetHelpFor([]string{consts.UseStr, consts.PulsesStr}),
 		Run: func(cmd *cobra.Command, args []string) {
-			UseBeaconCmd(cmd, con, args)
+			UsePulseCmd(cmd, con, args)
 		},
 	}
-	carapace.Gen(useBeaconCmd).PositionalCompletion(beacons.BeaconIDCompleter(con))
-	registerUseIDCompletion(useBeaconCmd, con, false, true)
-	useCmd.AddCommand(useBeaconCmd)
+	carapace.Gen(usePulseCmd).PositionalCompletion(pulses.PulseIDCompleter(con))
+	registerUseIDCompletion(usePulseCmd, con, false, true)
+	useCmd.AddCommand(usePulseCmd)
 
 	return []*cobra.Command{useCmd}
 }

@@ -27,7 +27,7 @@ func Commands(client *console.SliverClient) []*cobra.Command {
 }
 
 // ServerCommands returns the same persistent script manager in the server
-// menu. CNA Beacon aliases themselves are registered only on implant roots.
+// menu. CNA Pulse aliases themselves are registered only on implant roots.
 func ServerCommands(client *console.SliverClient) []*cobra.Command {
 	return []*cobra.Command{managementCommand(client, consts.GenericHelpGroup)}
 }
@@ -152,7 +152,7 @@ func loadScriptCommand(command *cobra.Command, client *console.SliverClient, pat
 		}
 	}
 	if len(aliases) == 0 {
-		manager.output.PrintInfof("The script is retained for this client process; it registered no invokable Beacon aliases\n")
+		manager.output.PrintInfof("The script is retained for this client process; it registered no invokable Pulse aliases\n")
 		return nil
 	}
 	manager.output.PrintInfof("Registered CNA aliases:\n")
@@ -218,7 +218,7 @@ func helpAliasCommand(command *cobra.Command, client *console.SliverClient, name
 	}
 	description := strings.TrimSpace(metadata.Description)
 	if description == "" {
-		description = "CNA-defined Beacon alias"
+		description = "CNA-defined Pulse alias"
 	}
 	manager.output.Printf("Command: opfor %s [arguments...]\n\n%s\n", name, description)
 	if detail := strings.TrimSpace(metadata.Detail); detail != "" {
@@ -265,7 +265,7 @@ func listScriptsCommand(command *cobra.Command, client *console.SliverClient) er
 	return nil
 }
 
-// RegisterCommands rehydrates the active CNA Beacon aliases beneath the
+// RegisterCommands rehydrates the active CNA Pulse aliases beneath the
 // implant menu's opfor namespace. Keeping script declarations namespaced avoids
 // collisions with built-ins such as Sliver's own cat command.
 func RegisterCommands(root *cobra.Command, client *console.SliverClient) {
@@ -321,7 +321,7 @@ func (manager *Manager) syncRootLocked(root *cobra.Command) {
 		wanted[name] = struct{}{}
 	}
 
-	catalog, _ := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandBeacon)
+	catalog, _ := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandPulse)
 	help := make(map[string]opforengine.AggressorCommandMetadata, len(catalog.Commands))
 	for _, metadata := range catalog.Commands {
 		help[metadata.Name] = metadata
@@ -384,7 +384,7 @@ func directChild(root *cobra.Command, name string) *cobra.Command {
 func applyAliasHelp(command *cobra.Command, metadata opforengine.AggressorCommandMetadata) {
 	command.Short = metadata.Description
 	if command.Short == "" {
-		command.Short = "CNA-defined Beacon alias"
+		command.Short = "CNA-defined Pulse alias"
 	}
 	command.Long = strings.TrimSpace(strings.Join([]string{metadata.Description, metadata.Detail}, "\n\n"))
 	if command.Long == "" {
@@ -402,15 +402,15 @@ func (manager *Manager) runAlias(command *cobra.Command, name string, args []str
 		return err
 	}
 	defer cancel()
-	session, beacon := manager.client.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := manager.client.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return errorsNewTargetRequired(name)
 	}
 	targetID := ""
 	if session != nil {
 		targetID = session.ID
 	} else {
-		targetID = beacon.ID
+		targetID = pulse.ID
 	}
 
 	rawInput := name

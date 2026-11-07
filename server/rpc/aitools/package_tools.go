@@ -64,7 +64,7 @@ type executeExtensionArgs struct {
 type packageTargetResult struct {
 	TargetType   string `json:"target_type,omitempty"`
 	SessionID    string `json:"session_id,omitempty"`
-	BeaconID     string `json:"beacon_id,omitempty"`
+	PulseID     string `json:"pulse_id,omitempty"`
 	Hostname     string `json:"hostname,omitempty"`
 	OS           string `json:"os,omitempty"`
 	Arch         string `json:"arch,omitempty"`
@@ -205,7 +205,7 @@ func packageToolDefinitions() []serverai.AgenticToolDefinition {
 	return []serverai.AgenticToolDefinition{
 		{
 			Name:        "search_aliases",
-			Description: "Search server-side AI aliases copied into ~/.sliver/ai/aliases. Results include manifest details and, when a target is selected, compatibility for that session or beacon.",
+			Description: "Search server-side AI aliases copied into ~/.sliver/ai/aliases. Results include manifest details and, when a target is selected, compatibility for that session or pulse.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -231,7 +231,7 @@ func packageToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "execute_alias",
-			Description: "Execute a server-side AI alias from ~/.sliver/ai/aliases on the selected session or beacon. Use search_aliases first when you need command metadata or a root_path to disambiguate duplicates.",
+			Description: "Execute a server-side AI alias from ~/.sliver/ai/aliases on the selected session or pulse. Use search_aliases first when you need command metadata or a root_path to disambiguate duplicates.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -256,7 +256,7 @@ func packageToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "execute_extension",
-			Description: "Execute a server-side AI extension from ~/.sliver/ai/extensions on the selected session or beacon. BOFs are supported and dependencies such as coff-loader are registered automatically when present in the server-side store.",
+			Description: "Execute a server-side AI extension from ~/.sliver/ai/extensions on the selected session or pulse. BOFs are supported and dependencies such as coff-loader are registered automatically when present in the server-side store.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -312,12 +312,12 @@ func (e *executor) callPackageTool(ctx context.Context, name string, arguments s
 }
 
 func (e *executor) callSearchAliases(ctx context.Context, args searchPackagesArgs) (string, error) {
-	target, err := e.optionalPackageTarget(ctx, args.SessionID, args.BeaconID)
+	target, err := e.optionalPackageTarget(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
 	if args.OnlyCompatible && target == nil {
-		return "", fmt.Errorf("only_compatible requires session_id, beacon_id, or a conversation target")
+		return "", fmt.Errorf("only_compatible requires session_id, pulse_id, or a conversation target")
 	}
 
 	aliases, warnings := loadAIAliases()
@@ -412,12 +412,12 @@ func (e *executor) callSearchAliases(ctx context.Context, args searchPackagesArg
 }
 
 func (e *executor) callSearchExtensions(ctx context.Context, args searchPackagesArgs) (string, error) {
-	target, err := e.optionalPackageTarget(ctx, args.SessionID, args.BeaconID)
+	target, err := e.optionalPackageTarget(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
 	if args.OnlyCompatible && target == nil {
-		return "", fmt.Errorf("only_compatible requires session_id, beacon_id, or a conversation target")
+		return "", fmt.Errorf("only_compatible requires session_id, pulse_id, or a conversation target")
 	}
 
 	extensions, warnings := loadAIExtensions()
@@ -540,12 +540,12 @@ func (e *executor) callSearchExtensions(ctx context.Context, args searchPackages
 }
 
 func (e *executor) callExecuteAlias(ctx context.Context, args executeAliasArgs) (string, error) {
-	session, beacon, err := e.lookupTargetMetadata(ctx, args.SessionID, args.BeaconID)
+	session, pulse, err := e.lookupTargetMetadata(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
-	targetInfo := packageTargetFromMetadata(session, beacon)
-	target := toolTargetFromMetadata(session, beacon)
+	targetInfo := packageTargetFromMetadata(session, pulse)
+	target := toolTargetFromMetadata(session, pulse)
 
 	aliases, _ := loadAIAliases()
 	manifest, err := selectAIAlias(aliases, args.CommandName, args.RootPath, targetInfo.OS, targetInfo.Arch)
@@ -697,12 +697,12 @@ func (e *executor) callExecuteAlias(ctx context.Context, args executeAliasArgs) 
 }
 
 func (e *executor) callExecuteExtension(ctx context.Context, args executeExtensionArgs) (string, error) {
-	session, beacon, err := e.lookupTargetMetadata(ctx, args.SessionID, args.BeaconID)
+	session, pulse, err := e.lookupTargetMetadata(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
-	targetInfo := packageTargetFromMetadata(session, beacon)
-	target := toolTargetFromMetadata(session, beacon)
+	targetInfo := packageTargetFromMetadata(session, pulse)
+	target := toolTargetFromMetadata(session, pulse)
 
 	extensions, _ := loadAIExtensions()
 	command, err := selectAIExtensionCommand(extensions, args.CommandName, args.RootPath, targetInfo.OS, targetInfo.Arch)
@@ -724,7 +724,7 @@ func (e *executor) callExecuteExtension(ctx context.Context, args executeExtensi
 		return "", err
 	}
 
-	isBOF, preferReflektor, useReflektor := extensionBOFRouting(command, artifactPath, targetSupportsBOFV1(session, beacon))
+	isBOF, preferReflektor, useReflektor := extensionBOFRouting(command, artifactPath, targetSupportsBOFV1(session, pulse))
 	warnings := []string{}
 	if preferReflektor && !useReflektor {
 		if strings.TrimSpace(command.DependsOn) == "" {
@@ -868,24 +868,24 @@ func (e *executor) ensureExtensionRegistered(ctx context.Context, target toolTar
 	return registeredName, nil
 }
 
-func (e *executor) optionalPackageTarget(ctx context.Context, sessionID string, beaconID string) (*packageTargetResult, error) {
+func (e *executor) optionalPackageTarget(ctx context.Context, sessionID string, pulseID string) (*packageTargetResult, error) {
 	sessionID = strings.TrimSpace(sessionID)
-	beaconID = strings.TrimSpace(beaconID)
-	if sessionID == "" && beaconID == "" && e != nil && e.conversation != nil {
+	pulseID = strings.TrimSpace(pulseID)
+	if sessionID == "" && pulseID == "" && e != nil && e.conversation != nil {
 		sessionID = strings.TrimSpace(e.conversation.GetTargetSessionID())
-		beaconID = strings.TrimSpace(e.conversation.GetTargetBeaconID())
+		pulseID = strings.TrimSpace(e.conversation.GetTargetPulseID())
 	}
-	if sessionID == "" && beaconID == "" {
+	if sessionID == "" && pulseID == "" {
 		return nil, nil
 	}
-	session, beacon, err := e.lookupTargetMetadata(ctx, sessionID, beaconID)
+	session, pulse, err := e.lookupTargetMetadata(ctx, sessionID, pulseID)
 	if err != nil {
 		return nil, err
 	}
-	return packageTargetFromMetadata(session, beacon), nil
+	return packageTargetFromMetadata(session, pulse), nil
 }
 
-func packageTargetFromMetadata(session *clientpb.Session, beacon *clientpb.Beacon) *packageTargetResult {
+func packageTargetFromMetadata(session *clientpb.Session, pulse *clientpb.Pulse) *packageTargetResult {
 	if session != nil {
 		return &packageTargetResult{
 			TargetType:   "session",
@@ -896,35 +896,35 @@ func packageTargetFromMetadata(session *clientpb.Session, beacon *clientpb.Beaco
 			Capabilities: session.Capabilities,
 		}
 	}
-	if beacon != nil {
+	if pulse != nil {
 		return &packageTargetResult{
-			TargetType:   "beacon",
-			BeaconID:     beacon.ID,
-			Hostname:     beacon.Hostname,
-			OS:           strings.ToLower(strings.TrimSpace(beacon.OS)),
-			Arch:         strings.ToLower(strings.TrimSpace(beacon.Arch)),
-			Capabilities: beacon.Capabilities,
+			TargetType:   "pulse",
+			PulseID:     pulse.ID,
+			Hostname:     pulse.Hostname,
+			OS:           strings.ToLower(strings.TrimSpace(pulse.OS)),
+			Arch:         strings.ToLower(strings.TrimSpace(pulse.Arch)),
+			Capabilities: pulse.Capabilities,
 		}
 	}
 	return nil
 }
 
-func toolTargetFromMetadata(session *clientpb.Session, beacon *clientpb.Beacon) toolTarget {
+func toolTargetFromMetadata(session *clientpb.Session, pulse *clientpb.Pulse) toolTarget {
 	if session != nil {
 		return toolTarget{SessionID: session.ID}
 	}
-	if beacon != nil {
-		return toolTarget{BeaconID: beacon.ID}
+	if pulse != nil {
+		return toolTarget{PulseID: pulse.ID}
 	}
 	return toolTarget{}
 }
 
-func targetSupportsBOFV1(session *clientpb.Session, beacon *clientpb.Beacon) bool {
+func targetSupportsBOFV1(session *clientpb.Session, pulse *clientpb.Pulse) bool {
 	if session != nil {
 		return session.GetCapabilities()&sliverpb.CapabilityBOFV1 != 0
 	}
-	if beacon != nil {
-		return beacon.GetCapabilities()&sliverpb.CapabilityBOFV1 != 0
+	if pulse != nil {
+		return pulse.GetCapabilities()&sliverpb.CapabilityBOFV1 != 0
 	}
 	return false
 }

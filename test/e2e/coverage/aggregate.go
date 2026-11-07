@@ -33,7 +33,7 @@ func ComprehensiveDimensions() Dimensions {
 	return Dimensions{
 		Targets:      comprehensiveTargets(),
 		Transports:   []string{TransportMTLS, TransportWG, TransportHTTP},
-		ImplantModes: []string{ImplantModeSession, ImplantModeBeacon},
+		ImplantModes: []string{ImplantModeSession, ImplantModePulse},
 		Commands:     ComprehensiveCatalog(),
 	}
 }

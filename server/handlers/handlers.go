@@ -244,9 +244,9 @@ func GetHandlers() map[uint32]ServerHandler {
 		sliverpb.MsgPing:        pingHandler,
 		sliverpb.MsgSocksData:   socksDataHandler,
 
-		// Beacons
-		sliverpb.MsgBeaconRegister: beaconRegisterHandler,
-		sliverpb.MsgBeaconTasks:    beaconTasksHandler,
+		// Pulses
+		sliverpb.MsgPulseRegister: pulseRegisterHandler,
+		sliverpb.MsgPulseTasks:    pulseTasksHandler,
 
 		// Pivots
 		sliverpb.MsgPivotPeerEnvelope: pivotPeerEnvelopeHandler,
@@ -266,6 +266,6 @@ func GetNonPivotHandlers() map[uint32]ServerHandler {
 		sliverpb.MsgPing:        pingHandler,
 		sliverpb.MsgSocksData:   socksDataHandler,
 
-		// Beacons - Not currently supported in pivots
+		// Pulses - Not currently supported in pivots
 	}
 }

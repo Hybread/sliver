@@ -23,7 +23,7 @@ const aiToolDefaultWaitSeconds = int64(60)
 // Backend captures the RPC methods the AI tool executor needs.
 type Backend interface {
 	GetSessions(context.Context, *commonpb.Empty) (*clientpb.Sessions, error)
-	GetBeacons(context.Context, *commonpb.Empty) (*clientpb.Beacons, error)
+	GetPulses(context.Context, *commonpb.Empty) (*clientpb.Pulses, error)
 	Ls(context.Context, *sliverpb.LsReq) (*sliverpb.Ls, error)
 	Mv(context.Context, *sliverpb.MvReq) (*sliverpb.Mv, error)
 	Cp(context.Context, *sliverpb.CpReq) (*sliverpb.Cp, error)
@@ -59,7 +59,7 @@ type executor struct {
 
 type targetArgs struct {
 	SessionID string `json:"session_id,omitempty"`
-	BeaconID  string `json:"beacon_id,omitempty"`
+	PulseID  string `json:"pulse_id,omitempty"`
 }
 
 type lsToolArgs struct {
@@ -125,7 +125,7 @@ type sessionSummary struct {
 	Integrity     string `json:"integrity"`
 }
 
-type beaconSummary struct {
+type pulseSummary struct {
 	ID                  string `json:"id"`
 	Name                string `json:"name"`
 	Transport           string `json:"transport"`
@@ -146,16 +146,16 @@ type beaconSummary struct {
 	Integrity           string `json:"integrity"`
 }
 
-type sessionsAndBeaconsResult struct {
+type sessionsAndPulsesResult struct {
 	Sessions      []sessionSummary `json:"sessions"`
 	SessionsCount int              `json:"sessions_count"`
-	Beacons       []beaconSummary  `json:"beacons"`
-	BeaconsCount  int              `json:"beacons_count"`
+	Pulses       []pulseSummary  `json:"pulses"`
+	PulsesCount  int              `json:"pulses_count"`
 }
 
 type toolTarget struct {
 	SessionID string
-	BeaconID  string
+	PulseID  string
 }
 
 // NewExecutor returns the Sliver-backed tool executor used by the AI agent loop.
@@ -169,8 +169,8 @@ func NewExecutor(backend Backend, conversation *clientpb.AIConversation) servera
 func (e *executor) ToolDefinitions() []serverai.AgenticToolDefinition {
 	definitions := []serverai.AgenticToolDefinition{
 		{
-			Name:        "list_sessions_and_beacons",
-			Description: "List active sessions and beacons so the model can discover valid target IDs before invoking filesystem tools.",
+			Name:        "list_sessions_and_pulses",
+			Description: "List active sessions and pulses so the model can discover valid target IDs before invoking filesystem tools.",
 			Parameters: map[string]any{
 				"type":                 "object",
 				"properties":           map[string]any{},
@@ -179,12 +179,12 @@ func (e *executor) ToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_ls",
-			Description: "List the contents of a remote directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "List the contents of a remote directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
 					"session_id": map[string]any{"type": "string", "description": "Interactive session ID to run the command against."},
-					"beacon_id":  map[string]any{"type": "string", "description": "Beacon ID to run the command against."},
+					"pulse_id":  map[string]any{"type": "string", "description": "Pulse ID to run the command against."},
 					"path":       map[string]any{"type": "string", "description": "Directory path to list. Defaults to . when omitted."},
 				},
 				"additionalProperties": false,
@@ -192,12 +192,12 @@ func (e *executor) ToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_cat",
-			Description: "Download and return the contents of a remote file. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Download and return the contents of a remote file. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
 					"session_id": map[string]any{"type": "string", "description": "Interactive session ID to run the command against."},
-					"beacon_id":  map[string]any{"type": "string", "description": "Beacon ID to run the command against."},
+					"pulse_id":  map[string]any{"type": "string", "description": "Pulse ID to run the command against."},
 					"path":       map[string]any{"type": "string", "description": "Remote file path to download."},
 					"max_bytes":  map[string]any{"type": "integer", "description": "Optional byte limit for the download."},
 					"max_lines":  map[string]any{"type": "integer", "description": "Optional line limit for the download."},
@@ -208,12 +208,12 @@ func (e *executor) ToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_pwd",
-			Description: "Return the current working directory of a remote session or beacon. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Return the current working directory of a remote session or pulse. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
 					"session_id": map[string]any{"type": "string", "description": "Interactive session ID to run the command against."},
-					"beacon_id":  map[string]any{"type": "string", "description": "Beacon ID to run the command against."},
+					"pulse_id":  map[string]any{"type": "string", "description": "Pulse ID to run the command against."},
 				},
 				"additionalProperties": false,
 			},
@@ -229,8 +229,8 @@ func (e *executor) ToolDefinitions() []serverai.AgenticToolDefinition {
 
 func (e *executor) CallTool(ctx context.Context, name string, arguments string) (string, error) {
 	switch strings.TrimSpace(name) {
-	case "list_sessions_and_beacons":
-		return e.callListSessionsAndBeacons(ctx)
+	case "list_sessions_and_pulses":
+		return e.callListSessionsAndPulses(ctx)
 	case "fs_ls":
 		var args lsToolArgs
 		if err := decodeToolArgs(arguments, &args); err != nil {
@@ -389,7 +389,7 @@ func (e *executor) CallTool(ctx context.Context, name string, arguments string) 
 	}
 }
 
-func (e *executor) callListSessionsAndBeacons(ctx context.Context) (string, error) {
+func (e *executor) callListSessionsAndPulses(ctx context.Context) (string, error) {
 	if e == nil || e.backend == nil {
 		return "", fmt.Errorf("AI tool executor is unavailable")
 	}
@@ -399,14 +399,14 @@ func (e *executor) callListSessionsAndBeacons(ctx context.Context) (string, erro
 		return "", err
 	}
 
-	beaconsResp, err := e.backend.GetBeacons(ctx, &commonpb.Empty{})
+	pulsesResp, err := e.backend.GetPulses(ctx, &commonpb.Empty{})
 	if err != nil {
 		return "", err
 	}
 
-	result := sessionsAndBeaconsResult{
+	result := sessionsAndPulsesResult{
 		Sessions: make([]sessionSummary, 0, len(sessionsResp.GetSessions())),
-		Beacons:  make([]beaconSummary, 0, len(beaconsResp.GetBeacons())),
+		Pulses:  make([]pulseSummary, 0, len(pulsesResp.GetPulses())),
 	}
 
 	for _, session := range sessionsResp.GetSessions() {
@@ -430,39 +430,39 @@ func (e *executor) callListSessionsAndBeacons(ctx context.Context) (string, erro
 		})
 	}
 
-	for _, beacon := range beaconsResp.GetBeacons() {
-		if beacon == nil {
+	for _, pulse := range pulsesResp.GetPulses() {
+		if pulse == nil {
 			continue
 		}
-		result.Beacons = append(result.Beacons, beaconSummary{
-			ID:                  beacon.ID,
-			Name:                beacon.Name,
-			Transport:           beacon.Transport,
-			RemoteAddress:       beacon.RemoteAddress,
-			Hostname:            beacon.Hostname,
-			Username:            beacon.Username,
-			PID:                 beacon.PID,
-			OS:                  beacon.OS,
-			Arch:                beacon.Arch,
-			Locale:              beacon.Locale,
-			LastCheckin:         beacon.LastCheckin,
-			NextCheckin:         beacon.NextCheckin,
-			Interval:            beacon.Interval,
-			Jitter:              beacon.Jitter,
-			TasksCount:          beacon.TasksCount,
-			TasksCountCompleted: beacon.TasksCountCompleted,
-			IsDead:              beacon.IsDead,
-			Integrity:           beacon.Integrity,
+		result.Pulses = append(result.Pulses, pulseSummary{
+			ID:                  pulse.ID,
+			Name:                pulse.Name,
+			Transport:           pulse.Transport,
+			RemoteAddress:       pulse.RemoteAddress,
+			Hostname:            pulse.Hostname,
+			Username:            pulse.Username,
+			PID:                 pulse.PID,
+			OS:                  pulse.OS,
+			Arch:                pulse.Arch,
+			Locale:              pulse.Locale,
+			LastCheckin:         pulse.LastCheckin,
+			NextCheckin:         pulse.NextCheckin,
+			Interval:            pulse.Interval,
+			Jitter:              pulse.Jitter,
+			TasksCount:          pulse.TasksCount,
+			TasksCountCompleted: pulse.TasksCountCompleted,
+			IsDead:              pulse.IsDead,
+			Integrity:           pulse.Integrity,
 		})
 	}
 
 	result.SessionsCount = len(result.Sessions)
-	result.BeaconsCount = len(result.Beacons)
+	result.PulsesCount = len(result.Pulses)
 	return marshalToolResult(result)
 }
 
 func (e *executor) callLS(ctx context.Context, args lsToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -470,7 +470,7 @@ func (e *executor) callLS(ctx context.Context, args lsToolArgs) (string, error) 
 		args.Path = "."
 	}
 
-	req, isBeacon, callCtx, cancel, err := buildRequestContext(ctx, target)
+	req, isPulse, callCtx, cancel, err := buildRequestContext(ctx, target)
 	if err != nil {
 		return "", err
 	}
@@ -488,9 +488,9 @@ func (e *executor) callLS(ctx context.Context, args lsToolArgs) (string, error) 
 	if err := genericResponseError(resp.Response); err != nil {
 		return "", err
 	}
-	if isBeacon && resp.Response != nil && resp.Response.Async {
+	if isPulse && resp.Response != nil && resp.Response.Async {
 		resolved := &sliverpb.Ls{}
-		if err := waitForBeaconTaskResponse(callCtx, resp.Response.TaskID, resolved); err != nil {
+		if err := waitForPulseTaskResponse(callCtx, resp.Response.TaskID, resolved); err != nil {
 			return "", err
 		}
 		resp = resolved
@@ -525,7 +525,7 @@ func (e *executor) callLS(ctx context.Context, args lsToolArgs) (string, error) 
 }
 
 func (e *executor) callCat(ctx context.Context, args catToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -533,7 +533,7 @@ func (e *executor) callCat(ctx context.Context, args catToolArgs) (string, error
 		return "", fmt.Errorf("path is required")
 	}
 
-	req, isBeacon, callCtx, cancel, err := buildRequestContext(ctx, target)
+	req, isPulse, callCtx, cancel, err := buildRequestContext(ctx, target)
 	if err != nil {
 		return "", err
 	}
@@ -554,9 +554,9 @@ func (e *executor) callCat(ctx context.Context, args catToolArgs) (string, error
 	if err := genericResponseError(resp.Response); err != nil {
 		return "", err
 	}
-	if isBeacon && resp.Response != nil && resp.Response.Async {
+	if isPulse && resp.Response != nil && resp.Response.Async {
 		resolved := &sliverpb.Download{}
-		if err := waitForBeaconTaskResponse(callCtx, resp.Response.TaskID, resolved); err != nil {
+		if err := waitForPulseTaskResponse(callCtx, resp.Response.TaskID, resolved); err != nil {
 			return "", err
 		}
 		resp = resolved
@@ -573,12 +573,12 @@ func (e *executor) callCat(ctx context.Context, args catToolArgs) (string, error
 }
 
 func (e *executor) callPWD(ctx context.Context, args targetArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
 
-	req, isBeacon, callCtx, cancel, err := buildRequestContext(ctx, target)
+	req, isPulse, callCtx, cancel, err := buildRequestContext(ctx, target)
 	if err != nil {
 		return "", err
 	}
@@ -593,9 +593,9 @@ func (e *executor) callPWD(ctx context.Context, args targetArgs) (string, error)
 	if err := genericResponseError(resp.Response); err != nil {
 		return "", err
 	}
-	if isBeacon && resp.Response != nil && resp.Response.Async {
+	if isPulse && resp.Response != nil && resp.Response.Async {
 		resolved := &sliverpb.Pwd{}
-		if err := waitForBeaconTaskResponse(callCtx, resp.Response.TaskID, resolved); err != nil {
+		if err := waitForPulseTaskResponse(callCtx, resp.Response.TaskID, resolved); err != nil {
 			return "", err
 		}
 		resp = resolved
@@ -607,47 +607,47 @@ func (e *executor) callPWD(ctx context.Context, args targetArgs) (string, error)
 	return marshalToolResult(pathResult{Path: resp.Path})
 }
 
-func (e *executor) resolveTarget(sessionID, beaconID string) (toolTarget, error) {
+func (e *executor) resolveTarget(sessionID, pulseID string) (toolTarget, error) {
 	sessionID = strings.TrimSpace(sessionID)
-	beaconID = strings.TrimSpace(beaconID)
-	if sessionID != "" && beaconID != "" {
-		return toolTarget{}, fmt.Errorf("provide only one of session_id or beacon_id")
+	pulseID = strings.TrimSpace(pulseID)
+	if sessionID != "" && pulseID != "" {
+		return toolTarget{}, fmt.Errorf("provide only one of session_id or pulse_id")
 	}
-	if sessionID == "" && beaconID == "" && e != nil && e.conversation != nil {
+	if sessionID == "" && pulseID == "" && e != nil && e.conversation != nil {
 		sessionID = strings.TrimSpace(e.conversation.GetTargetSessionID())
-		beaconID = strings.TrimSpace(e.conversation.GetTargetBeaconID())
+		pulseID = strings.TrimSpace(e.conversation.GetTargetPulseID())
 	}
-	if sessionID == "" && beaconID == "" {
-		return toolTarget{}, fmt.Errorf("session_id or beacon_id is required; call list_sessions_and_beacons or start a conversation from an active target")
+	if sessionID == "" && pulseID == "" {
+		return toolTarget{}, fmt.Errorf("session_id or pulse_id is required; call list_sessions_and_pulses or start a conversation from an active target")
 	}
 	return toolTarget{
 		SessionID: sessionID,
-		BeaconID:  beaconID,
+		PulseID:  pulseID,
 	}, nil
 }
 
 func buildRequestContext(ctx context.Context, target toolTarget) (*commonpb.Request, bool, context.Context, context.CancelFunc, error) {
-	if strings.TrimSpace(target.SessionID) != "" && strings.TrimSpace(target.BeaconID) != "" {
-		return nil, false, nil, nil, fmt.Errorf("provide only one of session_id or beacon_id")
+	if strings.TrimSpace(target.SessionID) != "" && strings.TrimSpace(target.PulseID) != "" {
+		return nil, false, nil, nil, fmt.Errorf("provide only one of session_id or pulse_id")
 	}
 
 	timeoutSeconds := aiToolDefaultWaitSeconds
 	req := &commonpb.Request{
 		Timeout: (int64(time.Second) * timeoutSeconds) - 1,
 	}
-	isBeacon := false
+	isPulse := false
 
 	if strings.TrimSpace(target.SessionID) != "" {
 		req.SessionID = strings.TrimSpace(target.SessionID)
 		req.Async = false
 	} else {
-		req.BeaconID = strings.TrimSpace(target.BeaconID)
+		req.PulseID = strings.TrimSpace(target.PulseID)
 		req.Async = true
-		isBeacon = true
+		isPulse = true
 	}
 
 	callCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
-	return req, isBeacon, callCtx, cancel, nil
+	return req, isPulse, callCtx, cancel, nil
 }
 
 func decodeToolArgs(raw string, out any) error {
@@ -676,8 +676,8 @@ func genericResponseError(resp *commonpb.Response) error {
 	return fmt.Errorf("%s", strings.TrimSpace(resp.Err))
 }
 
-func waitForBeaconTaskResponse(ctx context.Context, taskID string, out proto.Message) error {
-	task, err := waitForBeaconTask(ctx, taskID)
+func waitForPulseTaskResponse(ctx context.Context, taskID string, out proto.Message) error {
+	task, err := waitForPulseTask(ctx, taskID)
 	if err != nil {
 		return err
 	}
@@ -686,20 +686,20 @@ func waitForBeaconTaskResponse(ctx context.Context, taskID string, out proto.Mes
 		if state == "" {
 			state = "unknown"
 		}
-		return fmt.Errorf("beacon task %s %s", task.GetID(), state)
+		return fmt.Errorf("pulse task %s %s", task.GetID(), state)
 	}
 	if len(task.GetResponse()) == 0 {
-		return fmt.Errorf("beacon task %s returned empty response", task.GetID())
+		return fmt.Errorf("pulse task %s returned empty response", task.GetID())
 	}
 	return proto.Unmarshal(task.GetResponse(), out)
 }
 
-func waitForBeaconTask(ctx context.Context, taskID string) (*clientpb.BeaconTask, error) {
+func waitForPulseTask(ctx context.Context, taskID string) (*clientpb.PulseTask, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for {
-		task, err := db.BeaconTaskByID(taskID)
+		task, err := db.PulseTaskByID(taskID)
 		if err != nil {
 			return nil, err
 		}

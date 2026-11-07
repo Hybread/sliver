@@ -497,7 +497,7 @@ func TestExecuteExtensionUsesReflektorForCapableTarget(t *testing.T) {
 		t.Fatalf("unexpected BOF entrypoint: %q", callReq.GetExport())
 	}
 	if len(callReq.GetArgs()) != 4 {
-		t.Fatalf("expected empty Beacon argument buffer, got %d bytes", len(callReq.GetArgs()))
+		t.Fatalf("expected empty Pulse argument buffer, got %d bytes", len(callReq.GetArgs()))
 	}
 
 	var resp extensionExecutionResult
@@ -511,7 +511,7 @@ func TestExecuteExtensionUsesReflektorForCapableTarget(t *testing.T) {
 
 type fakePackageBackend struct {
 	sessions *clientpb.Sessions
-	beacons  *clientpb.Beacons
+	pulses  *clientpb.Pulses
 
 	executeAssemblyFn   func(context.Context, *sliverpb.ExecuteAssemblyReq) (*sliverpb.ExecuteAssembly, error)
 	listExtensionsFn    func(context.Context, *sliverpb.ListExtensionsReq) (*sliverpb.ListExtensions, error)
@@ -531,11 +531,11 @@ func (f *fakePackageBackend) GetSessions(context.Context, *commonpb.Empty) (*cli
 	return f.sessions, nil
 }
 
-func (f *fakePackageBackend) GetBeacons(context.Context, *commonpb.Empty) (*clientpb.Beacons, error) {
-	if f.beacons == nil {
-		return &clientpb.Beacons{}, nil
+func (f *fakePackageBackend) GetPulses(context.Context, *commonpb.Empty) (*clientpb.Pulses, error) {
+	if f.pulses == nil {
+		return &clientpb.Pulses{}, nil
 	}
-	return f.beacons, nil
+	return f.pulses, nil
 }
 
 func (*fakePackageBackend) Ls(context.Context, *sliverpb.LsReq) (*sliverpb.Ls, error) {

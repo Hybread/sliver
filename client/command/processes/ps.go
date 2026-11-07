@@ -111,8 +111,8 @@ var knownSecurityTools = map[string]string{
 
 // PsCmd - List processes on the remote system
 func PsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -138,7 +138,7 @@ func PsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	}
 
 	// Get OS information
-	os := getOS(session, beacon)
+	os := getOS(session, pulse)
 
 	/*
 		Because a full list can trigger EDR on some platforms,
@@ -155,7 +155,7 @@ func PsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	}
 
 	if ps.Response != nil && ps.Response.Async {
-		con.AddBeaconCallback(ps.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(ps.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, ps)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -179,11 +179,11 @@ func PsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	}
 }
 
-func getOS(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func getOS(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return session.OS
-	} else if beacon != nil {
-		return beacon.OS
+	} else if pulse != nil {
+		return pulse.OS
 	}
 	return ""
 }
@@ -199,11 +199,11 @@ func PrintPS(os string, ps *sliverpb.Ps, interactive bool, fullInfo bool, flags 
 
 	if pstree {
 		var currentPID int32
-		session, beacon := con.ActiveTarget.GetInteractive()
+		session, pulse := con.ActiveTarget.GetInteractive()
 		if session != nil && session.PID != 0 {
 			currentPID = session.PID
-		} else if beacon != nil && beacon.PID != 0 {
-			currentPID = beacon.PID
+		} else if pulse != nil && pulse.PID != 0 {
+			currentPID = pulse.PID
 		}
 		// Print the process tree
 		sorted := SortProcessesByPID(ps.Processes)
@@ -279,7 +279,7 @@ func findKnownSecurityProducts(ps *sliverpb.Ps) []string {
 
 // procRow - Stylizes the process information
 func procRow(proc *commonpb.Process, cmdLine bool, fullInfo bool, con *console.SliverClient) table.Row {
-	session, beacon := con.ActiveTarget.GetInteractive()
+	session, pulse := con.ActiveTarget.GetInteractive()
 
 	style := console.StyleNormal
 	if _, ok := knownSecurityTools[proc.Executable]; ok {
@@ -288,7 +288,7 @@ func procRow(proc *commonpb.Process, cmdLine bool, fullInfo bool, con *console.S
 	if session != nil && proc.Pid == session.PID {
 		style = console.StyleGreen
 	}
-	if beacon != nil && proc.Pid == beacon.PID {
+	if pulse != nil && proc.Pid == pulse.PID {
 		style = console.StyleGreen
 	}
 

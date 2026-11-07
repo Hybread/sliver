@@ -34,12 +34,12 @@ func (rpc *corpusRPC) GetSessions(context.Context, *commonpb.Empty, ...grpc.Call
 	return &clientpb.Sessions{Sessions: rpc.sessions}, nil
 }
 
-func (*corpusRPC) GetBeacons(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Beacons, error) {
-	return &clientpb.Beacons{}, nil
+func (*corpusRPC) GetPulses(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Pulses, error) {
+	return &clientpb.Pulses{}, nil
 }
 
-func (*corpusRPC) GetBeaconTaskContent(context.Context, *clientpb.BeaconTask, ...grpc.CallOption) (*clientpb.BeaconTask, error) {
-	return nil, fmt.Errorf("unexpected beacon task poll in session corpus test")
+func (*corpusRPC) GetPulseTaskContent(context.Context, *clientpb.PulseTask, ...grpc.CallOption) (*clientpb.PulseTask, error) {
+	return nil, fmt.Errorf("unexpected pulse task poll in session corpus test")
 }
 
 func (rpc *corpusRPC) CallExtension(_ context.Context, request *sliverpb.CallExtensionReq, _ ...grpc.CallOption) (*sliverpb.CallExtension, error) {

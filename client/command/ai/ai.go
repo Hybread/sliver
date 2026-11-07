@@ -120,7 +120,7 @@ type aiContext struct {
 
 type aiTargetSummary struct {
 	SessionID string
-	BeaconID  string
+	PulseID  string
 	Label     string
 	Host      string
 	OS        string
@@ -140,7 +140,7 @@ type aiConnectionSummary struct {
 func defaultAITargetSummary() aiTargetSummary {
 	return aiTargetSummary{
 		Label: "No active target",
-		Host:  "Select a session or beacon with `use` or ctrl+s",
+		Host:  "Select a session or pulse with `use` or ctrl+s",
 		Mode:  "offline preview",
 		C2:    "n/a",
 		OS:    "unknown",
@@ -169,25 +169,25 @@ func aiSessionTargetSummary(session *clientpb.Session) aiTargetSummary {
 	}
 }
 
-func aiBeaconTargetSummary(beacon *clientpb.Beacon) aiTargetSummary {
-	if beacon == nil {
+func aiPulseTargetSummary(pulse *clientpb.Pulse) aiTargetSummary {
+	if pulse == nil {
 		return defaultAITargetSummary()
 	}
 
 	return aiTargetSummary{
-		BeaconID: beacon.ID,
-		Label:    fmt.Sprintf("Beacon %s", fallback(beacon.Name, beacon.ID)),
-		Host:     fallback(beacon.Hostname, "<unknown host>"),
-		OS:       fallback(beacon.OS, "unknown"),
-		Arch:     fallback(beacon.Arch, "unknown"),
-		C2:       fallback(beacon.ActiveC2, "unknown"),
-		Mode:     "asynchronous beacon",
+		PulseID: pulse.ID,
+		Label:    fmt.Sprintf("Pulse %s", fallback(pulse.Name, pulse.ID)),
+		Host:     fallback(pulse.Hostname, "<unknown host>"),
+		OS:       fallback(pulse.OS, "unknown"),
+		Arch:     fallback(pulse.Arch, "unknown"),
+		C2:       fallback(pulse.ActiveC2, "unknown"),
+		Mode:     "asynchronous pulse",
 		Details: []string{
-			fmt.Sprintf("User: %s", fallback(beacon.Username, "<unknown>")),
-			fmt.Sprintf("PID: %d", beacon.PID),
-			fmt.Sprintf("Remote: %s", fallback(beacon.RemoteAddress, "<unknown>")),
-			fmt.Sprintf("Interval: %s", time.Duration(beacon.Interval).String()),
-			fmt.Sprintf("Next checkin: %s", formatUnix(beacon.NextCheckin)),
+			fmt.Sprintf("User: %s", fallback(pulse.Username, "<unknown>")),
+			fmt.Sprintf("PID: %d", pulse.PID),
+			fmt.Sprintf("Remote: %s", fallback(pulse.RemoteAddress, "<unknown>")),
+			fmt.Sprintf("Interval: %s", time.Duration(pulse.Interval).String()),
+			fmt.Sprintf("Next checkin: %s", formatUnix(pulse.NextCheckin)),
 		},
 	}
 }
@@ -214,12 +214,12 @@ func buildAIContext(con *console.SliverClient) aiContext {
 			}
 		}
 
-		session, beacon := con.ActiveTarget.Get()
+		session, pulse := con.ActiveTarget.Get()
 		switch {
 		case session != nil:
 			ctx.target = aiSessionTargetSummary(session)
-		case beacon != nil:
-			ctx.target = aiBeaconTargetSummary(beacon)
+		case pulse != nil:
+			ctx.target = aiPulseTargetSummary(pulse)
 		}
 	}
 

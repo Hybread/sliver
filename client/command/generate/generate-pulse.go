@@ -15,24 +15,24 @@ import (
 )
 
 var (
-	minBeaconInterval         = 5 * time.Second
-	ErrBeaconIntervalTooShort = fmt.Errorf("beacon interval must be %v or greater", minBeaconInterval)
+	minPulseInterval         = 5 * time.Second
+	ErrPulseIntervalTooShort = fmt.Errorf("pulse interval must be %v or greater", minPulseInterval)
 )
 
-// GenerateBeaconCmd - The main command used to generate implant binaries
-func GenerateBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	if shouldRunGenerateBeaconForm(cmd, con, args) {
+// GeneratePulseCmd - The main command used to generate implant binaries
+func GeneratePulseCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+	if shouldRunGeneratePulseForm(cmd, con, args) {
 		compiler, _ := compilerTargets(con)
-		result, err := forms.GenerateBeaconForm(compiler)
+		result, err := forms.GeneratePulseForm(compiler)
 		if err != nil {
 			if errors.Is(err, forms.ErrUserAborted) {
 				return
 			}
-			con.PrintErrorf("Generate beacon form failed: %s\n", err)
+			con.PrintErrorf("Generate pulse form failed: %s\n", err)
 			return
 		}
-		if err := applyGenerateBeaconForm(cmd, result); err != nil {
-			con.PrintErrorf("Failed to apply generate beacon form values: %s\n", err)
+		if err := applyGeneratePulseForm(cmd, result); err != nil {
+			con.PrintErrorf("Failed to apply generate pulse form values: %s\n", err)
 			return
 		}
 	}
@@ -46,8 +46,8 @@ func GenerateBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []str
 		con.PrintErrorf("%s\n", err)
 		return
 	}
-	config.IsBeacon = true
-	err = parseBeaconFlags(cmd, config)
+	config.IsPulse = true
+	err = parsePulseFlags(cmd, config)
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 		return
@@ -63,7 +63,7 @@ func GenerateBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []str
 	}
 }
 
-func parseBeaconFlags(cmd *cobra.Command, config *clientpb.ImplantConfig) error {
+func parsePulseFlags(cmd *cobra.Command, config *clientpb.ImplantConfig) error {
 	days, _ := cmd.Flags().GetInt64("days")
 	hours, _ := cmd.Flags().GetInt64("hours")
 	minutes, _ := cmd.Flags().GetInt64("minutes")
@@ -83,17 +83,17 @@ func parseBeaconFlags(cmd *cobra.Command, config *clientpb.ImplantConfig) error 
 		interval += time.Duration(seconds) * time.Second
 	}
 
-	if interval < minBeaconInterval {
-		return ErrBeaconIntervalTooShort
+	if interval < minPulseInterval {
+		return ErrPulseIntervalTooShort
 	}
 
-	beaconJitter, _ := cmd.Flags().GetInt64("jitter")
-	config.BeaconInterval = int64(interval)
-	config.BeaconJitter = int64(time.Duration(beaconJitter) * time.Second)
+	pulseJitter, _ := cmd.Flags().GetInt64("jitter")
+	config.PulseInterval = int64(interval)
+	config.PulseJitter = int64(time.Duration(pulseJitter) * time.Second)
 	return nil
 }
 
-func shouldRunGenerateBeaconForm(cmd *cobra.Command, con *console.SliverClient, args []string) bool {
+func shouldRunGeneratePulseForm(cmd *cobra.Command, con *console.SliverClient, args []string) bool {
 	if con == nil || con.IsCLI {
 		return false
 	}
@@ -103,7 +103,7 @@ func shouldRunGenerateBeaconForm(cmd *cobra.Command, con *console.SliverClient, 
 	return cmd.Flags().NFlag() == 0
 }
 
-func applyGenerateBeaconForm(cmd *cobra.Command, result *forms.GenerateBeaconFormResult) error {
+func applyGeneratePulseForm(cmd *cobra.Command, result *forms.GeneratePulseFormResult) error {
 	if err := cmd.Flags().Set("os", result.OS); err != nil {
 		return err
 	}

@@ -1431,7 +1431,7 @@ func TestLegacySocksClientIdleCleanupIgnoresRequestAsyncAndStripsMetadata(t *tes
 		connection.Close()
 	})
 
-	// Request.Async has beacon-task semantics and is deliberately not a SOCKS
+	// Request.Async has pulse-task semantics and is deliberately not a SOCKS
 	// lifecycle capability. A legacy sequence-zero payload remains legacy even
 	// if this unrelated metadata bit is present.
 	stream.recv <- &sliverpb.SocksData{

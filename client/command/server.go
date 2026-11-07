@@ -26,7 +26,7 @@ import (
 	"github.com/bishopfox/sliver/client/command/aka"
 	"github.com/bishopfox/sliver/client/command/alias"
 	"github.com/bishopfox/sliver/client/command/armory"
-	"github.com/bishopfox/sliver/client/command/beacons"
+	"github.com/bishopfox/sliver/client/command/pulses"
 	"github.com/bishopfox/sliver/client/command/builders"
 	"github.com/bishopfox/sliver/client/command/c2profiles"
 	"github.com/bishopfox/sliver/client/command/certificates"
@@ -142,7 +142,7 @@ func ServerCommands(con *client.SliverClient, serverCmds func() []*cobra.Command
 			use.Commands,
 			info.Commands,
 			sessions.Commands,
-			beacons.Commands,
+			pulses.Commands,
 			monitor.Commands,
 			loot.Commands,
 			hosts.Commands,

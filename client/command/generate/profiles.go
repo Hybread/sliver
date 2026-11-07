@@ -76,8 +76,8 @@ func PrintProfiles(profiles []*clientpb.ImplantProfile, con *console.SliverClien
 			obfuscation = "enabled"
 		}
 		implantType := "session"
-		if config.IsBeacon {
-			implantType = "beacon"
+		if config.IsPulse {
+			implantType = "pulse"
 		}
 		c2URLs := []string{}
 		for index, c2 := range config.C2 {
@@ -130,20 +130,20 @@ func populateProfileProperties(config *clientpb.ImplantConfig) map[string]string
 	var plural string
 
 	properties["osarch"] = fmt.Sprintf("%s %s", strings.Title(config.GOOS), strings.ToUpper(config.GOARCH))
-	if config.IsBeacon {
-		properties["implanttype"] = "Beacon"
-		jitter := int(config.BeaconJitter / int64(math.Pow10(9)))
+	if config.IsPulse {
+		properties["implanttype"] = "Pulse"
+		jitter := int(config.PulseJitter / int64(math.Pow10(9)))
 		plural = "s"
 		if jitter == 1 {
 			plural = ""
 		}
-		properties["beaconjitter"] = fmt.Sprintf("%d second%s", jitter, plural)
-		interval := int(config.BeaconInterval / int64(math.Pow10(9)))
+		properties["pulsejitter"] = fmt.Sprintf("%d second%s", jitter, plural)
+		interval := int(config.PulseInterval / int64(math.Pow10(9)))
 		plural = "s"
 		if interval == 1 {
 			plural = ""
 		}
-		properties["beaconinterval"] = fmt.Sprintf("%d second%s", interval, plural)
+		properties["pulseinterval"] = fmt.Sprintf("%d second%s", interval, plural)
 	} else {
 		properties["implanttype"] = "Session"
 	}
@@ -333,14 +333,14 @@ func PrintProfileInfo(name string, con *console.SliverClient) {
 
 	// Timeouts and Intervals
 	tw.ResetRows()
-	if config.IsBeacon {
+	if config.IsPulse {
 		tw.AppendRow(table.Row{
-			"Beacon Interval",
-			properties["beaconinterval"],
+			"Pulse Interval",
+			properties["pulseinterval"],
 		})
 		tw.AppendRow(table.Row{
-			"Beacon Jitter",
-			properties["beaconjitter"],
+			"Pulse Jitter",
+			properties["pulsejitter"],
 		})
 	}
 	tw.AppendRow(table.Row{
@@ -459,7 +459,7 @@ func ProfileNameCompleter(con *console.SliverClient) carapace.Action {
 			buildFormat := profile.Config.Format.String()
 
 			profileType := ""
-			if profile.Config.IsBeacon {
+			if profile.Config.IsPulse {
 				profileType = "(B)"
 			} else {
 				profileType = "(S)"
@@ -472,7 +472,7 @@ func ProfileNameCompleter(con *console.SliverClient) carapace.Action {
 
 			desc := fmt.Sprintf("%s %s %s %s", profileType, osArch, buildFormat, strings.Join(domains, ","))
 
-			if profile.Config.IsBeacon {
+			if profile.Config.IsPulse {
 				results = append(results, profile.Name)
 				results = append(results, desc)
 			} else {
@@ -483,7 +483,7 @@ func ProfileNameCompleter(con *console.SliverClient) carapace.Action {
 
 		return action.Invoke(ctx).Merge(
 			carapace.ActionValuesDescribed(sessions...).Tag("sessions").Invoke(ctx),
-			carapace.ActionValuesDescribed(results...).Tag("beacons").Invoke(ctx),
+			carapace.ActionValuesDescribed(results...).Tag("pulses").Invoke(ctx),
 		).ToA()
 	}
 

@@ -67,7 +67,7 @@ type options struct {
 	startupTimeout          time.Duration
 	connectTimeout          time.Duration
 	commandTimeout          time.Duration
-	beaconInterval          time.Duration
+	pulseInterval          time.Duration
 	sgnSamples              int
 	socksFuzzSeed           int64
 	socksFuzzCases          int
@@ -128,19 +128,19 @@ type listener struct {
 
 type implantTarget struct {
 	session *clientpb.Session
-	beacon  *clientpb.Beacon
+	pulse  *clientpb.Pulse
 }
 
 func (target implantTarget) mode() string {
-	if target.beacon != nil {
-		return "beacon"
+	if target.pulse != nil {
+		return "pulse"
 	}
 	return "session"
 }
 
 func (target implantTarget) id() string {
-	if target.beacon != nil {
-		return target.beacon.ID
+	if target.pulse != nil {
+		return target.pulse.ID
 	}
 	if target.session != nil {
 		return target.session.ID
@@ -149,8 +149,8 @@ func (target implantTarget) id() string {
 }
 
 func (target implantTarget) name() string {
-	if target.beacon != nil {
-		return target.beacon.Name
+	if target.pulse != nil {
+		return target.pulse.Name
 	}
 	if target.session != nil {
 		return target.session.Name
@@ -164,9 +164,9 @@ func (target implantTarget) request(timeout time.Duration) *commonpb.Request {
 		requestTimeout = timeout
 	}
 	request := &commonpb.Request{Timeout: int64(requestTimeout)}
-	if target.beacon != nil {
+	if target.pulse != nil {
 		request.Async = true
-		request.BeaconID = target.beacon.ID
+		request.PulseID = target.pulse.ID
 	} else if target.session != nil {
 		request.SessionID = target.session.ID
 	}
@@ -414,7 +414,7 @@ func validateOptions(opts *options) error {
 	if opts.serverArch != "386" && opts.serverArch != "amd64" && opts.serverArch != "arm64" {
 		return fmt.Errorf("unsupported expected server architecture %q", opts.serverArch)
 	}
-	if opts.timeout <= 0 || opts.startupTimeout <= 0 || opts.connectTimeout <= 0 || opts.commandTimeout <= 0 || opts.beaconInterval <= 0 {
+	if opts.timeout <= 0 || opts.startupTimeout <= 0 || opts.connectTimeout <= 0 || opts.commandTimeout <= 0 || opts.pulseInterval <= 0 {
 		return errors.New("all E2E timeouts and intervals must be positive")
 	}
 	if opts.sgnSamples < shellcodecoverage.MinimumSGNSamples {
@@ -471,7 +471,7 @@ func validateOptions(opts *options) error {
 	if err := validateTunnelAcceptanceProfile(opts); err != nil {
 		return err
 	}
-	opts.modes, err = parseSelection(opts.modeCSV, []string{"session", "beacon"}, "implant mode")
+	opts.modes, err = parseSelection(opts.modeCSV, []string{"session", "pulse"}, "implant mode")
 	if err != nil {
 		return err
 	}
@@ -543,7 +543,7 @@ func normalizeSuiteScope(value string) (string, error) {
 func modesForSuiteScope(scope string, modes []string) []string {
 	if scope == suiteScopeRportFwd || scope == suiteScopePortfwdSocks5 {
 		// The tunnel feature scopes exercise interactive session features. A
-		// focused run intentionally avoids generating beacons even when callers
+		// focused run intentionally avoids generating pulses even when callers
 		// retain the comprehensive suite's default selector.
 		return []string{"session"}
 	}
@@ -757,8 +757,8 @@ func (s *suite) run() error {
 	for _, transport := range s.opts.transports {
 		listener := s.listeners[transport]
 		for _, mode := range s.opts.modes {
-			beacon := mode == "beacon"
-			if err := s.runImplant(listener, beacon); err != nil {
+			pulse := mode == "pulse"
+			if err := s.runImplant(listener, pulse); err != nil {
 				runErrors = append(runErrors, err)
 			}
 		}
@@ -855,10 +855,10 @@ func (s *suite) waitForListener(name string, port int) error {
 	return nil
 }
 
-func (s *suite) runImplant(listener *listener, beacon bool) error {
+func (s *suite) runImplant(listener *listener, pulse bool) error {
 	mode := "session"
-	if beacon {
-		mode = "beacon"
+	if pulse {
+		mode = "pulse"
 	}
 	implantName := fmt.Sprintf("e2e-%s-%s-%s-%s", listener.transport, mode, s.opts.targetOS, s.opts.targetArch)
 
@@ -868,9 +868,9 @@ func (s *suite) runImplant(listener *listener, beacon bool) error {
 		TemplateName:        "sliver",
 		Debug:               s.opts.implantDebug,
 		ObfuscateSymbols:    s.opts.implantObfuscate,
-		IsBeacon:            beacon,
-		BeaconInterval:      int64(s.opts.beaconInterval),
-		BeaconJitter:        0,
+		IsPulse:            pulse,
+		PulseInterval:      int64(s.opts.pulseInterval),
+		PulseJitter:        0,
 		Format:              clientpb.OutputFormat_EXECUTABLE,
 		C2:                  []*clientpb.ImplantC2{{URL: listener.c2URL}},
 		HTTPC2ConfigName:    consts.DefaultC2Profile,
@@ -1028,11 +1028,11 @@ func (s *suite) waitForImplant(ctx context.Context, cursor int, process *managed
 			if mode == "session" {
 				return event.EventType == consts.SessionOpenedEvent && event.Session != nil && event.Session.Name == implantName && event.Session.PID == expectedPID
 			}
-			if event.EventType != consts.BeaconRegisteredEvent {
+			if event.EventType != consts.PulseRegisteredEvent {
 				return false
 			}
-			beacon := &clientpb.Beacon{}
-			return proto.Unmarshal(event.Data, beacon) == nil && beacon.Name == implantName && beacon.PID == expectedPID
+			pulse := &clientpb.Pulse{}
+			return proto.Unmarshal(event.Data, pulse) == nil && pulse.Name == implantName && pulse.PID == expectedPID
 		})
 		cursor = next
 		if err != nil {
@@ -1055,17 +1055,17 @@ func (s *suite) waitForImplant(ctx context.Context, cursor int, process *managed
 			}
 			return implantTarget{session: event.Session}, nil
 		}
-		beacon := &clientpb.Beacon{}
-		if err := proto.Unmarshal(event.Data, beacon); err != nil {
-			return implantTarget{}, fmt.Errorf("decode beacon registration: %w", err)
+		pulse := &clientpb.Pulse{}
+		if err := proto.Unmarshal(event.Data, pulse); err != nil {
+			return implantTarget{}, fmt.Errorf("decode pulse registration: %w", err)
 		}
-		if beacon.OS != s.opts.targetOS || beacon.Arch != s.opts.targetArch {
-			return implantTarget{}, fmt.Errorf("beacon target mismatch: got %s/%s", beacon.OS, beacon.Arch)
+		if pulse.OS != s.opts.targetOS || pulse.Arch != s.opts.targetArch {
+			return implantTarget{}, fmt.Errorf("pulse target mismatch: got %s/%s", pulse.OS, pulse.Arch)
 		}
-		if err := validateConnectedTransport(beacon.Transport, beacon.ActiveC2, listener.transport); err != nil {
-			return implantTarget{}, fmt.Errorf("beacon connection mismatch: %w", err)
+		if err := validateConnectedTransport(pulse.Transport, pulse.ActiveC2, listener.transport); err != nil {
+			return implantTarget{}, fmt.Errorf("pulse connection mismatch: %w", err)
 		}
-		return implantTarget{beacon: beacon}, nil
+		return implantTarget{pulse: pulse}, nil
 	}
 }
 

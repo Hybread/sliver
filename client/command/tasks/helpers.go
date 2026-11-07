@@ -15,8 +15,8 @@ import (
 	"github.com/rsteube/carapace"
 )
 
-// SelectBeaconTask - Select a beacon task interactively.
-func SelectBeaconTask(tasks []*clientpb.BeaconTask) (*clientpb.BeaconTask, error) {
+// SelectPulseTask - Select a pulse task interactively.
+func SelectPulseTask(tasks []*clientpb.PulseTask) (*clientpb.PulseTask, error) {
 	// Render selection table
 	buf := bytes.NewBufferString("")
 	table := tabwriter.NewWriter(buf, 0, 2, 2, ' ', 0)
@@ -32,7 +32,7 @@ func SelectBeaconTask(tasks []*clientpb.BeaconTask) (*clientpb.BeaconTask, error
 	}
 
 	selected := ""
-	err := forms.Select("Select a beacon task:", options, &selected)
+	err := forms.Select("Select a pulse task:", options, &selected)
 	if err != nil {
 		return nil, err
 	}
@@ -44,15 +44,15 @@ func SelectBeaconTask(tasks []*clientpb.BeaconTask) (*clientpb.BeaconTask, error
 	return nil, errors.New("task not found")
 }
 
-// BeaconTaskIDCompleter returns a structured list of tasks completions, grouped by state.
-func BeaconTaskIDCompleter(con *console.SliverClient) carapace.Action {
+// PulseTaskIDCompleter returns a structured list of tasks completions, grouped by state.
+func PulseTaskIDCompleter(con *console.SliverClient) carapace.Action {
 	callback := func(ctx carapace.Context) carapace.Action {
-		beacon := con.ActiveTarget.GetBeacon()
-		if beacon == nil {
-			return carapace.ActionMessage("no active beacon")
+		pulse := con.ActiveTarget.GetPulse()
+		if pulse == nil {
+			return carapace.ActionMessage("no active pulse")
 		}
 
-		beaconTasks, err := con.Rpc.GetBeaconTasks(context.Background(), &clientpb.Beacon{ID: beacon.ID})
+		pulseTasks, err := con.Rpc.GetPulseTasks(context.Background(), &clientpb.Pulse{ID: pulse.ID})
 		if err != nil {
 			return carapace.ActionMessage("Failed to fetch tasks: %s", err.Error())
 		}
@@ -62,7 +62,7 @@ func BeaconTaskIDCompleter(con *console.SliverClient) carapace.Action {
 		sent := make([]string, 0)
 		canceled := make([]string, 0)
 
-		for _, task := range beaconTasks.Tasks {
+		for _, task := range pulseTasks.Tasks {
 			var desc string
 
 			switch task.State {
@@ -109,22 +109,22 @@ func BeaconTaskIDCompleter(con *console.SliverClient) carapace.Action {
 	return carapace.ActionCallback(callback)
 }
 
-// BeaconPendingTasksCompleter completes pending tasks.
-func BeaconPendingTasksCompleter(con *console.SliverClient) carapace.Action {
+// PulsePendingTasksCompleter completes pending tasks.
+func PulsePendingTasksCompleter(con *console.SliverClient) carapace.Action {
 	callback := func(ctx carapace.Context) carapace.Action {
-		beacon := con.ActiveTarget.GetBeacon()
-		if beacon == nil {
-			return carapace.ActionMessage("no active beacon")
+		pulse := con.ActiveTarget.GetPulse()
+		if pulse == nil {
+			return carapace.ActionMessage("no active pulse")
 		}
 
-		beaconTasks, err := con.Rpc.GetBeaconTasks(context.Background(), &clientpb.Beacon{ID: beacon.ID})
+		pulseTasks, err := con.Rpc.GetPulseTasks(context.Background(), &clientpb.Pulse{ID: pulse.ID})
 		if err != nil {
 			return carapace.ActionMessage("Failed to fetch tasks: %s", err.Error())
 		}
 
 		pending := make([]string, 0)
 
-		for _, task := range beaconTasks.Tasks {
+		for _, task := range pulseTasks.Tasks {
 			if task.State == "pending" {
 				pending = append(pending, task.ID)
 				pending = append(pending, task.Description)

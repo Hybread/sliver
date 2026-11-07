@@ -34,7 +34,7 @@ import (
 // Kill - Kill the implant process
 func (rpc *Server) Kill(ctx context.Context, kill *sliverpb.KillReq) (*commonpb.Empty, error) {
 	var (
-		beacon *models.Beacon
+		pulse *models.Pulse
 		err    error
 	)
 
@@ -44,11 +44,11 @@ func (rpc *Server) Kill(ctx context.Context, kill *sliverpb.KillReq) (*commonpb.
 
 	session := core.Sessions.Get(kill.Request.SessionID)
 	if session == nil {
-		beacon, err = db.BeaconByID(kill.Request.BeaconID)
+		pulse, err = db.PulseByID(kill.Request.PulseID)
 		if err != nil {
-			return &commonpb.Empty{}, ErrInvalidBeaconID
+			return &commonpb.Empty{}, ErrInvalidPulseID
 		} else {
-			return rpc.killBeacon(kill, beacon)
+			return rpc.killPulse(kill, pulse)
 		}
 	}
 	return rpc.killSession(kill, session)
@@ -66,17 +66,17 @@ func (rpc *Server) killSession(kill *sliverpb.KillReq, session *core.Session) (*
 	return &commonpb.Empty{}, nil
 }
 
-func (rpc *Server) killBeacon(kill *sliverpb.KillReq, beacon *models.Beacon) (*commonpb.Empty, error) {
+func (rpc *Server) killPulse(kill *sliverpb.KillReq, pulse *models.Pulse) (*commonpb.Empty, error) {
 	resp := &commonpb.Empty{}
 	request := kill.GetRequest()
 	request.SessionID = ""
 	request.Async = true
-	request.BeaconID = beacon.ID.String()
+	request.PulseID = pulse.ID.String()
 	reqData, err := proto.Marshal(request)
 	if err != nil {
 		return nil, rpcError(err)
 	}
-	task, err := beacon.Task(&sliverpb.Envelope{
+	task, err := pulse.Task(&sliverpb.Envelope{
 		Type: sliverpb.MsgKillSessionReq,
 		Data: reqData,
 	})

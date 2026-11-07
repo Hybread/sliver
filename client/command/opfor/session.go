@@ -20,8 +20,8 @@ func (manager *Manager) querySession(
 	}
 
 	switch query.Kind {
-	case opforengine.AggressorSessionQueryBeacons,
-		opforengine.AggressorSessionQueryBeaconIDs:
+	case opforengine.AggressorSessionQueryPulses,
+		opforengine.AggressorSessionQueryPulseIDs:
 		return manager.queryAllSessions(ctx, query.Kind)
 	default:
 		return manager.querySingleSession(ctx, query)
@@ -38,7 +38,7 @@ func (manager *Manager) queryAllSessions(
 	}
 	values := make([]opforengine.Value, 0, len(targets))
 	for _, target := range targets {
-		if kind == opforengine.AggressorSessionQueryBeaconIDs {
+		if kind == opforengine.AggressorSessionQueryPulseIDs {
 			values = append(values, opforengine.String(target.id()))
 		} else {
 			values = append(values, opforengine.HashValue(targetMetadata(target)))
@@ -57,14 +57,14 @@ func (manager *Manager) querySingleSession(
 	}
 	metadata := targetMetadata(target)
 	switch query.Kind {
-	case opforengine.AggressorSessionQueryBeaconArchitecture,
-		opforengine.AggressorSessionQueryBeaconData,
-		opforengine.AggressorSessionQueryBeaconInfo,
+	case opforengine.AggressorSessionQueryPulseArchitecture,
+		opforengine.AggressorSessionQueryPulseData,
+		opforengine.AggressorSessionQueryPulseInfo,
 		opforengine.AggressorSessionQueryIs64:
 		return querySessionMetadata(target, metadata, query)
 	case opforengine.AggressorSessionQueryIsActive,
 		opforengine.AggressorSessionQueryIsAdmin,
-		opforengine.AggressorSessionQueryIsBeacon,
+		opforengine.AggressorSessionQueryIsPulse,
 		opforengine.AggressorSessionQueryIsSSH:
 		return querySessionStatus(target, query)
 	default:
@@ -78,22 +78,22 @@ func querySessionMetadata(
 	query opforengine.AggressorSessionQuery,
 ) (opforengine.Value, error) {
 	switch query.Kind {
-	case opforengine.AggressorSessionQueryBeaconArchitecture:
-		architecture, err := beaconArchitecture(target.arch())
+	case opforengine.AggressorSessionQueryPulseArchitecture:
+		architecture, err := pulseArchitecture(target.arch())
 		if err != nil {
 			return opforengine.Null(), err
 		}
 		return opforengine.String(architecture), nil
-	case opforengine.AggressorSessionQueryBeaconData:
+	case opforengine.AggressorSessionQueryPulseData:
 		return opforengine.HashValue(metadata), nil
-	case opforengine.AggressorSessionQueryBeaconInfo:
+	case opforengine.AggressorSessionQueryPulseInfo:
 		value, found := metadata.Get(strings.ToLower(query.Key.String()))
 		if !found {
 			return opforengine.Null(), nil
 		}
 		return value, nil
 	case opforengine.AggressorSessionQueryIs64:
-		architecture, err := beaconArchitecture(target.arch())
+		architecture, err := pulseArchitecture(target.arch())
 		if err != nil {
 			return opforengine.Null(), err
 		}
@@ -112,12 +112,12 @@ func querySessionStatus(
 		if target.session != nil {
 			return opforengine.Bool(!target.session.IsDead), nil
 		}
-		return opforengine.Bool(target.beacon != nil && !target.beacon.IsDead), nil
+		return opforengine.Bool(target.pulse != nil && !target.pulse.IsDead), nil
 	case opforengine.AggressorSessionQueryIsAdmin:
 		integrity := strings.ToLower(targetIntegrity(target))
 		return opforengine.Bool(strings.Contains(integrity, "high") || strings.Contains(integrity, "system") || strings.Contains(integrity, "admin")), nil
-	case opforengine.AggressorSessionQueryIsBeacon:
-		return opforengine.Bool(target.beacon != nil), nil
+	case opforengine.AggressorSessionQueryIsPulse:
+		return opforengine.Bool(target.pulse != nil), nil
 	case opforengine.AggressorSessionQueryIsSSH:
 		return opforengine.Bool(false), nil
 	default:
@@ -129,8 +129,8 @@ func targetIntegrity(target resolvedTarget) string {
 	if target.session != nil {
 		return target.session.Integrity
 	}
-	if target.beacon != nil {
-		return target.beacon.Integrity
+	if target.pulse != nil {
+		return target.pulse.Integrity
 	}
 	return ""
 }
@@ -144,25 +144,25 @@ func (manager *Manager) allTargets(ctx context.Context) ([]resolvedTarget, error
 	if err != nil {
 		return nil, fmt.Errorf("opfor: list sessions: %w", err)
 	}
-	beacons, err := rpc.GetBeacons(ctx, &commonpb.Empty{})
+	pulses, err := rpc.GetPulses(ctx, &commonpb.Empty{})
 	if err != nil {
-		return nil, fmt.Errorf("opfor: list beacons: %w", err)
+		return nil, fmt.Errorf("opfor: list pulses: %w", err)
 	}
-	targets := make([]resolvedTarget, 0, len(sessions.GetSessions())+len(beacons.GetBeacons()))
+	targets := make([]resolvedTarget, 0, len(sessions.GetSessions())+len(pulses.GetPulses()))
 	for _, session := range sessions.GetSessions() {
 		if session != nil {
 			targets = append(targets, resolvedTarget{session: session})
 		}
 	}
-	for _, beacon := range beacons.GetBeacons() {
-		if beacon != nil {
-			targets = append(targets, resolvedTarget{beacon: beacon})
+	for _, pulse := range pulses.GetPulses() {
+		if pulse != nil {
+			targets = append(targets, resolvedTarget{pulse: pulse})
 		}
 	}
 	return targets, nil
 }
 
-func beaconArchitecture(arch string) (string, error) {
+func pulseArchitecture(arch string) (string, error) {
 	switch strings.ToLower(arch) {
 	case "amd64", "x64", "x86_64":
 		return "x64", nil
@@ -181,11 +181,11 @@ func targetMetadata(target resolvedTarget) *opforengine.Hash {
 			target.session.Username, target.session.OS, target.session.Arch, target.session.Transport,
 			target.session.RemoteAddress, target.session.Filename, target.session.Version,
 			target.session.Integrity, target.session.PID, !target.session.IsDead, false)
-	} else if target.beacon != nil {
-		appendTargetMetadata(set, target.beacon.ID, target.beacon.Name, target.beacon.Hostname,
-			target.beacon.Username, target.beacon.OS, target.beacon.Arch, target.beacon.Transport,
-			target.beacon.RemoteAddress, target.beacon.Filename, target.beacon.Version,
-			target.beacon.Integrity, target.beacon.PID, !target.beacon.IsDead, true)
+	} else if target.pulse != nil {
+		appendTargetMetadata(set, target.pulse.ID, target.pulse.Name, target.pulse.Hostname,
+			target.pulse.Username, target.pulse.OS, target.pulse.Arch, target.pulse.Transport,
+			target.pulse.RemoteAddress, target.pulse.Filename, target.pulse.Version,
+			target.pulse.Integrity, target.pulse.PID, !target.pulse.IsDead, true)
 	}
 	return metadata
 }
@@ -194,9 +194,9 @@ func appendTargetMetadata(
 	set func(string, opforengine.Value),
 	id, name, hostname, username, osName, arch, transport, remoteAddress, filename, version, integrity string,
 	pid int32,
-	active, beacon bool,
+	active, pulse bool,
 ) {
-	architecture, err := beaconArchitecture(arch)
+	architecture, err := pulseArchitecture(arch)
 	if err != nil {
 		architecture = strings.ToLower(arch)
 	}
@@ -214,5 +214,5 @@ func appendTargetMetadata(
 	set("integrity", opforengine.String(integrity))
 	set("pid", opforengine.Int(pid))
 	set("active", opforengine.Bool(active))
-	set("beacon", opforengine.Bool(beacon))
+	set("pulse", opforengine.Bool(pulse))
 }

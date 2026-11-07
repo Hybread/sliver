@@ -46,13 +46,13 @@ package help
 // 	for _, c := range con.App.CurrentMenu().Commands() {
 // 		key := c.GroupID
 // 		targetOS := ""
-// 		session, beacon := con.ActiveTarget.Get()
+// 		session, pulse := con.ActiveTarget.Get()
 // 		if session != nil {
 // 			targetOS = session.OS
-// 		} else if beacon != nil {
-// 			targetOS = beacon.OS
+// 		} else if pulse != nil {
+// 			targetOS = pulse.OS
 // 		}
-// 		if beacon != nil || session != nil {
+// 		if pulse != nil || session != nil {
 // 			if targetOS != "windows" && key == consts.SliverWinHelpGroup {
 // 				continue
 // 			}

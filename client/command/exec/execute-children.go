@@ -36,8 +36,8 @@ import (
 
 // ExecuteChildrenCmd - List tracked background execute child processes on the implant.
 func ExecuteChildrenCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -54,7 +54,7 @@ func ExecuteChildrenCmd(cmd *cobra.Command, con *console.SliverClient, args []st
 	}
 
 	if execChildren.Response != nil && execChildren.Response.Async {
-		con.AddBeaconCallback(execChildren.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(execChildren.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, execChildren)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

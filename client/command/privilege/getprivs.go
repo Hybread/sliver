@@ -33,11 +33,11 @@ import (
 
 // GetPrivsCmd - Get the current process privileges (Windows only)
 func GetPrivsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
-	targetOS := getOS(session, beacon)
+	targetOS := getOS(session, pulse)
 	if targetOS != "windows" {
 		con.PrintErrorf("Command only supported on Windows.\n")
 		return
@@ -50,18 +50,18 @@ func GetPrivsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		con.PrintErrorf("%s\n", err)
 		return
 	}
-	pid := getPID(session, beacon)
+	pid := getPID(session, pulse)
 	if privs.Response != nil && privs.Response.Async {
-		con.AddBeaconCallback(privs.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(privs.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, privs)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
 				return
 			}
 			PrintGetPrivs(privs, pid, con)
-			err = updateBeaconIntegrityInformation(con, beacon.ID, privs.ProcessIntegrity)
+			err = updatePulseIntegrityInformation(con, pulse.ID, privs.ProcessIntegrity)
 			if err != nil {
-				con.PrintWarnf("Could not save integrity information for the beacon: %s\n", err)
+				con.PrintWarnf("Could not save integrity information for the pulse: %s\n", err)
 				return
 			}
 		})
@@ -131,28 +131,28 @@ func PrintGetPrivs(privs *sliverpb.GetPrivs, pid int32, con *console.SliverClien
 	}
 }
 
-func getOS(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func getOS(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return session.OS
 	}
-	if beacon != nil {
-		return beacon.OS
+	if pulse != nil {
+		return pulse.OS
 	}
-	panic("no session or beacon")
+	panic("no session or pulse")
 }
 
-func getPID(session *clientpb.Session, beacon *clientpb.Beacon) int32 {
+func getPID(session *clientpb.Session, pulse *clientpb.Pulse) int32 {
 	if session != nil {
 		return session.PID
 	}
-	if beacon != nil {
-		return beacon.PID
+	if pulse != nil {
+		return pulse.PID
 	}
-	panic("no session or beacon")
+	panic("no session or pulse")
 }
 
-func updateBeaconIntegrityInformation(con *console.SliverClient, beaconID string, integrity string) error {
-	_, err := con.Rpc.UpdateBeaconIntegrityInformation(context.Background(), &clientpb.BeaconIntegrity{BeaconID: beaconID,
+func updatePulseIntegrityInformation(con *console.SliverClient, pulseID string, integrity string) error {
+	_, err := con.Rpc.UpdatePulseIntegrityInformation(context.Background(), &clientpb.PulseIntegrity{PulseID: pulseID,
 		Integrity: integrity})
 
 	return err

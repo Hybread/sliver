@@ -262,10 +262,10 @@ const (
 	// MsgListExtensionsReq - List loaded extensions
 	MsgListExtensionsReq
 
-	// MsgBeaconRegister - Register a new beacon
-	MsgBeaconRegister
-	// MsgBeaconTasks - Send/recv batches of beacon tasks
-	MsgBeaconTasks
+	// MsgPulseRegister - Register a new pulse
+	MsgPulseRegister
+	// MsgPulseTasks - Send/recv batches of pulse tasks
+	MsgPulseTasks
 
 	// MsgOpenSession - Open a new session
 	MsgOpenSession
@@ -560,8 +560,8 @@ func MsgNumber(request proto.Message) uint32 {
 	case *ListExtensionsReq:
 		return MsgListExtensionsReq
 
-	case *BeaconTasks:
-		return MsgBeaconTasks
+	case *PulseTasks:
+		return MsgPulseTasks
 
 	case *OpenSession:
 		return MsgOpenSession

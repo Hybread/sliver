@@ -89,11 +89,11 @@ const (
 	// LootRemoved.
 	LootRemovedEvent = "loot-removed"
 
-	// BeaconRegisteredEvent - First connection from a new beacon.
-	BeaconRegisteredEvent = "beacon-registered"
+	// PulseRegisteredEvent - First connection from a new pulse.
+	PulseRegisteredEvent = "pulse-registered"
 
-	// BeaconTaskResult - Beacon task completed with a result.
-	BeaconTaskResultEvent = "beacon-taskresult"
+	// PulseTaskResult - Pulse task completed with a result.
+	PulseTaskResultEvent = "pulse-taskresult"
 
 	// ExternalBuildEvent.
 	ExternalBuildEvent          = "external-build"
@@ -155,8 +155,8 @@ const (
 	RegenerateStr      = "regenerate"
 	CompilerInfoStr    = "info"
 	ProfilesStr        = "profiles"
-	BeaconStr          = "beacon"
-	BeaconsStr         = "beacons"
+	PulseStr          = "pulse"
+	PulsesStr         = "pulses"
 	WatchStr           = "watch"
 	SettingsStr        = "settings"
 	SearchStr          = "search"
@@ -372,7 +372,7 @@ const (
 // Should not be changed: extension.json artifact file (architecture/OS) rely on some of the values below,.
 const (
 	SessionCmdsFilter   = "session"
-	BeaconCmdsFilter    = "beacon"
+	PulseCmdsFilter    = "pulse"
 	WindowsCmdsFilter   = "windows"
 	WireguardCmdsFilter = "wireguard"
 

@@ -1,4 +1,4 @@
-package beacons
+package pulses
 
 /*
 	Sliver Implant Framework
@@ -33,33 +33,33 @@ import (
 )
 
 var (
-	// ErrNoBeacons - No sessions available
-	ErrNoBeacons = errors.New("no beacons")
+	// ErrNoPulses - No sessions available
+	ErrNoPulses = errors.New("no pulses")
 	// ErrNoSelection - No selection made
 	ErrNoSelection = errors.New("no selection")
-	// ErrBeaconNotFound
-	ErrBeaconNotFound = errors.New("no beacon found for this ID")
+	// ErrPulseNotFound
+	ErrPulseNotFound = errors.New("no pulse found for this ID")
 )
 
-// SelectBeacon - Interactive menu for the user to select an session, optionally only display live sessions
-func SelectBeacon(con *console.SliverClient) (*clientpb.Beacon, error) {
+// SelectPulse - Interactive menu for the user to select an session, optionally only display live sessions
+func SelectPulse(con *console.SliverClient) (*clientpb.Pulse, error) {
 	grpcCtx, cancel := con.GrpcContext(nil)
 	defer cancel()
-	beacons, err := con.Rpc.GetBeacons(grpcCtx, &commonpb.Empty{})
+	pulses, err := con.Rpc.GetPulses(grpcCtx, &commonpb.Empty{})
 	if err != nil {
 		return nil, err
 	}
-	if len(beacons.Beacons) == 0 {
-		return nil, ErrNoBeacons
+	if len(pulses.Pulses) == 0 {
+		return nil, ErrNoPulses
 	}
 
-	beaconsMap := map[string]*clientpb.Beacon{}
-	for _, beacon := range beacons.Beacons {
-		beaconsMap[beacon.ID] = beacon
+	pulsesMap := map[string]*clientpb.Pulse{}
+	for _, pulse := range pulses.Pulses {
+		pulsesMap[pulse.ID] = pulse
 	}
 	keys := []string{}
-	for beaconID := range beaconsMap {
-		keys = append(keys, beaconID)
+	for pulseID := range pulsesMap {
+		keys = append(keys, pulseID)
 	}
 	sort.Strings(keys)
 
@@ -68,14 +68,14 @@ func SelectBeacon(con *console.SliverClient) (*clientpb.Beacon, error) {
 
 	// Column Headers
 	for _, key := range keys {
-		beacon := beaconsMap[key]
+		pulse := pulsesMap[key]
 		fmt.Fprintf(table, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			beacon.ID,
-			beacon.Name,
-			beacon.RemoteAddress,
-			beacon.Hostname,
-			beacon.Username,
-			fmt.Sprintf("%s/%s", beacon.OS, beacon.Arch),
+			pulse.ID,
+			pulse.Name,
+			pulse.RemoteAddress,
+			pulse.Hostname,
+			pulse.Username,
+			fmt.Sprintf("%s/%s", pulse.OS, pulse.Arch),
 		)
 	}
 	table.Flush()
@@ -83,7 +83,7 @@ func SelectBeacon(con *console.SliverClient) (*clientpb.Beacon, error) {
 	options := strings.Split(outputBuf.String(), "\n")
 	options = options[:len(options)-1] // Remove the last empty option
 	selected := ""
-	_ = forms.Select("Select a beacon:", options, &selected)
+	_ = forms.Select("Select a pulse:", options, &selected)
 	if selected == "" {
 		return nil, ErrNoSelection
 	}
@@ -91,39 +91,39 @@ func SelectBeacon(con *console.SliverClient) (*clientpb.Beacon, error) {
 	// Go from the selected option -> index -> session
 	for index, option := range options {
 		if option == selected {
-			return beaconsMap[keys[index]], nil
+			return pulsesMap[keys[index]], nil
 		}
 	}
 	return nil, ErrNoSelection
 }
 
-func GetBeacon(con *console.SliverClient, beaconID string) (*clientpb.Beacon, error) {
+func GetPulse(con *console.SliverClient, pulseID string) (*clientpb.Pulse, error) {
 	grpcCtx, cancel := con.GrpcContext(nil)
 	defer cancel()
-	beacons, err := con.Rpc.GetBeacons(grpcCtx, &commonpb.Empty{})
+	pulses, err := con.Rpc.GetPulses(grpcCtx, &commonpb.Empty{})
 	if err != nil {
 		return nil, err
 	}
-	if len(beacons.Beacons) == 0 {
-		return nil, ErrNoBeacons
+	if len(pulses.Pulses) == 0 {
+		return nil, ErrNoPulses
 	}
-	for _, beacon := range beacons.Beacons {
-		if beacon.ID == beaconID || strings.HasPrefix(beacon.ID, beaconID) {
-			return beacon, nil
+	for _, pulse := range pulses.Pulses {
+		if pulse.ID == pulseID || strings.HasPrefix(pulse.ID, pulseID) {
+			return pulse, nil
 		}
 	}
-	return nil, ErrBeaconNotFound
+	return nil, ErrPulseNotFound
 }
 
-func GetBeacons(con *console.SliverClient) (*clientpb.Beacons, error) {
+func GetPulses(con *console.SliverClient) (*clientpb.Pulses, error) {
 	grpcCtx, cancel := con.GrpcContext(nil)
 	defer cancel()
-	beacons, err := con.Rpc.GetBeacons(grpcCtx, &commonpb.Empty{})
+	pulses, err := con.Rpc.GetPulses(grpcCtx, &commonpb.Empty{})
 	if err != nil {
 		return nil, err
 	}
-	if len(beacons.Beacons) == 0 {
-		return nil, ErrNoBeacons
+	if len(pulses.Pulses) == 0 {
+		return nil, ErrNoPulses
 	}
-	return beacons, nil
+	return pulses, nil
 }

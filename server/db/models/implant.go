@@ -151,9 +151,9 @@ type ImplantConfig struct {
 
 	TemplateName string
 
-	IsBeacon       bool
-	BeaconInterval int64
-	BeaconJitter   int64
+	IsPulse       bool
+	PulseInterval int64
+	PulseJitter   int64
 
 	Debug               bool
 	DebugFile           string
@@ -247,9 +247,9 @@ func (ic *ImplantConfig) ToProtobuf() *clientpb.ImplantConfig {
 		ID:            ic.ID.String(),
 		ImplantBuilds: implantBuilds,
 
-		IsBeacon:       ic.IsBeacon,
-		BeaconInterval: ic.BeaconInterval,
-		BeaconJitter:   ic.BeaconJitter,
+		IsPulse:       ic.IsPulse,
+		PulseInterval: ic.PulseInterval,
+		PulseJitter:   ic.PulseJitter,
 
 		GOOS:   ic.GOOS,
 		GOARCH: ic.GOARCH,
@@ -454,9 +454,9 @@ func ImplantConfigFromProtobuf(pbConfig *clientpb.ImplantConfig) *ImplantConfig 
 		cfg.ImplantProfileID = &profileID
 	}
 
-	cfg.IsBeacon = pbConfig.IsBeacon
-	cfg.BeaconInterval = pbConfig.BeaconInterval
-	cfg.BeaconJitter = pbConfig.BeaconJitter
+	cfg.IsPulse = pbConfig.IsPulse
+	cfg.PulseInterval = pbConfig.PulseInterval
+	cfg.PulseJitter = pbConfig.PulseJitter
 
 	cfg.GOOS = pbConfig.GOOS
 	cfg.GOARCH = pbConfig.GOARCH

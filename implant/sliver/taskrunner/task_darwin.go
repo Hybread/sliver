@@ -44,7 +44,7 @@ func localTaskAfterFork()
 func localTaskAfterForkInChild()
 
 // LocalTask - Run shellcode in a forked child; blocks until the child exits.
-// Forking isolates the beacon from payloads that exit/execve (issue #2237).
+// Forking isolates the pulse from payloads that exit/execve (issue #2237).
 func LocalTask(data []byte, rwxPages bool) error {
 	dataAddr := uintptr(unsafe.Pointer(&data[0]))
 	page := getPage(dataAddr)

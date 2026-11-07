@@ -36,31 +36,31 @@ func InfoCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	var err error
 
 	// Check if we have an active target via 'use'
-	session, beacon := con.ActiveTarget.Get()
+	session, pulse := con.ActiveTarget.Get()
 
 	if len(args) > 0 {
 		// ID passed via argument takes priority
 		idArg := args[0]
-		session, beacon, err = use.SessionOrBeaconByID(idArg, con)
+		session, pulse, err = use.SessionOrPulseByID(idArg, con)
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
 		}
-	} else if session != nil || beacon != nil {
+	} else if session != nil || pulse != nil {
 		currID := ""
 		if session != nil {
 			currID = session.ID
 		} else {
-			currID = beacon.ID
+			currID = pulse.ID
 		}
-		session, beacon, err = use.SessionOrBeaconByID(currID, con)
+		session, pulse, err = use.SessionOrPulseByID(currID, con)
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
 		}
 	} else {
-		if session == nil && beacon == nil {
-			session, beacon, err = use.SelectSessionOrBeacon(con)
+		if session == nil && pulse == nil {
+			session, pulse, err = use.SelectSessionOrPulse(con)
 			if err != nil {
 				con.PrintErrorf("%s\n", err)
 				return
@@ -89,28 +89,28 @@ func InfoCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		con.Printf("%s %s\n", console.StyleBold.Render("     First Contact:"), con.FormatDateDelta(time.Unix(session.FirstContact, 0), true, false))
 		con.Printf("%s %s\n", console.StyleBold.Render("      Last Checkin:"), con.FormatDateDelta(time.Unix(session.LastCheckin, 0), true, false))
 
-	} else if beacon != nil {
+	} else if pulse != nil {
 
-		con.Printf("%s %s\n", console.StyleBold.Render("         Beacon ID:"), beacon.ID)
-		con.Printf("%s %s\n", console.StyleBold.Render("              Name:"), beacon.Name)
-		con.Printf("%s %s\n", console.StyleBold.Render("          Hostname:"), beacon.Hostname)
-		con.Printf("%s %s\n", console.StyleBold.Render("              UUID:"), beacon.UUID)
-		con.Printf("%s %s\n", console.StyleBold.Render("          Username:"), beacon.Username)
-		con.Printf("%s %s\n", console.StyleBold.Render("               UID:"), beacon.UID)
-		con.Printf("%s %s\n", console.StyleBold.Render("               GID:"), beacon.GID)
-		con.Printf("%s %d\n", console.StyleBold.Render("               PID:"), beacon.PID)
-		con.Printf("%s %s\n", console.StyleBold.Render("                OS:"), beacon.OS)
-		con.Printf("%s %s\n", console.StyleBold.Render("           Version:"), beacon.Version)
-		con.Printf("%s %s\n", console.StyleBold.Render("            Locale:"), beacon.Locale)
-		con.Printf("%s %s\n", console.StyleBold.Render("              Arch:"), beacon.Arch)
-		con.Printf("%s %s\n", console.StyleBold.Render("         Active C2:"), beacon.ActiveC2)
-		con.Printf("%s %s\n", console.StyleBold.Render("    Remote Address:"), beacon.RemoteAddress)
-		con.Printf("%s %s\n", console.StyleBold.Render("         Proxy URL:"), beacon.ProxyURL)
-		con.Printf("%s %s\n", console.StyleBold.Render("          Interval:"), time.Duration(beacon.Interval).String())
-		con.Printf("%s %s\n", console.StyleBold.Render("            Jitter:"), time.Duration(beacon.Jitter).String())
-		con.Printf("%s %s\n", console.StyleBold.Render("     First Contact:"), con.FormatDateDelta(time.Unix(beacon.FirstContact, 0), true, false))
-		con.Printf("%s %s\n", console.StyleBold.Render("      Last Checkin:"), con.FormatDateDelta(time.Unix(beacon.LastCheckin, 0), true, false))
-		con.Printf("%s %s\n", console.StyleBold.Render("      Next Checkin:"), con.FormatDateDelta(time.Unix(beacon.NextCheckin, 0), true, true))
+		con.Printf("%s %s\n", console.StyleBold.Render("         Pulse ID:"), pulse.ID)
+		con.Printf("%s %s\n", console.StyleBold.Render("              Name:"), pulse.Name)
+		con.Printf("%s %s\n", console.StyleBold.Render("          Hostname:"), pulse.Hostname)
+		con.Printf("%s %s\n", console.StyleBold.Render("              UUID:"), pulse.UUID)
+		con.Printf("%s %s\n", console.StyleBold.Render("          Username:"), pulse.Username)
+		con.Printf("%s %s\n", console.StyleBold.Render("               UID:"), pulse.UID)
+		con.Printf("%s %s\n", console.StyleBold.Render("               GID:"), pulse.GID)
+		con.Printf("%s %d\n", console.StyleBold.Render("               PID:"), pulse.PID)
+		con.Printf("%s %s\n", console.StyleBold.Render("                OS:"), pulse.OS)
+		con.Printf("%s %s\n", console.StyleBold.Render("           Version:"), pulse.Version)
+		con.Printf("%s %s\n", console.StyleBold.Render("            Locale:"), pulse.Locale)
+		con.Printf("%s %s\n", console.StyleBold.Render("              Arch:"), pulse.Arch)
+		con.Printf("%s %s\n", console.StyleBold.Render("         Active C2:"), pulse.ActiveC2)
+		con.Printf("%s %s\n", console.StyleBold.Render("    Remote Address:"), pulse.RemoteAddress)
+		con.Printf("%s %s\n", console.StyleBold.Render("         Proxy URL:"), pulse.ProxyURL)
+		con.Printf("%s %s\n", console.StyleBold.Render("          Interval:"), time.Duration(pulse.Interval).String())
+		con.Printf("%s %s\n", console.StyleBold.Render("            Jitter:"), time.Duration(pulse.Jitter).String())
+		con.Printf("%s %s\n", console.StyleBold.Render("     First Contact:"), con.FormatDateDelta(time.Unix(pulse.FirstContact, 0), true, false))
+		con.Printf("%s %s\n", console.StyleBold.Render("      Last Checkin:"), con.FormatDateDelta(time.Unix(pulse.LastCheckin, 0), true, false))
+		con.Printf("%s %s\n", console.StyleBold.Render("      Next Checkin:"), con.FormatDateDelta(time.Unix(pulse.NextCheckin, 0), true, true))
 
 	} else {
 		con.PrintErrorf("No target session, see `help %s`\n", consts.InfoStr)
@@ -119,47 +119,47 @@ func InfoCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 
 // PIDCmd - Get the active session's PID.
 func PIDCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 	if session != nil {
 		con.Printf("%d\n", session.PID)
-	} else if beacon != nil {
-		con.Printf("%d\n", beacon.PID)
+	} else if pulse != nil {
+		con.Printf("%d\n", pulse.PID)
 	}
 }
 
 // UIDCmd - Get the active session's UID.
 func UIDCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 	if session != nil {
 		con.Printf("%s\n", session.UID)
-	} else if beacon != nil {
-		con.Printf("%s\n", beacon.UID)
+	} else if pulse != nil {
+		con.Printf("%s\n", pulse.UID)
 	}
 }
 
 // GIDCmd - Get the active session's GID.
 func GIDCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 	if session != nil {
 		con.Printf("%s\n", session.GID)
-	} else if beacon != nil {
-		con.Printf("%s\n", beacon.GID)
+	} else if pulse != nil {
+		con.Printf("%s\n", pulse.GID)
 	}
 }
 
 // WhoamiCmd - Displays the current user of the active session.
 func WhoamiCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -170,9 +170,9 @@ func WhoamiCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		if session.GetOS() == "windows" {
 			isWin = true
 		}
-	} else if beacon != nil {
-		con.Printf("%s\n", beacon.Username)
-		if beacon.GetOS() == "windows" {
+	} else if pulse != nil {
+		con.Printf("%s\n", pulse.Username)
+		if pulse.GetOS() == "windows" {
 			isWin = true
 		}
 	}
@@ -187,7 +187,7 @@ func WhoamiCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		}
 
 		if cto.Response != nil && cto.Response.Async {
-			con.AddBeaconCallback(cto.Response.TaskID, func(task *clientpb.BeaconTask) {
+			con.AddPulseCallback(cto.Response.TaskID, func(task *clientpb.PulseTask) {
 				err = proto.Unmarshal(task.Response, cto)
 				if err != nil {
 					con.PrintErrorf("Failed to decode response %s\n", err)

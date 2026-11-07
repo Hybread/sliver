@@ -33,8 +33,8 @@ import (
 
 // ReconfigCmd - Reconfigure metadata about a sessions.
 func ReconfigCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -50,28 +50,28 @@ func ReconfigCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		}
 	}
 
-	var beaconInterval time.Duration
-	var beaconJitter time.Duration
-	binterval, _ := cmd.Flags().GetString("beacon-interval")
-	bjitter, _ := cmd.Flags().GetString("beacon-jitter")
+	var pulseInterval time.Duration
+	var pulseJitter time.Duration
+	binterval, _ := cmd.Flags().GetString("pulse-interval")
+	bjitter, _ := cmd.Flags().GetString("pulse-jitter")
 	C2URI, _ := cmd.Flags().GetString("c2-uri")
 
-	if beacon != nil {
+	if pulse != nil {
 		if binterval != "" {
-			beaconInterval, err = time.ParseDuration(binterval)
+			pulseInterval, err = time.ParseDuration(binterval)
 			if err != nil {
-				con.PrintErrorf("Invalid beacon interval: %s\n", err)
+				con.PrintErrorf("Invalid pulse interval: %s\n", err)
 				return
 			}
 		}
 		if bjitter != "" {
-			beaconJitter, err = time.ParseDuration(bjitter)
+			pulseJitter, err = time.ParseDuration(bjitter)
 			if err != nil {
-				con.PrintErrorf("Invalid beacon jitter: %s\n", err)
+				con.PrintErrorf("Invalid pulse jitter: %s\n", err)
 				return
 			}
-			if beaconInterval == 0 && beaconJitter != 0 {
-				con.PrintInfof("Modified beacon jitter will take effect after next check-in\n")
+			if pulseInterval == 0 && pulseJitter != 0 {
+				con.PrintInfof("Modified pulse jitter will take effect after next check-in\n")
 			}
 		}
 	}
@@ -84,10 +84,10 @@ func ReconfigCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 			return
 		}
 
-		// validate the protocol is the same as the beacon (cuz it compiled with only one protocol)
+		// validate the protocol is the same as the pulse (cuz it compiled with only one protocol)
 		var activeC2 string
-		if beacon != nil {
-			activeC2 = beacon.ActiveC2
+		if pulse != nil {
+			activeC2 = pulse.ActiveC2
 		} else if session != nil {
 			activeC2 = session.ActiveC2
 		}
@@ -97,7 +97,7 @@ func ReconfigCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 			if err == nil {
 				if newURI.Scheme != currentURI.Scheme {
 					confirm := false
-					con.PrintWarnf("Switching protocol from %s to %s. This will only work if the protocol was included in the compiled implant. If it was NOT included, YOU WILL LOSE THE BEACON CONNECTION PERMANENTLY.\n",
+					con.PrintWarnf("Switching protocol from %s to %s. This will only work if the protocol was included in the compiled implant. If it was NOT included, YOU WILL LOSE THE PULSE CONNECTION PERMANENTLY.\n",
 						currentURI.Scheme, newURI.Scheme)
 					_ = forms.Confirm("Do you want to continue?", &confirm)
 					if !confirm {
@@ -122,8 +122,8 @@ func ReconfigCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 
 	reconfig, err := con.Rpc.Reconfigure(context.Background(), &sliverpb.ReconfigureReq{
 		ReconnectInterval: int64(reconnectInterval),
-		BeaconInterval:    int64(beaconInterval),
-		BeaconJitter:      int64(beaconJitter),
+		PulseInterval:    int64(pulseInterval),
+		PulseJitter:      int64(pulseJitter),
 		C2URI:             C2URI,
 		Request:           con.ActiveTarget.Request(cmd),
 	})
@@ -132,13 +132,13 @@ func ReconfigCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		return
 	}
 	if reconfig.Response != nil && reconfig.Response.Async {
-		con.AddBeaconCallback(reconfig.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(reconfig.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, reconfig)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
 				return
 			}
-			con.PrintInfof("Reconfigured beacon\n")
+			con.PrintInfof("Reconfigured pulse\n")
 		})
 		con.PrintAsyncResponse(reconfig.Response)
 	} else {

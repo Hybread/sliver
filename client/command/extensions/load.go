@@ -577,12 +577,12 @@ func planExtensionExecution(ext *ExtCommand, binPath string, capabilities uint64
 	return extensionExecutionNative, fmt.Errorf("target does not support built-in Reflektor BOF execution and command %q has no depends_on fallback", ext.CommandName)
 }
 
-func activeTargetCapabilities(session *clientpb.Session, beacon *clientpb.Beacon) uint64 {
+func activeTargetCapabilities(session *clientpb.Session, pulse *clientpb.Pulse) uint64 {
 	if session != nil {
 		return session.Capabilities
 	}
-	if beacon != nil {
-		return beacon.Capabilities
+	if pulse != nil {
+		return pulse.Capabilities
 	}
 	return 0
 }
@@ -646,8 +646,8 @@ func runExtensionCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 		extName       string
 		entryPoint    string
 	)
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 	var goos string
@@ -656,8 +656,8 @@ func runExtensionCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 		goos = session.OS
 		goarch = session.Arch
 	} else {
-		goos = beacon.OS
-		goarch = beacon.Arch
+		goos = pulse.OS
+		goarch = pulse.Arch
 	}
 
 	ext, ok := loadedExtensions[cmd.Name()]
@@ -672,7 +672,7 @@ func runExtensionCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 		return
 	}
 
-	executionMode, err := planExtensionExecution(ext, binPath, activeTargetCapabilities(session, beacon))
+	executionMode, err := planExtensionExecution(ext, binPath, activeTargetCapabilities(session, pulse))
 	if err != nil {
 		con.PrintErrorf("Could not execute extension: %s\n", err)
 		return
@@ -685,7 +685,7 @@ func runExtensionCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 		}
 	}
 
-	// BOFs (Beacon Object Files) are a specific kind of extensions
+	// BOFs (Pulse Object Files) are a specific kind of extensions
 	// that either use the built-in Reflektor executor or another extension.
 	// BOFs also have strongly typed arguments that need to be parsed in the proper way.
 	switch executionMode {
@@ -738,7 +738,7 @@ func runExtensionCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 	}
 
 	if callExtResp.Response != nil && callExtResp.Response.Async {
-		con.AddBeaconCallback(callExtResp.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(callExtResp.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, callExtResp)
 			if err != nil {
 				con.PrintErrorf("Failed to decode call ext response %s\n", err)

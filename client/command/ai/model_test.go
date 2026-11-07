@@ -681,7 +681,7 @@ func TestViewWidthTracksResize(t *testing.T) {
 	model := newAIModel(nil, aiContext{
 		target: aiTargetSummary{
 			Label: "No active target",
-			Host:  "Select a session or beacon with `use`",
+			Host:  "Select a session or pulse with `use`",
 			OS:    "unknown",
 			Arch:  "unknown",
 			C2:    "n/a",
@@ -2006,9 +2006,9 @@ func TestComposerCtrlSOpensTargetSelectModal(t *testing.T) {
 				{ID: "session-1", Name: "alpha", Hostname: "alpha-host", Username: "alice", OS: "linux", Arch: "amd64", ActiveC2: "mtls", RemoteAddress: "10.0.0.1:31337", PID: 1111},
 			},
 		},
-		beaconsResp: &clientpb.Beacons{
-			Beacons: []*clientpb.Beacon{
-				{ID: "beacon-1", Name: "bravo", Hostname: "bravo-host", Username: "bob", OS: "windows", Arch: "amd64", ActiveC2: "https", RemoteAddress: "10.0.0.2:443", PID: 2222, Interval: int64(time.Minute), NextCheckin: time.Now().Add(2 * time.Minute).Unix()},
+		pulsesResp: &clientpb.Pulses{
+			Pulses: []*clientpb.Pulse{
+				{ID: "pulse-1", Name: "bravo", Hostname: "bravo-host", Username: "bob", OS: "windows", Arch: "amd64", ActiveC2: "https", RemoteAddress: "10.0.0.2:443", PID: 2222, Interval: int64(time.Minute), NextCheckin: time.Now().Add(2 * time.Minute).Unix()},
 			},
 		},
 	}
@@ -2040,7 +2040,7 @@ func TestComposerCtrlSOpensTargetSelectModal(t *testing.T) {
 	updated, _ = model.Update(msg)
 	model = updated.(*aiModel)
 	if len(model.targetSelectionOptions) != 2 {
-		t.Fatalf("expected session and beacon options, got %d", len(model.targetSelectionOptions))
+		t.Fatalf("expected session and pulse options, got %d", len(model.targetSelectionOptions))
 	}
 	if model.modal.selectedOption != 0 {
 		t.Fatalf("expected active session to be preselected, got %d", model.modal.selectedOption)
@@ -2114,9 +2114,9 @@ func TestTargetSelectionModalSavesConversationTarget(t *testing.T) {
 				{ID: "session-1", Name: "alpha", Hostname: "alpha-host", Username: "alice", OS: "linux", Arch: "amd64", ActiveC2: "mtls", RemoteAddress: "10.0.0.1:31337", PID: 1111},
 			},
 		},
-		beaconsResp: &clientpb.Beacons{
-			Beacons: []*clientpb.Beacon{
-				{ID: "beacon-1", Name: "bravo", Hostname: "bravo-host", Username: "bob", OS: "windows", Arch: "amd64", ActiveC2: "https", RemoteAddress: "10.0.0.2:443", PID: 2222, Interval: int64(time.Minute), NextCheckin: time.Now().Add(2 * time.Minute).Unix()},
+		pulsesResp: &clientpb.Pulses{
+			Pulses: []*clientpb.Pulse{
+				{ID: "pulse-1", Name: "bravo", Hostname: "bravo-host", Username: "bob", OS: "windows", Arch: "amd64", ActiveC2: "https", RemoteAddress: "10.0.0.2:443", PID: 2222, Interval: int64(time.Minute), NextCheckin: time.Now().Add(2 * time.Minute).Unix()},
 			},
 		},
 		saveConversationResp: &clientpb.AIConversation{
@@ -2124,7 +2124,7 @@ func TestTargetSelectionModalSavesConversationTarget(t *testing.T) {
 			Provider:        "openai",
 			Model:           "gpt-test",
 			Title:           "Thread",
-			TargetBeaconID:  "beacon-1",
+			TargetPulseID:  "pulse-1",
 			TargetSessionID: "",
 		},
 	}
@@ -2178,17 +2178,17 @@ func TestTargetSelectionModalSavesConversationTarget(t *testing.T) {
 	if model.modal != nil {
 		t.Fatalf("expected target modal to close after confirm, got %+v", model.modal)
 	}
-	if model.ctx.target.BeaconID != "beacon-1" || model.ctx.target.SessionID != "" {
-		t.Fatalf("expected local target context to switch to beacon, got %+v", model.ctx.target)
+	if model.ctx.target.PulseID != "pulse-1" || model.ctx.target.SessionID != "" {
+		t.Fatalf("expected local target context to switch to pulse, got %+v", model.ctx.target)
 	}
 
 	msg = cmd()
 	updated, _ = model.Update(msg)
 	model = updated.(*aiModel)
-	if model.currentConversation.GetTargetBeaconID() != "beacon-1" || model.currentConversation.GetTargetSessionID() != "" {
-		t.Fatalf("expected conversation target to switch to beacon, got %+v", model.currentConversation)
+	if model.currentConversation.GetTargetPulseID() != "pulse-1" || model.currentConversation.GetTargetSessionID() != "" {
+		t.Fatalf("expected conversation target to switch to pulse, got %+v", model.currentConversation)
 	}
-	if model.status != "Active target set to Beacon bravo." {
+	if model.status != "Active target set to Pulse bravo." {
 		t.Fatalf("unexpected target update status: %q", model.status)
 	}
 
@@ -2197,14 +2197,14 @@ func TestTargetSelectionModalSavesConversationTarget(t *testing.T) {
 	if server.getSessionsCalls != 1 {
 		t.Fatalf("expected GetSessions to be called once, got %d", server.getSessionsCalls)
 	}
-	if server.getBeaconsCalls != 1 {
-		t.Fatalf("expected GetBeacons to be called once, got %d", server.getBeaconsCalls)
+	if server.getPulsesCalls != 1 {
+		t.Fatalf("expected GetPulses to be called once, got %d", server.getPulsesCalls)
 	}
 	if len(server.saveConversationReqs) != 1 {
 		t.Fatalf("expected SaveAIConversation to be called once, got %d", len(server.saveConversationReqs))
 	}
-	if got := server.saveConversationReqs[0].GetTargetBeaconID(); got != "beacon-1" {
-		t.Fatalf("expected target beacon %q, got %q", "beacon-1", got)
+	if got := server.saveConversationReqs[0].GetTargetPulseID(); got != "pulse-1" {
+		t.Fatalf("expected target pulse %q, got %q", "pulse-1", got)
 	}
 	if got := server.saveConversationReqs[0].GetTargetSessionID(); got != "" {
 		t.Fatalf("expected target session to clear, got %q", got)

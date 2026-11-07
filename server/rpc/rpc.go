@@ -211,7 +211,7 @@ func (rpc *Server) GenericHandler(req GenericRequest, resp GenericResponse) erro
 	return rpcError(rpc.getError(resp))
 }
 
-// asyncGenericHandler - Generic handler for async request/response's for beacon tasks
+// asyncGenericHandler - Generic handler for async request/response's for pulse tasks
 func (rpc *Server) asyncGenericHandler(req GenericRequest, resp GenericResponse) error {
 	// VERY VERBOSE
 	// rpcLog.Debugf("Async Generic Handler: %#v", req)
@@ -220,23 +220,23 @@ func (rpc *Server) asyncGenericHandler(req GenericRequest, resp GenericResponse)
 		return ErrMissingRequestField
 	}
 
-	beacon, err := db.BeaconByID(request.BeaconID)
-	if beacon == nil || err != nil {
-		rpcLog.Errorf("Invalid beacon ID in request: %s", err)
-		return ErrInvalidBeaconID
+	pulse, err := db.PulseByID(request.PulseID)
+	if pulse == nil || err != nil {
+		rpcLog.Errorf("Invalid pulse ID in request: %s", err)
+		return ErrInvalidPulseID
 	}
 
 	// Overwrite unused implant fields before re-serializing
 	request.SessionID = ""
-	request.BeaconID = ""
+	request.PulseID = ""
 	reqData, err := proto.Marshal(req)
 	if err != nil {
 		return rpcError(err)
 	}
 	taskResponse := resp.GetResponse()
 	taskResponse.Async = true
-	taskResponse.BeaconID = beacon.ID.String()
-	task, err := beacon.Task(&sliverpb.Envelope{
+	taskResponse.PulseID = pulse.ID.String()
+	task, err := pulse.Task(&sliverpb.Envelope{
 		Type: sliverpb.MsgNumber(req),
 		Data: reqData,
 	})
@@ -253,7 +253,7 @@ func (rpc *Server) asyncGenericHandler(req GenericRequest, resp GenericResponse)
 		return ErrDatabaseFailure
 	}
 	taskResponse.TaskID = task.ID.String()
-	rpcLog.Debugf("Successfully tasked beacon: %#v", taskResponse)
+	rpcLog.Debugf("Successfully tasked pulse: %#v", taskResponse)
 	return nil
 }
 

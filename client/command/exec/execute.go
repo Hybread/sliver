@@ -33,8 +33,8 @@ import (
 
 // ExecuteCmd - Run a command on the remote system.
 func ExecuteCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -57,7 +57,7 @@ func ExecuteCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		con.PrintErrorf("%s\n", err)
 		return
 	}
-	hostName := getHostname(session, beacon)
+	hostName := getHostname(session, pulse)
 
 	if background && (saveLoot || saveOutput) {
 		con.PrintErrorf("The loot and save options are not supported with --background\n")
@@ -67,8 +67,8 @@ func ExecuteCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	// If the user wants to loot or save the output, we have to capture it regardless of if they specified -o
 	captureOutput := !background && (output || saveLoot || saveOutput)
 
-	if captureOutput && beacon != nil {
-		con.PrintWarnf("Using --output in beacon mode, if the command blocks the task will never complete\n\n")
+	if captureOutput && pulse != nil {
+		con.PrintWarnf("Using --output in pulse mode, if the command blocks the task will never complete\n\n")
 	}
 
 	var exec *sliverpb.Execute
@@ -77,7 +77,7 @@ func ExecuteCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	con.PrintInfof("Execute: %s [%s]\n", cmdPath, strings.Join(args, " "))
 	con.SpinUntil(fmt.Sprintf("Executing %s %s ...", cmdPath, strings.Join(args, " ")), ctrl)
 	if token || hidden || ppid != 0 {
-		if (session != nil && session.OS != "windows") || (beacon != nil && beacon.OS != "windows") {
+		if (session != nil && session.OS != "windows") || (pulse != nil && pulse.OS != "windows") {
 			con.PrintErrorf("The token, hide window, and ppid options are not valid on %s\n", session.OS)
 			ctrl <- true
 			<-ctrl
@@ -122,7 +122,7 @@ func ExecuteCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	}
 
 	if exec.Response != nil && exec.Response.Async {
-		con.AddBeaconCallback(exec.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(exec.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, exec)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -206,12 +206,12 @@ func PrintExecute(exec *sliverpb.Execute, cmd *cobra.Command, con *console.Slive
 	}
 }
 
-func getHostname(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func getHostname(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return session.Hostname
 	}
-	if beacon != nil {
-		return beacon.Hostname
+	if pulse != nil {
+		return pulse.Hostname
 	}
 	return ""
 }

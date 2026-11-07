@@ -31,15 +31,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// CleanCmd - Remove all profiles, beacons, sessions and implant builds (Builds and logs will still exist on disk in .sliver)
+// CleanCmd - Remove all profiles, pulses, sessions and implant builds (Builds and logs will still exist on disk in .sliver)
 func CleanCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	con.Printf("This command will kill and remove all sessions, beacons and profiles \n")
+	con.Printf("This command will kill and remove all sessions, pulses and profiles \n")
 	confirm := false
 	_ = forms.Confirm("Are you sure you want to destroy everything?", &confirm)
 	if !confirm {
 		return
 	}
-	err := removeSessionsAndBeacons(con)
+	err := removeSessionsAndPulses(con)
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 		return
@@ -94,7 +94,7 @@ func removeProfiles(con *console.SliverClient) error {
 	return nil
 }
 
-func removeSessionsAndBeacons(con *console.SliverClient) error {
+func removeSessionsAndPulses(con *console.SliverClient) error {
 	sessions, err := con.Rpc.GetSessions(context.Background(), &commonpb.Empty{})
 	if err != nil {
 		return err
@@ -113,13 +113,13 @@ func removeSessionsAndBeacons(con *console.SliverClient) error {
 		}
 	}
 
-	beacons, err := con.Rpc.GetBeacons(context.Background(), &commonpb.Empty{})
+	pulses, err := con.Rpc.GetPulses(context.Background(), &commonpb.Empty{})
 	if err != nil {
 		return err
 	}
 
-	for _, beacon := range beacons.Beacons {
-		_, err = con.Rpc.RmBeacon(context.Background(), &clientpb.Beacon{ID: beacon.ID})
+	for _, pulse := range pulses.Pulses {
+		_, err = con.Rpc.RmPulse(context.Background(), &clientpb.Pulse{ID: pulse.ID})
 		if err != nil {
 			return err
 		}
@@ -131,7 +131,7 @@ func removeSessionsAndBeacons(con *console.SliverClient) error {
 func Command(con *console.SliverClient) []*cobra.Command {
 	return []*cobra.Command{{
 		Use:   "clean",
-		Short: "Remove all profiles, beacons, sessions, implant builds and HTTP profiles (Builds and logs will still exist on disk in .sliver)",
+		Short: "Remove all profiles, pulses, sessions, implant builds and HTTP profiles (Builds and logs will still exist on disk in .sliver)",
 		Run: func(cmd *cobra.Command, args []string) {
 			CleanCmd(cmd, con, args)
 		},

@@ -27,7 +27,7 @@ func TestRecorderWritesDeterministicTargetReports(t *testing.T) {
 		},
 		{
 			Transport:   "http",
-			ImplantMode: "beacon",
+			ImplantMode: "pulse",
 			GRPCMethod:  "/sliverpb.Sliver/Cd",
 			Scenario:    "change directory",
 			Status:      StatusPass,
@@ -86,7 +86,7 @@ func TestRecorderRejectsDuplicateAndMalformedRecords(t *testing.T) {
 	}
 	valid := Observation{
 		Transport:   "wg",
-		ImplantMode: "beacon",
+		ImplantMode: "pulse",
 		GRPCMethod:  "/sliverpb.Sliver/Env",
 		Scenario:    "read environment",
 		Status:      StatusPass,

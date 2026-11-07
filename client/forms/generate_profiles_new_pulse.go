@@ -2,83 +2,100 @@ package forms
 
 import (
 	"errors"
-	"strconv"
 	"strings"
 
 	"charm.land/huh/v2"
 	"github.com/bishopfox/sliver/client/theme"
-	"github.com/bishopfox/sliver/protobuf/clientpb"
 	"github.com/bishopfox/sliver/util"
 )
 
-// GenerateBeaconFormResult captures the inputs needed to drive the generate beacon command.
-type GenerateBeaconFormResult struct {
-	OS      string
-	Arch    string
-	Format  string
-	Name    string
-	C2Type  string
-	C2Value string
-	Save    string
-	Days    string
-	Hours   string
-	Minutes string
-	Seconds string
-	Jitter  string
+// GenerateProfilesNewPulseFormResult captures the inputs needed to drive the profiles new pulse command.
+type GenerateProfilesNewPulseFormResult struct {
+	ProfileName string
+	OS          string
+	Arch        string
+	Format      string
+	Name        string
+	C2Type      string
+	C2Value     string
+	Days        string
+	Hours       string
+	Minutes     string
+	Seconds     string
+	Jitter      string
 }
 
-// GenerateBeaconForm prompts for generate beacon flags and returns the collected values.
-func GenerateBeaconForm(compiler *clientpb.Compiler) (*GenerateBeaconFormResult, error) {
-	result := &GenerateBeaconFormResult{
+// GenerateProfilesNewPulseForm prompts for profiles new pulse flags and returns the collected values.
+func GenerateProfilesNewPulseForm() (*GenerateProfilesNewPulseFormResult, error) {
+	result := &GenerateProfilesNewPulseFormResult{
 		OS:     "windows",
 		Arch:   "amd64",
 		Format: "exe",
 		C2Type: "mtls",
 	}
-	commonPlatformsOnly := true
-	lastCommonPlatformsOnly := commonPlatformsOnly
-	compilerTargets := compilerTargetList(compiler)
-	targetBindings := &targetOptionBindings{
-		Common: &commonPlatformsOnly,
-		OS:     &result.OS,
-		Arch:   &result.Arch,
-	}
 
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewConfirm().
-				Title("Common Platforms Only").
-				Value(&commonPlatformsOnly),
+			huh.NewInput().
+				Title("Profile name").
+				Value(&result.ProfileName).
+				Validate(func(value string) error {
+					trimmed := strings.TrimSpace(value)
+					if trimmed == "" {
+						return errors.New("profile name required")
+					}
+					return util.AllowedName(trimmed)
+				}),
 			huh.NewSelect[string]().
 				Title("Target operating system").
-				OptionsFunc(func() []huh.Option[string] {
-					maybeResetTargets(commonPlatformsOnly, &lastCommonPlatformsOnly, compilerTargets, &result.OS, &result.Arch, &result.Format)
-					if commonPlatformsOnly || len(compilerTargets) == 0 {
-						return commonOSOptions()
-					}
-					return osOptionsFromTargets(compilerTargets)
-				}, targetBindings).
+				Options(
+					huh.NewOption("Windows", "windows"),
+					huh.NewOption("Linux", "linux"),
+					huh.NewOption("macOS", "darwin"),
+				).
 				Value(&result.OS),
 			huh.NewSelect[string]().
 				Title("CPU architecture").
 				OptionsFunc(func() []huh.Option[string] {
-					maybeResetTargets(commonPlatformsOnly, &lastCommonPlatformsOnly, compilerTargets, &result.OS, &result.Arch, &result.Format)
-					if commonPlatformsOnly || len(compilerTargets) == 0 {
-						return commonArchOptions(result.OS)
+					switch result.OS {
+					case "darwin":
+						return []huh.Option[string]{
+							huh.NewOption("amd64", "amd64"),
+							huh.NewOption("arm64", "arm64"),
+						}
+					case "linux":
+						return []huh.Option[string]{
+							huh.NewOption("amd64", "amd64"),
+							huh.NewOption("arm64", "arm64"),
+							huh.NewOption("386", "386"),
+						}
+					default:
+						return []huh.Option[string]{
+							huh.NewOption("amd64", "amd64"),
+							huh.NewOption("386", "386"),
+						}
 					}
-					return archOptionsFromTargets(compilerTargets, result.OS)
-				}, targetBindings).
+				}, &result.OS).
 				Height(3).
 				Value(&result.Arch),
 			huh.NewSelect[string]().
 				Title("Output format").
 				OptionsFunc(func() []huh.Option[string] {
-					maybeResetTargets(commonPlatformsOnly, &lastCommonPlatformsOnly, compilerTargets, &result.OS, &result.Arch, &result.Format)
-					if commonPlatformsOnly || len(compilerTargets) == 0 {
-						return commonFormatOptions(result.OS)
+					options := []huh.Option[string]{
+						huh.NewOption("Executable", "exe"),
+						huh.NewOption("Shared library", "shared"),
+						huh.NewOption("Go archive", "archive"),
 					}
-					return formatOptionsFromTargets(compilerTargets, result.OS, result.Arch)
-				}, targetBindings).
+					if result.OS == "windows" {
+						options = append(options,
+							huh.NewOption("Service", "service"),
+							huh.NewOption("Shellcode", "shellcode"),
+						)
+					} else if result.OS == "darwin" || result.OS == "linux" {
+						options = append(options, huh.NewOption("Shellcode", "shellcode"))
+					}
+					return options
+				}, &result.OS).
 				Height(3).
 				Value(&result.Format),
 		),
@@ -121,34 +138,30 @@ func GenerateBeaconForm(compiler *clientpb.Compiler) (*GenerateBeaconFormResult,
 					}
 					return nil
 				}),
-			huh.NewInput().
-				Title("Save path (optional)").
-				Description("File or directory; defaults to the current directory").
-				Value(&result.Save),
 		),
 		huh.NewGroup(
 			huh.NewInput().
-				Title("Beacon interval days (optional)").
+				Title("Pulse interval days (optional)").
 				Description("Leave blank for 0").
 				Value(&result.Days).
 				Validate(validateOptionalNonNegativeInt),
 			huh.NewInput().
-				Title("Beacon interval hours (optional)").
+				Title("Pulse interval hours (optional)").
 				Description("Leave blank for 0").
 				Value(&result.Hours).
 				Validate(validateOptionalNonNegativeInt),
 			huh.NewInput().
-				Title("Beacon interval minutes (optional)").
+				Title("Pulse interval minutes (optional)").
 				Description("Leave blank for 0").
 				Value(&result.Minutes).
 				Validate(validateOptionalNonNegativeInt),
 			huh.NewInput().
-				Title("Beacon interval seconds (optional)").
+				Title("Pulse interval seconds (optional)").
 				Description("Leave blank for default 60 seconds unless other units are set").
 				Value(&result.Seconds).
 				Validate(validateOptionalNonNegativeInt),
 			huh.NewInput().
-				Title("Beacon jitter seconds (optional)").
+				Title("Pulse jitter seconds (optional)").
 				Description("Leave blank for default 30 seconds").
 				Value(&result.Jitter).
 				Validate(validateOptionalNonNegativeInt),
@@ -161,19 +174,4 @@ func GenerateBeaconForm(compiler *clientpb.Compiler) (*GenerateBeaconFormResult,
 	}
 
 	return result, nil
-}
-
-func validateOptionalNonNegativeInt(value string) error {
-	trimmed := strings.TrimSpace(value)
-	if trimmed == "" {
-		return nil
-	}
-	parsed, err := strconv.ParseInt(trimmed, 10, 64)
-	if err != nil {
-		return errors.New("must be a whole number")
-	}
-	if parsed < 0 {
-		return errors.New("must be 0 or greater")
-	}
-	return nil
 }

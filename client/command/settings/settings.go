@@ -76,7 +76,7 @@ func SettingsCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	tw.AppendRow(table.Row{"Tables", con.Settings.TableStyle, "Set the stylization of tables"})
 	tw.AppendRow(table.Row{"Prompt", con.Settings.PromptStyle, "Set the console prompt prefix style"})
 	tw.AppendRow(table.Row{"Auto Adult", con.Settings.AutoAdult, "Automatically accept OPSEC warnings"})
-	tw.AppendRow(table.Row{"Auto Beacon Results", con.Settings.BeaconAutoResults, "Automatically display beacon results when tasks complete"})
+	tw.AppendRow(table.Row{"Auto Pulse Results", con.Settings.PulseAutoResults, "Automatically display pulse results when tasks complete"})
 	tw.AppendRow(table.Row{"Small Term Width", con.Settings.SmallTermWidth, "Omit some table columns when terminal width is less than this value"})
 	tw.AppendRow(table.Row{"Always Overflow", con.Settings.AlwaysOverflow, "Disable table pagination"})
 	tw.AppendRow(table.Row{"Vim Mode", con.Settings.VimMode, "Navigation mode, vim style"})
@@ -236,7 +236,7 @@ func applySettingsForm(settings *assets.ClientSettings, result *forms.SettingsFo
 
 	settings.TableStyle = result.TableStyle
 	settings.AutoAdult = result.AutoAdult
-	settings.BeaconAutoResults = result.BeaconAutoResults
+	settings.PulseAutoResults = result.PulseAutoResults
 	settings.SmallTermWidth = width
 	settings.AlwaysOverflow = result.AlwaysOverflow
 	settings.VimMode = result.VimMode

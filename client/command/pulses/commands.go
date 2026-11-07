@@ -1,4 +1,4 @@
-package beacons
+package pulses
 
 import (
 	"context"
@@ -18,79 +18,79 @@ import (
 
 // Commands returns the “ command and its subcommands.
 func Commands(con *console.SliverClient) []*cobra.Command {
-	beaconsCmd := &cobra.Command{
-		Use:     consts.BeaconsStr,
-		Short:   "Manage beacons",
-		Long:    help.GetHelpFor([]string{consts.BeaconsStr}),
+	pulsesCmd := &cobra.Command{
+		Use:     consts.PulsesStr,
+		Short:   "Manage pulses",
+		Long:    help.GetHelpFor([]string{consts.PulsesStr}),
 		GroupID: consts.SliverHelpGroup,
 		Run: func(cmd *cobra.Command, args []string) {
-			BeaconsCmd(cmd, con, args)
+			PulsesCmd(cmd, con, args)
 		},
 	}
-	flags.Bind("beacons", true, beaconsCmd, func(f *pflag.FlagSet) {
+	flags.Bind("pulses", true, pulsesCmd, func(f *pflag.FlagSet) {
 		f.Int64P("timeout", "t", flags.DefaultTimeout, "grpc timeout in seconds")
 	})
-	flags.Bind("beacons", false, beaconsCmd, func(f *pflag.FlagSet) {
-		f.StringP("kill", "k", "", "kill the designated beacon")
-		f.BoolP("kill-all", "K", false, "kill all beacons")
-		f.StringP("interact", "i", "", "interact with a beacon")
-		f.BoolP("force", "F", false, "force killing the beacon")
+	flags.Bind("pulses", false, pulsesCmd, func(f *pflag.FlagSet) {
+		f.StringP("kill", "k", "", "kill the designated pulse")
+		f.BoolP("kill-all", "K", false, "kill all pulses")
+		f.StringP("interact", "i", "", "interact with a pulse")
+		f.BoolP("force", "F", false, "force killing the pulse")
 
-		f.StringP("filter", "f", "", "filter beacons by substring")
-		f.StringP("filter-re", "e", "", "filter beacons by regular expression")
+		f.StringP("filter", "f", "", "filter pulses by substring")
+		f.StringP("filter-re", "e", "", "filter pulses by regular expression")
 	})
-	flags.BindFlagCompletions(beaconsCmd, func(comp *carapace.ActionMap) {
-		(*comp)["kill"] = BeaconIDCompleter(con)
-		(*comp)["interact"] = BeaconIDCompleter(con)
+	flags.BindFlagCompletions(pulsesCmd, func(comp *carapace.ActionMap) {
+		(*comp)["kill"] = PulseIDCompleter(con)
+		(*comp)["interact"] = PulseIDCompleter(con)
 	})
-	registerBeaconIDFlagCompletion(beaconsCmd, "interact", con)
-	beaconsRmCmd := &cobra.Command{
+	registerPulseIDFlagCompletion(pulsesCmd, "interact", con)
+	pulsesRmCmd := &cobra.Command{
 		Use:   consts.RmStr,
-		Short: "Remove a beacon",
-		Long:  help.GetHelpFor([]string{consts.BeaconsStr, consts.RmStr}),
+		Short: "Remove a pulse",
+		Long:  help.GetHelpFor([]string{consts.PulsesStr, consts.RmStr}),
 		Run: func(cmd *cobra.Command, args []string) {
-			BeaconsRmCmd(cmd, con, args)
+			PulsesRmCmd(cmd, con, args)
 		},
 	}
-	carapace.Gen(beaconsRmCmd).PositionalCompletion(BeaconIDCompleter(con))
-	beaconsCmd.AddCommand(beaconsRmCmd)
+	carapace.Gen(pulsesRmCmd).PositionalCompletion(PulseIDCompleter(con))
+	pulsesCmd.AddCommand(pulsesRmCmd)
 
-	beaconsWatchCmd := &cobra.Command{
+	pulsesWatchCmd := &cobra.Command{
 		Use:   consts.WatchStr,
-		Short: "Watch your beacons",
-		Long:  help.GetHelpFor([]string{consts.BeaconsStr, consts.WatchStr}),
+		Short: "Watch your pulses",
+		Long:  help.GetHelpFor([]string{consts.PulsesStr, consts.WatchStr}),
 		Run: func(cmd *cobra.Command, args []string) {
-			BeaconsWatchCmd(cmd, con, args)
+			PulsesWatchCmd(cmd, con, args)
 		},
 	}
-	beaconsCmd.AddCommand(beaconsWatchCmd)
+	pulsesCmd.AddCommand(pulsesWatchCmd)
 
-	beaconsPruneCmd := &cobra.Command{
+	pulsesPruneCmd := &cobra.Command{
 		Use:   consts.PruneStr,
-		Short: "Prune stale beacons automatically",
-		Long:  help.GetHelpFor([]string{consts.BeaconsStr, consts.PruneStr}),
+		Short: "Prune stale pulses automatically",
+		Long:  help.GetHelpFor([]string{consts.PulsesStr, consts.PruneStr}),
 		Run: func(cmd *cobra.Command, args []string) {
-			BeaconsPruneCmd(cmd, con, args)
+			PulsesPruneCmd(cmd, con, args)
 		},
 	}
-	flags.Bind("beacons", false, beaconsPruneCmd, func(f *pflag.FlagSet) {
-		f.StringP("duration", "d", "1h", "duration to prune beacons that have missed their last checkin")
+	flags.Bind("pulses", false, pulsesPruneCmd, func(f *pflag.FlagSet) {
+		f.StringP("duration", "d", "1h", "duration to prune pulses that have missed their last checkin")
 	})
-	beaconsCmd.AddCommand(beaconsPruneCmd)
+	pulsesCmd.AddCommand(pulsesPruneCmd)
 
-	return []*cobra.Command{beaconsCmd}
+	return []*cobra.Command{pulsesCmd}
 }
 
-// BeaconIDCompleter completes beacon IDs
-func BeaconIDCompleter(con *console.SliverClient) carapace.Action {
+// PulseIDCompleter completes pulse IDs
+func PulseIDCompleter(con *console.SliverClient) carapace.Action {
 	callback := func(_ carapace.Context) carapace.Action {
-		return carapace.ActionValuesDescribed(beaconCompletionPairs(con)...).Tag("beacons")
+		return carapace.ActionValuesDescribed(pulseCompletionPairs(con)...).Tag("pulses")
 	}
 
 	return carapace.ActionCallback(callback)
 }
 
-func registerBeaconIDFlagCompletion(cmd *cobra.Command, name string, con *console.SliverClient) {
+func registerPulseIDFlagCompletion(cmd *cobra.Command, name string, con *console.SliverClient) {
 	if cmd == nil {
 		return
 	}
@@ -101,23 +101,23 @@ func registerBeaconIDFlagCompletion(cmd *cobra.Command, name string, con *consol
 		return
 	}
 	_ = cmd.RegisterFlagCompletionFunc(name, func(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		values := describedValuesToTabs(beaconCompletionPairs(con))
+		values := describedValuesToTabs(pulseCompletionPairs(con))
 		return filterCompletionValues(values, toComplete), cobra.ShellCompDirectiveNoFileComp
 	})
 }
 
-func beaconCompletionPairs(con *console.SliverClient) []string {
+func pulseCompletionPairs(con *console.SliverClient) []string {
 	results := make([]string, 0)
 	if con == nil || con.Rpc == nil {
 		return results
 	}
 
-	beacons, err := con.Rpc.GetBeacons(context.Background(), &commonpb.Empty{})
+	pulses, err := con.Rpc.GetPulses(context.Background(), &commonpb.Empty{})
 	if err != nil {
 		return results
 	}
 
-	for _, b := range beacons.Beacons {
+	for _, b := range pulses.Pulses {
 		link := fmt.Sprintf("[%s <- %s]", b.ActiveC2, b.RemoteAddress)
 		id := fmt.Sprintf("%s (%d)", b.Name, b.PID)
 		userHost := fmt.Sprintf("%s@%s", b.Username, b.Hostname)

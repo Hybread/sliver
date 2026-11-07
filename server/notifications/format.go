@@ -17,8 +17,8 @@ func formatEvent(event core.Event) (string, string) {
 	if event.Session != nil {
 		lines = append(lines, formatSession(event.Session)...)
 	}
-	if event.Beacon != nil {
-		lines = append(lines, formatBeacon(event.Beacon)...)
+	if event.Pulse != nil {
+		lines = append(lines, formatPulse(event.Pulse)...)
 	}
 	if event.Job != nil {
 		lines = append(lines, formatJob(event.Job)...)
@@ -60,27 +60,27 @@ func formatSession(session *core.Session) []string {
 	return lines
 }
 
-func formatBeacon(beacon *models.Beacon) []string {
+func formatPulse(pulse *models.Pulse) []string {
 	lines := []string{
-		fmt.Sprintf("Beacon ID: %s", beacon.ID.String()),
+		fmt.Sprintf("Pulse ID: %s", pulse.ID.String()),
 	}
-	if beacon.Name != "" {
-		lines = append(lines, fmt.Sprintf("Name: %s", beacon.Name))
+	if pulse.Name != "" {
+		lines = append(lines, fmt.Sprintf("Name: %s", pulse.Name))
 	}
-	if beacon.Hostname != "" {
-		lines = append(lines, fmt.Sprintf("Host: %s", beacon.Hostname))
+	if pulse.Hostname != "" {
+		lines = append(lines, fmt.Sprintf("Host: %s", pulse.Hostname))
 	}
-	if beacon.Username != "" {
-		lines = append(lines, fmt.Sprintf("User: %s", beacon.Username))
+	if pulse.Username != "" {
+		lines = append(lines, fmt.Sprintf("User: %s", pulse.Username))
 	}
-	if beacon.OS != "" {
-		lines = append(lines, fmt.Sprintf("OS: %s", beacon.OS))
+	if pulse.OS != "" {
+		lines = append(lines, fmt.Sprintf("OS: %s", pulse.OS))
 	}
-	if beacon.Transport != "" {
-		lines = append(lines, fmt.Sprintf("Transport: %s", beacon.Transport))
+	if pulse.Transport != "" {
+		lines = append(lines, fmt.Sprintf("Transport: %s", pulse.Transport))
 	}
-	if beacon.RemoteAddress != "" {
-		lines = append(lines, fmt.Sprintf("Remote: %s", beacon.RemoteAddress))
+	if pulse.RemoteAddress != "" {
+		lines = append(lines, fmt.Sprintf("Remote: %s", pulse.RemoteAddress))
 	}
 	return lines
 }

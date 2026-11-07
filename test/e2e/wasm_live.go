@@ -84,10 +84,10 @@ func (s *suite) exerciseWasmExtensionLifecycle(target implantTarget, transport s
 	}); err != nil {
 		return err
 	}
-	// Beacon tasks use the standard handler table. WASM execution is a tunnel
+	// Pulse tasks use the standard handler table. WASM execution is a tunnel
 	// handler, so only a session can exercise this execution path today.
-	if target.beacon != nil {
-		s.t.Logf("SKIP live %s/%s %s beacon ExecWasmExtension: beacon tasks do not dispatch tunnel handlers",
+	if target.pulse != nil {
+		s.t.Logf("SKIP live %s/%s %s pulse ExecWasmExtension: pulse tasks do not dispatch tunnel handlers",
 			s.opts.targetOS, s.opts.targetArch, transport)
 	} else if err := s.liveWasmStep(target, transport, "ExecWasmExtension", func() error {
 		response, err := invokeRPC(s, target, "ExecWasmExtension", func(ctx context.Context, request *commonpb.Request) (*sliverpb.ExecWasmExtension, error) {

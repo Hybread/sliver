@@ -440,12 +440,12 @@ type aiRPCServer struct {
 	saveConversationResp *clientpb.AIConversation
 	saveMessageResp      *clientpb.AIConversationMessage
 	sessionsResp         *clientpb.Sessions
-	beaconsResp          *clientpb.Beacons
+	pulsesResp          *clientpb.Pulses
 
 	getProvidersCalls      int
 	getConversationsCalls  int
 	getSessionsCalls       int
-	getBeaconsCalls        int
+	getPulsesCalls        int
 	getConversationReqs    []*clientpb.AIConversationReq
 	deleteConversationReqs []*clientpb.AIConversationReq
 	saveConversationReqs   []*clientpb.AIConversation
@@ -486,14 +486,14 @@ func (s *aiRPCServer) GetSessions(context.Context, *commonpb.Empty) (*clientpb.S
 	return proto.Clone(s.sessionsResp).(*clientpb.Sessions), nil
 }
 
-func (s *aiRPCServer) GetBeacons(context.Context, *commonpb.Empty) (*clientpb.Beacons, error) {
+func (s *aiRPCServer) GetPulses(context.Context, *commonpb.Empty) (*clientpb.Pulses, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.getBeaconsCalls++
-	if s.beaconsResp == nil {
-		return &clientpb.Beacons{}, nil
+	s.getPulsesCalls++
+	if s.pulsesResp == nil {
+		return &clientpb.Pulses{}, nil
 	}
-	return proto.Clone(s.beaconsResp).(*clientpb.Beacons), nil
+	return proto.Clone(s.pulsesResp).(*clientpb.Pulses), nil
 }
 
 func (s *aiRPCServer) GetAIConversation(_ context.Context, req *clientpb.AIConversationReq) (*clientpb.AIConversation, error) {

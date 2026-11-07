@@ -17,7 +17,7 @@ func TestCommandMarkdownAggregatesScenariosAndImplantModes(t *testing.T) {
 	dimensions := Dimensions{
 		Targets:      allTargets,
 		Transports:   []string{TransportMTLS, TransportHTTP},
-		ImplantModes: []string{ImplantModeSession, ImplantModeBeacon},
+		ImplantModes: []string{ImplantModeSession, ImplantModePulse},
 		Commands: []CommandExpectation{
 			{Command: Command{GRPCMethod: "RecordedSkip", Scenario: "one"}, SupportedTargets: allTargets},
 			{Command: Command{GRPCMethod: `Windows\Only`, Scenario: "one"}, SupportedTargets: []Target{windows}, UnsupportedReason: "Windows only"},
@@ -46,11 +46,11 @@ func TestCommandMarkdownAggregatesScenariosAndImplantModes(t *testing.T) {
 						Status:      StatusPass,
 					}
 					switch {
-					case record.GRPCMethod == "Failure" && target == windows && transport == TransportHTTP && mode == ImplantModeBeacon:
+					case record.GRPCMethod == "Failure" && target == windows && transport == TransportHTTP && mode == ImplantModePulse:
 						record.Status = StatusFail
 					case record.GRPCMethod == "RecordedSkip" && target == linux && transport == TransportMTLS && mode == ImplantModeSession:
 						record.Status = StatusSkip
-					case record.GRPCMethod == "Missing" && target == windows && transport == TransportHTTP && mode == ImplantModeBeacon:
+					case record.GRPCMethod == "Missing" && target == windows && transport == TransportHTTP && mode == ImplantModePulse:
 						continue
 					}
 					recordsByTarget[target] = append(recordsByTarget[target], record)

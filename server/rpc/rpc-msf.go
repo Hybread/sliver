@@ -51,16 +51,16 @@ func (rpc *Server) Msf(ctx context.Context, req *clientpb.MSFReq) (*sliverpb.Tas
 		os = session.OS
 		arch = session.Arch
 	} else {
-		beacon, err := db.BeaconByID(req.Request.BeaconID)
+		pulse, err := db.PulseByID(req.Request.PulseID)
 		if err != nil {
 			msfLog.Errorf("%s\n", err)
 			return nil, ErrDatabaseFailure
 		}
-		if beacon == nil {
-			return nil, ErrInvalidBeaconID
+		if pulse == nil {
+			return nil, ErrInvalidPulseID
 		}
-		os = beacon.OS
-		arch = beacon.Arch
+		os = pulse.OS
+		arch = pulse.Arch
 	}
 
 	rawPayload, err := msf.VenomPayload(msf.VenomConfig{
@@ -108,16 +108,16 @@ func (rpc *Server) MsfRemote(ctx context.Context, req *clientpb.MSFRemoteReq) (*
 		os = session.OS
 		arch = session.Arch
 	} else {
-		beacon, err := db.BeaconByID(req.Request.BeaconID)
+		pulse, err := db.PulseByID(req.Request.PulseID)
 		if err != nil {
 			msfLog.Errorf("%s\n", err)
 			return nil, ErrDatabaseFailure
 		}
-		if beacon == nil {
-			return nil, ErrInvalidBeaconID
+		if pulse == nil {
+			return nil, ErrInvalidPulseID
 		}
-		os = beacon.OS
-		arch = beacon.Arch
+		os = pulse.OS
+		arch = pulse.Arch
 	}
 
 	rawPayload, err := msf.VenomPayload(msf.VenomConfig{

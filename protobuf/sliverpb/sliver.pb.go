@@ -297,8 +297,8 @@ func (x *Envelope) GetUnknownMessageType() bool {
 	return false
 }
 
-// BeaconTasks - DO NOT CONFUSE WITH clientpb.BeaconTasks
-type BeaconTasks struct {
+// PulseTasks - DO NOT CONFUSE WITH clientpb.PulseTasks
+type PulseTasks struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            string                 `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Tasks         []*Envelope            `protobuf:"bytes,2,rep,name=Tasks,proto3" json:"Tasks,omitempty"`
@@ -307,20 +307,20 @@ type BeaconTasks struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeaconTasks) Reset() {
-	*x = BeaconTasks{}
+func (x *PulseTasks) Reset() {
+	*x = PulseTasks{}
 	mi := &file_sliverpb_sliver_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeaconTasks) String() string {
+func (x *PulseTasks) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeaconTasks) ProtoMessage() {}
+func (*PulseTasks) ProtoMessage() {}
 
-func (x *BeaconTasks) ProtoReflect() protoreflect.Message {
+func (x *PulseTasks) ProtoReflect() protoreflect.Message {
 	mi := &file_sliverpb_sliver_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -332,26 +332,26 @@ func (x *BeaconTasks) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeaconTasks.ProtoReflect.Descriptor instead.
-func (*BeaconTasks) Descriptor() ([]byte, []int) {
+// Deprecated: Use PulseTasks.ProtoReflect.Descriptor instead.
+func (*PulseTasks) Descriptor() ([]byte, []int) {
 	return file_sliverpb_sliver_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *BeaconTasks) GetID() string {
+func (x *PulseTasks) GetID() string {
 	if x != nil {
 		return x.ID
 	}
 	return ""
 }
 
-func (x *BeaconTasks) GetTasks() []*Envelope {
+func (x *PulseTasks) GetTasks() []*Envelope {
 	if x != nil {
 		return x.Tasks
 	}
 	return nil
 }
 
-func (x *BeaconTasks) GetNextCheckin() int64 {
+func (x *PulseTasks) GetNextCheckin() int64 {
 	if x != nil {
 		return x.NextCheckin
 	}
@@ -539,7 +539,7 @@ func (x *Register) GetCapabilities() uint64 {
 	return 0
 }
 
-type BeaconRegister struct {
+type PulseRegister struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            string                 `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Interval      int64                  `protobuf:"varint,2,opt,name=Interval,proto3" json:"Interval,omitempty"`
@@ -550,20 +550,20 @@ type BeaconRegister struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeaconRegister) Reset() {
-	*x = BeaconRegister{}
+func (x *PulseRegister) Reset() {
+	*x = PulseRegister{}
 	mi := &file_sliverpb_sliver_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeaconRegister) String() string {
+func (x *PulseRegister) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeaconRegister) ProtoMessage() {}
+func (*PulseRegister) ProtoMessage() {}
 
-func (x *BeaconRegister) ProtoReflect() protoreflect.Message {
+func (x *PulseRegister) ProtoReflect() protoreflect.Message {
 	mi := &file_sliverpb_sliver_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -575,40 +575,40 @@ func (x *BeaconRegister) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeaconRegister.ProtoReflect.Descriptor instead.
-func (*BeaconRegister) Descriptor() ([]byte, []int) {
+// Deprecated: Use PulseRegister.ProtoReflect.Descriptor instead.
+func (*PulseRegister) Descriptor() ([]byte, []int) {
 	return file_sliverpb_sliver_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *BeaconRegister) GetID() string {
+func (x *PulseRegister) GetID() string {
 	if x != nil {
 		return x.ID
 	}
 	return ""
 }
 
-func (x *BeaconRegister) GetInterval() int64 {
+func (x *PulseRegister) GetInterval() int64 {
 	if x != nil {
 		return x.Interval
 	}
 	return 0
 }
 
-func (x *BeaconRegister) GetJitter() int64 {
+func (x *PulseRegister) GetJitter() int64 {
 	if x != nil {
 		return x.Jitter
 	}
 	return 0
 }
 
-func (x *BeaconRegister) GetRegister() *Register {
+func (x *PulseRegister) GetRegister() *Register {
 	if x != nil {
 		return x.Register
 	}
 	return nil
 }
 
-func (x *BeaconRegister) GetNextCheckin() int64 {
+func (x *PulseRegister) GetNextCheckin() int64 {
 	if x != nil {
 		return x.NextCheckin
 	}
@@ -9286,8 +9286,8 @@ func (x *WGTCPForwarders) GetResponse() *commonpb.Response {
 type ReconfigureReq struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ReconnectInterval int64                  `protobuf:"varint,1,opt,name=ReconnectInterval,proto3" json:"ReconnectInterval,omitempty"`
-	BeaconInterval    int64                  `protobuf:"varint,2,opt,name=BeaconInterval,proto3" json:"BeaconInterval,omitempty"`
-	BeaconJitter      int64                  `protobuf:"varint,3,opt,name=BeaconJitter,proto3" json:"BeaconJitter,omitempty"`
+	PulseInterval    int64                  `protobuf:"varint,2,opt,name=PulseInterval,proto3" json:"PulseInterval,omitempty"`
+	PulseJitter      int64                  `protobuf:"varint,3,opt,name=PulseJitter,proto3" json:"PulseJitter,omitempty"`
 	C2URI             string                 `protobuf:"bytes,4,opt,name=C2URI,proto3" json:"C2URI,omitempty"`
 	Request           *commonpb.Request      `protobuf:"bytes,9,opt,name=Request,proto3" json:"Request,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -9331,16 +9331,16 @@ func (x *ReconfigureReq) GetReconnectInterval() int64 {
 	return 0
 }
 
-func (x *ReconfigureReq) GetBeaconInterval() int64 {
+func (x *ReconfigureReq) GetPulseInterval() int64 {
 	if x != nil {
-		return x.BeaconInterval
+		return x.PulseInterval
 	}
 	return 0
 }
 
-func (x *ReconfigureReq) GetBeaconJitter() int64 {
+func (x *ReconfigureReq) GetPulseJitter() int64 {
 	if x != nil {
-		return x.BeaconJitter
+		return x.PulseJitter
 	}
 	return 0
 }
@@ -10098,7 +10098,7 @@ type CallExtension struct {
 	// Output is the legacy ordered concatenation of BOF record data.
 	Output      []byte `protobuf:"bytes,1,opt,name=Output,proto3" json:"Output,omitempty"`
 	ServerStore bool   `protobuf:"varint,2,opt,name=ServerStore,proto3" json:"ServerStore,omitempty"`
-	// BOFOutputs preserves record boundaries and raw Beacon output channels
+	// BOFOutputs preserves record boundaries and raw Pulse output channels
 	// when requested by CallExtensionReq.WantBOFOutputs.
 	BOFOutputs    []*BOFOutput       `protobuf:"bytes,3,rep,name=BOFOutputs,proto3" json:"BOFOutputs,omitempty"`
 	Response      *commonpb.Response `protobuf:"bytes,9,opt,name=Response,proto3" json:"Response,omitempty"`
@@ -12143,7 +12143,7 @@ func (x *StartServiceByNameReq) GetRequest() *commonpb.Request {
 	return nil
 }
 
-// BOFOutput preserves one ordered record emitted through a Beacon output
+// BOFOutput preserves one ordered record emitted through a Pulse output
 // callback. Type is the raw Cobalt-compatible output channel value.
 type BOFOutput struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -12259,7 +12259,7 @@ const file_sliverpb_sliver_proto_rawDesc = "" +
 	"\x04Type\x18\x02 \x01(\rR\x04Type\x12\x12\n" +
 	"\x04Data\x18\x03 \x01(\fR\x04Data\x12.\n" +
 	"\x12UnknownMessageType\x18\x04 \x01(\bR\x12UnknownMessageType\"i\n" +
-	"\vBeaconTasks\x12\x0e\n" +
+	"\vPulseTasks\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12(\n" +
 	"\x05Tasks\x18\x02 \x03(\v2\x12.sliverpb.EnvelopeR\x05Tasks\x12 \n" +
 	"\vNextCheckin\x18\x03 \x01(\x03R\vNextCheckin\"\xd0\x03\n" +
@@ -12283,7 +12283,7 @@ const file_sliverpb_sliver_proto_rawDesc = "" +
 	"\x06PeerID\x18\x11 \x01(\x03R\x06PeerID\x12\x16\n" +
 	"\x06Locale\x18\x12 \x01(\tR\x06Locale\x12\"\n" +
 	"\fCapabilities\x18\x13 \x01(\x04R\fCapabilities\"\xa6\x01\n" +
-	"\x0eBeaconRegister\x12\x0e\n" +
+	"\x0ePulseRegister\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12\x1a\n" +
 	"\bInterval\x18\x02 \x01(\x03R\bInterval\x12\x16\n" +
 	"\x06Jitter\x18\x03 \x01(\x03R\x06Jitter\x12.\n" +
@@ -12973,8 +12973,8 @@ const file_sliverpb_sliver_proto_rawDesc = "" +
 	"\bResponse\x18\t \x01(\v2\x12.commonpb.ResponseR\bResponse\"\xcd\x01\n" +
 	"\x0eReconfigureReq\x12,\n" +
 	"\x11ReconnectInterval\x18\x01 \x01(\x03R\x11ReconnectInterval\x12&\n" +
-	"\x0eBeaconInterval\x18\x02 \x01(\x03R\x0eBeaconInterval\x12\"\n" +
-	"\fBeaconJitter\x18\x03 \x01(\x03R\fBeaconJitter\x12\x14\n" +
+	"\x0ePulseInterval\x18\x02 \x01(\x03R\x0ePulseInterval\x12\"\n" +
+	"\fPulseJitter\x18\x03 \x01(\x03R\fPulseJitter\x12\x14\n" +
 	"\x05C2URI\x18\x04 \x01(\tR\x05C2URI\x12+\n" +
 	"\aRequest\x18\t \x01(\v2\x11.commonpb.RequestR\aRequest\"=\n" +
 	"\vReconfigure\x12.\n" +
@@ -13221,9 +13221,9 @@ var file_sliverpb_sliver_proto_goTypes = []any{
 	(PivotType)(0),                         // 2: sliverpb.PivotType
 	(PeerFailureType)(0),                   // 3: sliverpb.PeerFailureType
 	(*Envelope)(nil),                       // 4: sliverpb.Envelope
-	(*BeaconTasks)(nil),                    // 5: sliverpb.BeaconTasks
+	(*PulseTasks)(nil),                    // 5: sliverpb.PulseTasks
 	(*Register)(nil),                       // 6: sliverpb.Register
-	(*BeaconRegister)(nil),                 // 7: sliverpb.BeaconRegister
+	(*PulseRegister)(nil),                 // 7: sliverpb.PulseRegister
 	(*SessionRegister)(nil),                // 8: sliverpb.SessionRegister
 	(*OpenSession)(nil),                    // 9: sliverpb.OpenSession
 	(*CloseSession)(nil),                   // 10: sliverpb.CloseSession
@@ -13416,8 +13416,8 @@ var file_sliverpb_sliver_proto_goTypes = []any{
 	(*commonpb.EnvVar)(nil),                // 197: commonpb.EnvVar
 }
 var file_sliverpb_sliver_proto_depIdxs = []int32{
-	4,   // 0: sliverpb.BeaconTasks.Tasks:type_name -> sliverpb.Envelope
-	6,   // 1: sliverpb.BeaconRegister.Register:type_name -> sliverpb.Register
+	4,   // 0: sliverpb.PulseTasks.Tasks:type_name -> sliverpb.Envelope
+	6,   // 1: sliverpb.PulseRegister.Register:type_name -> sliverpb.Register
 	6,   // 2: sliverpb.SessionRegister.Register:type_name -> sliverpb.Register
 	194, // 3: sliverpb.OpenSession.Response:type_name -> commonpb.Response
 	195, // 4: sliverpb.OpenSession.Request:type_name -> commonpb.Request

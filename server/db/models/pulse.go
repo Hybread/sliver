@@ -29,8 +29,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Beacon - Represents a host machine
-type Beacon struct {
+// Pulse - Represents a host machine
+type Pulse struct {
 	CreatedAt time.Time `gorm:"->;<-:create;"`
 
 	ID                UUID `gorm:"type:uuid;"`
@@ -61,18 +61,18 @@ type Beacon struct {
 	Jitter      int64
 	NextCheckin int64
 
-	Tasks []BeaconTask
+	Tasks []PulseTask
 }
 
 // BeforeCreate - GORM hook
-func (b *Beacon) BeforeCreate(tx *gorm.DB) (err error) {
+func (b *Pulse) BeforeCreate(tx *gorm.DB) (err error) {
 	b.CreatedAt = time.Now()
 	b.Integrity = "-"
 	return nil
 }
 
-func (b *Beacon) ToProtobuf() *clientpb.Beacon {
-	return &clientpb.Beacon{
+func (b *Pulse) ToProtobuf() *clientpb.Pulse {
+	return &clientpb.Pulse{
 		ID:                b.ID.String(),
 		Name:              b.Name,
 		Hostname:          b.Hostname,
@@ -101,20 +101,20 @@ func (b *Beacon) ToProtobuf() *clientpb.Beacon {
 	}
 }
 
-func (b *Beacon) Task(envelope *sliverpb.Envelope) (*BeaconTask, error) {
+func (b *Pulse) Task(envelope *sliverpb.Envelope) (*PulseTask, error) {
 	data, err := proto.Marshal(envelope)
 	if err != nil {
 		return nil, err
 	}
-	task := &BeaconTask{
-		BeaconID: b.ID,
+	task := &PulseTask{
+		PulseID: b.ID,
 		State:    PENDING,
 		Request:  data,
 	}
 	return task, nil
 }
 
-// BeaconTask - Represents a host machine
+// PulseTask - Represents a host machine
 const (
 	PENDING   = "pending"
 	SENT      = "sent"
@@ -122,10 +122,10 @@ const (
 	CANCELED  = "canceled"
 )
 
-type BeaconTask struct {
+type PulseTask struct {
 	ID          UUID      `gorm:"primaryKey;->;<-:create;type:uuid;"`
 	EnvelopeID  int64     `gorm:"uniqueIndex"`
-	BeaconID    UUID      `gorm:"type:uuid;"`
+	PulseID    UUID      `gorm:"type:uuid;"`
 	CreatedAt   time.Time `gorm:"->;<-:create;"`
 	State       string
 	SentAt      int64
@@ -136,7 +136,7 @@ type BeaconTask struct {
 }
 
 // BeforeCreate - GORM hook
-func (b *BeaconTask) BeforeCreate(tx *gorm.DB) (err error) {
+func (b *PulseTask) BeforeCreate(tx *gorm.DB) (err error) {
 	b.ID = NewUUID()
 	b.CreatedAt = time.Now()
 	b.State = PENDING
@@ -149,10 +149,10 @@ func (b *BeaconTask) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (b *BeaconTask) ToProtobuf(content bool) *clientpb.BeaconTask {
-	task := &clientpb.BeaconTask{
+func (b *PulseTask) ToProtobuf(content bool) *clientpb.PulseTask {
+	task := &clientpb.PulseTask{
 		ID:          b.ID.String(),
-		BeaconID:    b.BeaconID.String(),
+		PulseID:    b.PulseID.String(),
 		CreatedAt:   b.CreatedAt.Unix(),
 		State:       b.State,
 		SentAt:      b.SentAt,

@@ -51,17 +51,17 @@ const (
 
 // ExecuteShellcodeCmd - Execute shellcode in-memory.
 func ExecuteShellcodeCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
-	targetName := activeTargetName(session, beacon)
-	targetOS := activeTargetOS(session, beacon)
-	targetArch := activeTargetArch(session, beacon)
+	targetName := activeTargetName(session, pulse)
+	targetOS := activeTargetOS(session, pulse)
+	targetArch := activeTargetArch(session, pulse)
 
 	rwxPages, _ := cmd.Flags().GetBool("rwx-pages")
 	interactive, _ := cmd.Flags().GetBool("interactive")
-	if interactive && beacon != nil {
+	if interactive && pulse != nil {
 		con.PrintErrorf("Interactive shellcode can only be executed in a session\n")
 		return
 	}
@@ -150,7 +150,7 @@ func ExecuteShellcodeCmd(cmd *cobra.Command, con *console.SliverClient, args []s
 	}
 
 	if shellcodeTask.Response != nil && shellcodeTask.Response.Async {
-		con.AddBeaconCallback(shellcodeTask.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(shellcodeTask.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, shellcodeTask)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -228,32 +228,32 @@ func shouldConvertExecuteShellcodePE(shellcodePath string, shellcodeFlagsChanged
 	return isPEByExt || shellcodeFlagsChanged, ext == ".dll"
 }
 
-func activeTargetName(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func activeTargetName(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return session.GetName()
 	}
-	if beacon != nil {
-		return beacon.GetName()
+	if pulse != nil {
+		return pulse.GetName()
 	}
 	return "target"
 }
 
-func activeTargetOS(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func activeTargetOS(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return strings.ToLower(session.GetOS())
 	}
-	if beacon != nil {
-		return strings.ToLower(beacon.GetOS())
+	if pulse != nil {
+		return strings.ToLower(pulse.GetOS())
 	}
 	return ""
 }
 
-func activeTargetArch(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func activeTargetArch(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return session.GetArch()
 	}
-	if beacon != nil {
-		return beacon.GetArch()
+	if pulse != nil {
+		return pulse.GetArch()
 	}
 	return ""
 }

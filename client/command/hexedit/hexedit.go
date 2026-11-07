@@ -23,13 +23,13 @@ import (
 )
 
 const (
-	beaconPollInterval = 1 * time.Second
+	pulsePollInterval = 1 * time.Second
 )
 
 // HexEditCmd downloads a remote file, opens it in a hex editor, and optionally uploads changes.
 func HexEditCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -206,7 +206,7 @@ func downloadRemote(ctx context.Context, con *console.SliverClient, cmd *cobra.C
 	if download.Response != nil && download.Response.Async {
 		taskID := download.Response.TaskID
 		download = &sliverpb.Download{}
-		if err := waitForBeaconTaskResponse(ctx, con, taskID, download); err != nil {
+		if err := waitForPulseTaskResponse(ctx, con, taskID, download); err != nil {
 			return nil, err
 		}
 	}
@@ -235,7 +235,7 @@ func uploadEditedContent(cmd *cobra.Command, con *console.SliverClient, path str
 	if err == nil && upload.Response != nil && upload.Response.Async {
 		taskID := upload.Response.TaskID
 		upload = &sliverpb.Upload{}
-		err = waitForBeaconTaskResponse(ctx, con, taskID, upload)
+		err = waitForPulseTaskResponse(ctx, con, taskID, upload)
 	}
 	ctrl <- true
 	<-ctrl
@@ -247,8 +247,8 @@ func uploadEditedContent(cmd *cobra.Command, con *console.SliverClient, path str
 	return nil
 }
 
-func waitForBeaconTaskResponse(ctx context.Context, con *console.SliverClient, taskID string, out proto.Message) error {
-	task, err := waitForBeaconTask(ctx, con, taskID)
+func waitForPulseTaskResponse(ctx context.Context, con *console.SliverClient, taskID string, out proto.Message) error {
+	task, err := waitForPulseTask(ctx, con, taskID)
 	if err != nil {
 		return err
 	}
@@ -257,20 +257,20 @@ func waitForBeaconTaskResponse(ctx context.Context, con *console.SliverClient, t
 		if state == "" {
 			state = "unknown"
 		}
-		return fmt.Errorf("beacon task %s %s", task.ID, state)
+		return fmt.Errorf("pulse task %s %s", task.ID, state)
 	}
 	if len(task.Response) == 0 {
-		return fmt.Errorf("beacon task %s returned empty response", task.ID)
+		return fmt.Errorf("pulse task %s returned empty response", task.ID)
 	}
 	return proto.Unmarshal(task.Response, out)
 }
 
-func waitForBeaconTask(ctx context.Context, con *console.SliverClient, taskID string) (*clientpb.BeaconTask, error) {
-	ticker := time.NewTicker(beaconPollInterval)
+func waitForPulseTask(ctx context.Context, con *console.SliverClient, taskID string) (*clientpb.PulseTask, error) {
+	ticker := time.NewTicker(pulsePollInterval)
 	defer ticker.Stop()
 
 	for {
-		task, err := con.Rpc.GetBeaconTaskContent(ctx, &clientpb.BeaconTask{ID: taskID})
+		task, err := con.Rpc.GetPulseTaskContent(ctx, &clientpb.PulseTask{ID: taskID})
 		if err != nil {
 			return nil, err
 		}

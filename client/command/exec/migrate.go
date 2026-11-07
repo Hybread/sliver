@@ -37,8 +37,8 @@ import (
 
 // MigrateCmd - Windows only, inject an implant into another process
 func MigrateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -56,15 +56,15 @@ func MigrateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		config = con.GetActiveSessionConfig()
 		implantName = session.Name
 	} else {
-		config = con.GetActiveBeaconConfig()
-		implantName = beacon.Name
+		config = con.GetActivePulseConfig()
+		implantName = pulse.Name
 	}
 
 	targetArch := config.GetGOARCH()
 	if session != nil && session.Arch != "" {
 		targetArch = session.Arch
-	} else if beacon != nil && beacon.Arch != "" {
-		targetArch = beacon.Arch
+	} else if pulse != nil && pulse.Arch != "" {
+		targetArch = pulse.Arch
 	}
 
 	encoder, err := parseShellcodeEncoderFlag(cmd, targetArch, con)
@@ -105,7 +105,7 @@ func MigrateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		return
 	}
 	if migrate.Response != nil && migrate.Response.Async {
-		con.AddBeaconCallback(migrate.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(migrate.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, migrate)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

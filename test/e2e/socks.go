@@ -77,7 +77,7 @@ type socksE2EMutation struct {
 //
 //nolint:gocyclo // One lifecycle keeps all required SOCKS scenarios and cleanup accounting together.
 func (s *suite) exerciseSocks5(target implantTarget, transport string) (resultErr error) {
-	if target.session == nil || target.beacon != nil {
+	if target.session == nil || target.pulse != nil {
 		return errors.New("SOCKS5 E2E requires an interactive session target")
 	}
 	s.t.Logf(

@@ -50,14 +50,14 @@ service SliverRPC {
   rpc StartHTTPSListener(clientpb.HTTPListenerReq) returns (clientpb.ListenerJob);
   rpc StartHTTPListener(clientpb.HTTPListenerReq) returns (clientpb.ListenerJob);
   
-  // *** Beacons ***
-  rpc GetBeacons(commonpb.Empty) returns (clientpb.Beacons);
-  rpc GetBeacon(clientpb.Beacon) returns (clientpb.Beacon);
-  rpc RmBeacon(clientpb.Beacon) returns (commonpb.Empty);
-  rpc GetBeaconTasks(clientpb.Beacon) returns (clientpb.BeaconTasks);
-  rpc GetBeaconTaskContent(clientpb.BeaconTask) returns (clientpb.BeaconTask);
-  rpc CancelBeaconTask(clientpb.BeaconTask) returns (clientpb.BeaconTask);
-  rpc UpdateBeaconIntegrityInformation(clientpb.BeaconIntegrity) returns (commonpb.Empty);
+  // *** Pulses ***
+  rpc GetPulses(commonpb.Empty) returns (clientpb.Pulses);
+  rpc GetPulse(clientpb.Pulse) returns (clientpb.Pulse);
+  rpc RmPulse(clientpb.Pulse) returns (commonpb.Empty);
+  rpc GetPulseTasks(clientpb.Pulse) returns (clientpb.PulseTasks);
+  rpc GetPulseTaskContent(clientpb.PulseTask) returns (clientpb.PulseTask);
+  rpc CancelPulseTask(clientpb.PulseTask) returns (clientpb.PulseTask);
+  rpc UpdatePulseIntegrityInformation(clientpb.PulseIntegrity) returns (commonpb.Empty);
 
 
   // *** Jobs ***
@@ -264,7 +264,7 @@ service SliverRPC {
   rpc StopRportFwdListener(sliverpb.RportFwdStopListenerReq)
       returns (sliverpb.RportFwdListener);
 
-  // *** Beacon *** -only commands
+  // *** Pulse *** -only commands
   rpc OpenSession(sliverpb.OpenSession) returns (sliverpb.OpenSession);
   rpc CloseSession(sliverpb.CloseSession) returns (commonpb.Empty);
 

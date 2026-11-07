@@ -19,7 +19,7 @@ func TestRunWritesReportsAndFailsForFailedRecords(t *testing.T) {
 		TargetOS:    target.OS,
 		TargetArch:  target.Arch,
 		Transport:   "http",
-		ImplantMode: "beacon",
+		ImplantMode: "pulse",
 		GRPCMethod:  "Download",
 		Scenario:    "file, byte/line limits, and recursive directory",
 		Status:      e2ecoverage.StatusFail,

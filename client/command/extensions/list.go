@@ -125,7 +125,7 @@ func PrintExtensionMatches(matches map[string]*ExtensionMatch, con *console.Sliv
 	con.Println(tw.Render())
 }
 
-// ExtensionsListCmd - List all extension loaded on the active session/beacon.
+// ExtensionsListCmd - List all extension loaded on the active session/pulse.
 func ExtensionsListCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	session := con.ActiveTarget.GetSessionInteractive()
 	if session == nil {

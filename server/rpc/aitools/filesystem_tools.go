@@ -112,7 +112,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 	return []serverai.AgenticToolDefinition{
 		{
 			Name:        "fs_mv",
-			Description: "Move or rename a remote file or directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Move or rename a remote file or directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -125,7 +125,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_cp",
-			Description: "Copy a remote file. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Copy a remote file. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -138,7 +138,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_rm",
-			Description: "Remove a remote file or directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Remove a remote file or directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -152,7 +152,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_mkdir",
-			Description: "Create a remote directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Create a remote directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -164,7 +164,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_cd",
-			Description: "Change the remote working directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Change the remote working directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -203,7 +203,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_chmod",
-			Description: "Change permissions on a remote file or directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Change permissions on a remote file or directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -217,7 +217,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_chown",
-			Description: "Change ownership on a remote file or directory. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Change ownership on a remote file or directory. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -246,7 +246,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "fs_mount",
-			Description: "List mounted filesystems or drives on the remote host. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "List mounted filesystems or drives on the remote host. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type":                 "object",
 				"properties":           targetSchemaProperties(),
@@ -257,7 +257,7 @@ func filesystemToolDefinitions() []serverai.AgenticToolDefinition {
 }
 
 func (e *executor) callMV(ctx context.Context, args moveToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -280,7 +280,7 @@ func (e *executor) callMV(ctx context.Context, args moveToolArgs) (string, error
 }
 
 func (e *executor) callCP(ctx context.Context, args copyToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -303,7 +303,7 @@ func (e *executor) callCP(ctx context.Context, args copyToolArgs) (string, error
 }
 
 func (e *executor) callRM(ctx context.Context, args removeToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -331,7 +331,7 @@ func (e *executor) callRM(ctx context.Context, args removeToolArgs) (string, err
 }
 
 func (e *executor) callMkdir(ctx context.Context, args mkdirToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -354,7 +354,7 @@ func (e *executor) callMkdir(ctx context.Context, args mkdirToolArgs) (string, e
 }
 
 func (e *executor) callCD(ctx context.Context, args cdToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -385,7 +385,7 @@ func (e *executor) callTail(ctx context.Context, args headTailToolArgs) (string,
 }
 
 func (e *executor) callHeadTail(ctx context.Context, args headTailToolArgs, head bool) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -444,7 +444,7 @@ func (e *executor) callHeadTail(ctx context.Context, args headTailToolArgs, head
 }
 
 func (e *executor) callChmod(ctx context.Context, args chmodToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -472,7 +472,7 @@ func (e *executor) callChmod(ctx context.Context, args chmodToolArgs) (string, e
 }
 
 func (e *executor) callChown(ctx context.Context, args chownToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -501,7 +501,7 @@ func (e *executor) callChown(ctx context.Context, args chownToolArgs) (string, e
 }
 
 func (e *executor) callChtimes(ctx context.Context, args chtimesToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -533,7 +533,7 @@ func (e *executor) callChtimes(ctx context.Context, args chtimesToolArgs) (strin
 }
 
 func (e *executor) callMount(ctx context.Context, args targetArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}

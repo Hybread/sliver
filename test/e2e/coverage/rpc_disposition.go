@@ -66,13 +66,13 @@ func ComprehensiveRPCDispositions() []RPCDisposition {
 		"StartDNSListener",
 		"StartHTTPSListener",
 		"StartHTTPListener",
-		"GetBeacons",
-		"GetBeacon",
-		"RmBeacon",
-		"GetBeaconTasks",
-		"GetBeaconTaskContent",
-		"CancelBeaconTask",
-		"UpdateBeaconIntegrityInformation",
+		"GetPulses",
+		"GetPulse",
+		"RmPulse",
+		"GetPulseTasks",
+		"GetPulseTaskContent",
+		"CancelPulseTask",
+		"UpdatePulseIntegrityInformation",
 		"GetJobs",
 		"KillJob",
 		"RestartJobs",
@@ -236,7 +236,7 @@ func ComprehensiveRPCDispositions() []RPCDisposition {
 
 	lifecycle := []RPCDisposition{
 		{Method: "Kill", Reason: "terminates the E2E implant process"},
-		{Method: "OpenSession", Reason: "beacon-only transition into a new interactive session"},
+		{Method: "OpenSession", Reason: "pulse-only transition into a new interactive session"},
 		{Method: "CloseSession", Reason: "closes the active session connection"},
 	}
 	for _, disposition := range lifecycle {

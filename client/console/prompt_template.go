@@ -76,7 +76,7 @@ type promptStyles struct {
 
 type promptTarget struct {
 	SessionName string
-	BeaconName  string
+	PulseName  string
 
 	// Suffix is a pre-rendered, themed " (name)" segment matching the default prompt.
 	Suffix string
@@ -158,13 +158,13 @@ func renderPromptTemplate(con *SliverClient, src string) (string, error) {
 	// Active target context.
 	var suffix string
 	sessionName := ""
-	beaconName := ""
+	pulseName := ""
 	if session := con.ActiveTarget.GetSession(); session != nil {
 		sessionName = session.Name
 		suffix = StyleBoldRed.Render(" (" + sessionName + ")")
-	} else if beacon := con.ActiveTarget.GetBeacon(); beacon != nil {
-		beaconName = beacon.Name
-		suffix = StyleBoldBlue.Render(" (" + beaconName + ")")
+	} else if pulse := con.ActiveTarget.GetPulse(); pulse != nil {
+		pulseName = pulse.Name
+		suffix = StyleBoldBlue.Render(" (" + pulseName + ")")
 	}
 
 	th := theme.Current()
@@ -178,7 +178,7 @@ func renderPromptTemplate(con *SliverClient, src string) (string, error) {
 		HostPort:  hostPort,
 		Target: promptTarget{
 			SessionName: sessionName,
-			BeaconName:  beaconName,
+			PulseName:  pulseName,
 			Suffix:      suffix,
 		},
 		Colors: promptColors{

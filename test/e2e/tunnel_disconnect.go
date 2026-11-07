@@ -33,7 +33,7 @@ func (s *suite) exercisePortfwdSocks5Disconnect(target implantTarget, transport 
 
 //nolint:gocyclo // Portfwd and SOCKS teardown must be observed within the same session-disconnect lifecycle.
 func (s *suite) exercisePortfwdSocks5DisconnectLifecycle(target implantTarget, transport string, process *managedProcess) (resultErr error) {
-	if target.session == nil || target.beacon != nil || process == nil {
+	if target.session == nil || target.pulse != nil || process == nil {
 		return errors.New("portfwd/SOCKS5 disconnect E2E requires a managed session process")
 	}
 	portForwardEcho, err := startTCPEchoServer()

@@ -179,7 +179,7 @@ func systemToolDefinitions() []serverai.AgenticToolDefinition {
 	return []serverai.AgenticToolDefinition{
 		{
 			Name:        "exec_command",
-			Description: "Execute a remote command and optionally capture stdout/stderr. If session_id and beacon_id are both omitted, the conversation target is used when available.",
+			Description: "Execute a remote command and optionally capture stdout/stderr. If session_id and pulse_id are both omitted, the conversation target is used when available.",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": mergeSchemaProperties(map[string]any{
@@ -254,7 +254,7 @@ func systemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "getpid",
-			Description: "Return the current target process PID from session or beacon metadata.",
+			Description: "Return the current target process PID from session or pulse metadata.",
 			Parameters: map[string]any{
 				"type":                 "object",
 				"properties":           targetSchemaProperties(),
@@ -263,7 +263,7 @@ func systemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "getuid",
-			Description: "Return the current target process UID from session or beacon metadata.",
+			Description: "Return the current target process UID from session or pulse metadata.",
 			Parameters: map[string]any{
 				"type":                 "object",
 				"properties":           targetSchemaProperties(),
@@ -272,7 +272,7 @@ func systemToolDefinitions() []serverai.AgenticToolDefinition {
 		},
 		{
 			Name:        "info",
-			Description: "Return detailed session or beacon metadata for the selected target.",
+			Description: "Return detailed session or pulse metadata for the selected target.",
 			Parameters: map[string]any{
 				"type":                 "object",
 				"properties":           targetSchemaProperties(),
@@ -305,7 +305,7 @@ func systemToolDefinitions() []serverai.AgenticToolDefinition {
 }
 
 func (e *executor) callIfconfig(ctx context.Context, args targetArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -344,7 +344,7 @@ func (e *executor) callIfconfig(ctx context.Context, args targetArgs) (string, e
 }
 
 func (e *executor) callNetstat(ctx context.Context, args netstatToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -396,7 +396,7 @@ func (e *executor) callNetstat(ctx context.Context, args netstatToolArgs) (strin
 }
 
 func (e *executor) callPS(ctx context.Context, args psToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -446,7 +446,7 @@ func (e *executor) callPS(ctx context.Context, args psToolArgs) (string, error) 
 }
 
 func (e *executor) callEnv(ctx context.Context, args envToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -483,29 +483,29 @@ func (e *executor) callEnv(ctx context.Context, args envToolArgs) (string, error
 }
 
 func (e *executor) callGetPID(ctx context.Context, args targetArgs) (string, error) {
-	session, beacon, err := e.lookupTargetMetadata(ctx, args.SessionID, args.BeaconID)
+	session, pulse, err := e.lookupTargetMetadata(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
 	if session != nil {
 		return marshalToolResult(pidResult{PID: session.PID})
 	}
-	return marshalToolResult(pidResult{PID: beacon.PID})
+	return marshalToolResult(pidResult{PID: pulse.PID})
 }
 
 func (e *executor) callGetUID(ctx context.Context, args targetArgs) (string, error) {
-	session, beacon, err := e.lookupTargetMetadata(ctx, args.SessionID, args.BeaconID)
+	session, pulse, err := e.lookupTargetMetadata(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
 	if session != nil {
 		return marshalToolResult(uidResult{UID: session.UID})
 	}
-	return marshalToolResult(uidResult{UID: beacon.UID})
+	return marshalToolResult(uidResult{UID: pulse.UID})
 }
 
 func (e *executor) callInfo(ctx context.Context, args targetArgs) (string, error) {
-	session, beacon, err := e.lookupTargetMetadata(ctx, args.SessionID, args.BeaconID)
+	session, pulse, err := e.lookupTargetMetadata(ctx, args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -536,38 +536,38 @@ func (e *executor) callInfo(ctx context.Context, args targetArgs) (string, error
 		})
 	}
 	return marshalToolResult(targetInfoResult{
-		TargetType:          "beacon",
-		ID:                  beacon.ID,
-		Name:                beacon.Name,
-		Hostname:            beacon.Hostname,
-		UUID:                beacon.UUID,
-		Username:            beacon.Username,
-		UID:                 beacon.UID,
-		GID:                 beacon.GID,
-		PID:                 beacon.PID,
-		OS:                  beacon.OS,
-		Arch:                beacon.Arch,
-		Transport:           beacon.Transport,
-		ActiveC2:            beacon.ActiveC2,
-		RemoteAddress:       beacon.RemoteAddress,
-		ProxyURL:            beacon.ProxyURL,
-		Version:             beacon.Version,
-		Locale:              beacon.Locale,
-		Integrity:           beacon.Integrity,
-		IsDead:              beacon.IsDead,
-		FirstContact:        beacon.FirstContact,
-		LastCheckin:         beacon.LastCheckin,
-		ReconnectInterval:   beacon.ReconnectInterval,
-		Interval:            beacon.Interval,
-		Jitter:              beacon.Jitter,
-		NextCheckin:         beacon.NextCheckin,
-		TasksCount:          beacon.TasksCount,
-		TasksCountCompleted: beacon.TasksCountCompleted,
+		TargetType:          "pulse",
+		ID:                  pulse.ID,
+		Name:                pulse.Name,
+		Hostname:            pulse.Hostname,
+		UUID:                pulse.UUID,
+		Username:            pulse.Username,
+		UID:                 pulse.UID,
+		GID:                 pulse.GID,
+		PID:                 pulse.PID,
+		OS:                  pulse.OS,
+		Arch:                pulse.Arch,
+		Transport:           pulse.Transport,
+		ActiveC2:            pulse.ActiveC2,
+		RemoteAddress:       pulse.RemoteAddress,
+		ProxyURL:            pulse.ProxyURL,
+		Version:             pulse.Version,
+		Locale:              pulse.Locale,
+		Integrity:           pulse.Integrity,
+		IsDead:              pulse.IsDead,
+		FirstContact:        pulse.FirstContact,
+		LastCheckin:         pulse.LastCheckin,
+		ReconnectInterval:   pulse.ReconnectInterval,
+		Interval:            pulse.Interval,
+		Jitter:              pulse.Jitter,
+		NextCheckin:         pulse.NextCheckin,
+		TasksCount:          pulse.TasksCount,
+		TasksCountCompleted: pulse.TasksCountCompleted,
 	})
 }
 
 func (e *executor) callPing(ctx context.Context, args pingToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -595,7 +595,7 @@ func (e *executor) callPing(ctx context.Context, args pingToolArgs) (string, err
 }
 
 func (e *executor) callScreenshot(ctx context.Context, args screenshotToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -623,7 +623,7 @@ func (e *executor) callScreenshot(ctx context.Context, args screenshotToolArgs) 
 }
 
 func (e *executor) callExec(ctx context.Context, args execToolArgs) (string, error) {
-	target, err := e.resolveTarget(args.SessionID, args.BeaconID)
+	target, err := e.resolveTarget(args.SessionID, args.PulseID)
 	if err != nil {
 		return "", err
 	}
@@ -638,15 +638,15 @@ func (e *executor) callExec(ctx context.Context, args execToolArgs) (string, err
 
 	var resp *sliverpb.Execute
 	if args.UseToken || args.HideWindow || args.PPID != 0 {
-		session, beacon, err := e.lookupTargetMetadata(ctx, args.SessionID, args.BeaconID)
+		session, pulse, err := e.lookupTargetMetadata(ctx, args.SessionID, args.PulseID)
 		if err != nil {
 			return "", err
 		}
 		targetOS := ""
 		if session != nil {
 			targetOS = session.OS
-		} else if beacon != nil {
-			targetOS = beacon.OS
+		} else if pulse != nil {
+			targetOS = pulse.OS
 		}
 		if targetOS != "windows" {
 			return "", fmt.Errorf("use_token, hide_window, and ppid are only supported on windows targets")

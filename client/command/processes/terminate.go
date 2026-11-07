@@ -32,9 +32,9 @@ import (
 
 // TerminateCmd - Terminate a process on the remote system
 func TerminateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
-		con.PrintErrorf("No active session or beacon\n")
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
+		con.PrintErrorf("No active session or pulse\n")
 		return
 	}
 
@@ -57,7 +57,7 @@ func TerminateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) 
 	}
 
 	if terminated.Response != nil && terminated.Response.Async {
-		con.AddBeaconCallback(terminated.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(terminated.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, terminated)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

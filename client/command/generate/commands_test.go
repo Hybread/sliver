@@ -17,11 +17,11 @@ func TestGenerateSaveFlagCompletionRegistered(t *testing.T) {
 	}
 	assertFlagHasDefaultFileCompletion(t, generateCmd, "save")
 
-	beaconCmd := commandByUse(generateCmd.Commands(), consts.BeaconStr)
-	if beaconCmd == nil {
-		t.Fatalf("missing %q subcommand", consts.BeaconStr)
+	pulseCmd := commandByUse(generateCmd.Commands(), consts.PulseStr)
+	if pulseCmd == nil {
+		t.Fatalf("missing %q subcommand", consts.PulseStr)
 	}
-	assertFlagHasDefaultFileCompletion(t, beaconCmd, "save")
+	assertFlagHasDefaultFileCompletion(t, pulseCmd, "save")
 }
 
 func TestProfilesGenerateExternalBuilderFlagRegistered(t *testing.T) {

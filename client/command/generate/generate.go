@@ -1664,9 +1664,9 @@ func externalBuild(name string, config *clientpb.ImplantConfig, spoofMetadata *c
 	}
 	con.PrintInfof("Using external builder: %s\n", externalBuilder.Name)
 
-	if config.IsBeacon {
-		interval := time.Duration(config.BeaconInterval)
-		con.PrintInfof("Externally generating new %s/%s beacon implant binary (%v)\n", config.GOOS, config.GOARCH, interval)
+	if config.IsPulse {
+		interval := time.Duration(config.PulseInterval)
+		con.PrintInfof("Externally generating new %s/%s pulse implant binary (%v)\n", config.GOOS, config.GOARCH, interval)
 	} else {
 		con.PrintInfof("Externally generating new %s/%s implant binary\n", config.GOOS, config.GOARCH)
 	}
@@ -1823,9 +1823,9 @@ func externalBuild(name string, config *clientpb.ImplantConfig, spoofMetadata *c
 }
 
 func compile(name string, config *clientpb.ImplantConfig, spoofMetadata *clientpb.SpoofMetadataConfig, save string, con *console.SliverClient) (*commonpb.File, error) {
-	if config.IsBeacon {
-		interval := time.Duration(config.BeaconInterval)
-		con.PrintInfof("Generating new %s/%s beacon implant binary (%v)\n", config.GOOS, config.GOARCH, interval)
+	if config.IsPulse {
+		interval := time.Duration(config.PulseInterval)
+		con.PrintInfof("Generating new %s/%s pulse implant binary (%v)\n", config.GOOS, config.GOARCH, interval)
 	} else {
 		con.PrintInfof("Generating new %s/%s implant binary\n", config.GOOS, config.GOARCH)
 	}

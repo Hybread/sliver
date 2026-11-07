@@ -1345,12 +1345,12 @@ func reconfigureHandler(data []byte, resp RPCResponse) {
 		transports.SetReconnectInterval(reconfigReq.ReconnectInterval)
 	}
 
-	// {{if .Config.IsBeacon}}
-	if reconfigReq.BeaconInterval != 0 {
-		transports.SetInterval(reconfigReq.BeaconInterval)
+	// {{if .Config.IsPulse}}
+	if reconfigReq.PulseInterval != 0 {
+		transports.SetInterval(reconfigReq.PulseInterval)
 	}
-	if reconfigReq.BeaconJitter != 0 {
-		transports.SetJitter(reconfigReq.BeaconJitter)
+	if reconfigReq.PulseJitter != 0 {
+		transports.SetJitter(reconfigReq.PulseJitter)
 	}
 	if reconfigReq.C2URI != "" {
 		// {{if .Config.Debug}}

@@ -70,8 +70,8 @@ var isTerminal = term.IsTerminal
 
 // Observer - A function to call when the sessions changes.
 type (
-	Observer           func(*clientpb.Session, *clientpb.Beacon)
-	BeaconTaskCallback func(*clientpb.BeaconTask)
+	Observer           func(*clientpb.Session, *clientpb.Pulse)
+	PulseTaskCallback func(*clientpb.PulseTask)
 )
 
 type consoleEventListener struct {
@@ -130,8 +130,8 @@ type SliverClient struct {
 	Rpc                      rpcpb.SliverRPCClient
 	ActiveTarget             *ActiveTarget
 	EventListeners           *sync.Map
-	BeaconTaskCallbacks      map[string]BeaconTaskCallback
-	BeaconTaskCallbacksMutex *sync.Mutex
+	PulseTaskCallbacks      map[string]PulseTaskCallback
+	PulseTaskCallbacksMutex *sync.Mutex
 	Settings                 *assets.ClientSettings
 	IsServer                 bool
 	IsCLI                    bool
@@ -185,8 +185,8 @@ func NewConsole(isServer bool) *SliverClient {
 			observerID: 0,
 		},
 		EventListeners:           &sync.Map{},
-		BeaconTaskCallbacks:      map[string]BeaconTaskCallback{},
-		BeaconTaskCallbacksMutex: &sync.Mutex{},
+		PulseTaskCallbacks:      map[string]PulseTaskCallback{},
+		PulseTaskCallbacksMutex: &sync.Mutex{},
 		IsServer:                 isServer,
 		Settings:                 settings,
 		connWg:                   &sync.WaitGroup{},
@@ -530,16 +530,16 @@ func (con *SliverClient) startEventLoop(ctx context.Context, rpc rpcpb.SliverRPC
 				con.emitConsoleNotification("error", false, "Active session disconnected")
 			}
 
-		case consts.BeaconRegisteredEvent:
-			beacon := &clientpb.Beacon{}
-			proto.Unmarshal(event.Data, beacon)
+		case consts.PulseRegisteredEvent:
+			pulse := &clientpb.Pulse{}
+			proto.Unmarshal(event.Data, pulse)
 			currentTime := time.Now().Format(time.RFC1123)
-			shortID, _, _ := strings.Cut(beacon.ID, "-")
-			con.emitConsoleNotification("info", true, "Beacon %s %s - %s (%s) - %s/%s - %v",
-				shortID, beacon.Name, beacon.RemoteAddress, beacon.Hostname, beacon.OS, beacon.Arch, currentTime)
+			shortID, _, _ := strings.Cut(pulse.ID, "-")
+			con.emitConsoleNotification("info", true, "Pulse %s %s - %s (%s) - %s/%s - %v",
+				shortID, pulse.Name, pulse.RemoteAddress, pulse.Hostname, pulse.OS, pulse.Arch, currentTime)
 
-		case consts.BeaconTaskResultEvent:
-			con.triggerBeaconTaskCallback(event.Data)
+		case consts.PulseTaskResultEvent:
+			con.triggerPulseTaskCallback(event.Data)
 
 		}
 
@@ -638,9 +638,9 @@ func (con *SliverClient) triggerReactions(event *clientpb.Event) {
 
 	// We need some special handling for SessionOpenedEvent to
 	// set the new session as the active session
-	currentActiveSession, currentActiveBeacon := con.ActiveTarget.Get()
+	currentActiveSession, currentActivePulse := con.ActiveTarget.Get()
 	defer func() {
-		con.ActiveTarget.Set(currentActiveSession, currentActiveBeacon)
+		con.ActiveTarget.Set(currentActiveSession, currentActivePulse)
 	}()
 
 	switch event.EventType {
@@ -648,12 +648,12 @@ func (con *SliverClient) triggerReactions(event *clientpb.Event) {
 		con.ActiveTarget.Set(nil, nil)
 
 		con.ActiveTarget.Set(event.Session, nil)
-	case consts.BeaconRegisteredEvent:
+	case consts.PulseRegisteredEvent:
 		con.ActiveTarget.Set(nil, nil)
 
-		beacon := &clientpb.Beacon{}
-		proto.Unmarshal(event.Data, beacon)
-		con.ActiveTarget.Set(nil, beacon)
+		pulse := &clientpb.Pulse{}
+		proto.Unmarshal(event.Data, pulse)
+		con.ActiveTarget.Set(nil, pulse)
 	}
 
 	for _, reaction := range reactions {
@@ -667,46 +667,46 @@ func (con *SliverClient) triggerReactions(event *clientpb.Event) {
 	}
 }
 
-// triggerBeaconTaskCallback - Triggers the callback for a beacon task.
-func (con *SliverClient) triggerBeaconTaskCallback(data []byte) {
-	task := &clientpb.BeaconTask{}
+// triggerPulseTaskCallback - Triggers the callback for a pulse task.
+func (con *SliverClient) triggerPulseTaskCallback(data []byte) {
+	task := &clientpb.PulseTask{}
 	err := proto.Unmarshal(data, task)
 	if err != nil {
-		con.PrintErrorf("\rCould not unmarshal beacon task: %s", err)
+		con.PrintErrorf("\rCould not unmarshal pulse task: %s", err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	beacon, _ := con.Rpc.GetBeacon(ctx, &clientpb.Beacon{ID: task.BeaconID})
+	pulse, _ := con.Rpc.GetPulse(ctx, &clientpb.Pulse{ID: task.PulseID})
 
-	// If the callback is not in our map then we don't do anything, the beacon task
+	// If the callback is not in our map then we don't do anything, the pulse task
 	// was either issued by another operator in multiplayer mode or the client process
 	// was restarted between the time the task was created and when the server got the result
-	con.BeaconTaskCallbacksMutex.Lock()
-	defer con.BeaconTaskCallbacksMutex.Unlock()
-	if callback, ok := con.BeaconTaskCallbacks[task.ID]; ok {
-		if con.Settings.BeaconAutoResults {
-			if beacon != nil {
-				con.PrintSuccessf("%s completed task %s", beacon.Name, strings.Split(task.ID, "-")[0])
+	con.PulseTaskCallbacksMutex.Lock()
+	defer con.PulseTaskCallbacksMutex.Unlock()
+	if callback, ok := con.PulseTaskCallbacks[task.ID]; ok {
+		if con.Settings.PulseAutoResults {
+			if pulse != nil {
+				con.PrintSuccessf("%s completed task %s", pulse.Name, strings.Split(task.ID, "-")[0])
 			}
-			task_content, err := con.Rpc.GetBeaconTaskContent(ctx, &clientpb.BeaconTask{
+			task_content, err := con.Rpc.GetPulseTaskContent(ctx, &clientpb.PulseTask{
 				ID: task.ID,
 			})
 			con.Printf(Clearln + "\r")
 			if err == nil {
 				callback(task_content)
 			} else {
-				con.PrintErrorf("Could not get beacon task content: %s", err)
+				con.PrintErrorf("Could not get pulse task content: %s", err)
 			}
 		}
-		delete(con.BeaconTaskCallbacks, task.ID)
+		delete(con.PulseTaskCallbacks, task.ID)
 	}
 }
 
-func (con *SliverClient) AddBeaconCallback(taskID string, callback BeaconTaskCallback) {
-	con.BeaconTaskCallbacksMutex.Lock()
-	defer con.BeaconTaskCallbacksMutex.Unlock()
-	con.BeaconTaskCallbacks[taskID] = callback
+func (con *SliverClient) AddPulseCallback(taskID string, callback PulseTaskCallback) {
+	con.PulseTaskCallbacksMutex.Lock()
+	defer con.PulseTaskCallbacksMutex.Unlock()
+	con.PulseTaskCallbacks[taskID] = callback
 }
 
 func (con *SliverClient) GetPrompt() string {
@@ -765,8 +765,8 @@ func (con *SliverClient) GetPrompt() string {
 
 	if session := con.ActiveTarget.GetSession(); session != nil {
 		prompt += StyleBoldRed.Render(" (" + session.Name + ")")
-	} else if beacon := con.ActiveTarget.GetBeacon(); beacon != nil {
-		prompt += StyleBoldBlue.Render(" (" + beacon.Name + ")")
+	} else if pulse := con.ActiveTarget.GetPulse(); pulse != nil {
+		prompt += StyleBoldBlue.Render(" (" + pulse.Name + ")")
 	}
 	prompt += " > "
 	return Clearln + prompt
@@ -925,27 +925,27 @@ func (con *SliverClient) GetActiveSessionConfig() *clientpb.ImplantConfig {
 	return config
 }
 
-func (con *SliverClient) GetActiveBeaconConfig() *clientpb.ImplantConfig {
-	beacon := con.ActiveTarget.GetBeacon()
-	if beacon == nil {
+func (con *SliverClient) GetActivePulseConfig() *clientpb.ImplantConfig {
+	pulse := con.ActiveTarget.GetPulse()
+	if pulse == nil {
 		return nil
 	}
 
 	c2s := []*clientpb.ImplantC2{}
 	c2s = append(c2s, &clientpb.ImplantC2{
-		URL:      beacon.ActiveC2,
+		URL:      pulse.ActiveC2,
 		Priority: uint32(0),
 	})
 
 	config := &clientpb.ImplantConfig{
-		ID:                  beacon.ID,
-		GOOS:                beacon.OS,
-		GOARCH:              beacon.Arch,
+		ID:                  pulse.ID,
+		GOOS:                pulse.OS,
+		GOARCH:              pulse.Arch,
 		Debug:               false,
-		IsBeacon:            true,
-		BeaconInterval:      beacon.Interval,
-		BeaconJitter:        beacon.Jitter,
-		Evasion:             beacon.Evasion,
+		IsPulse:            true,
+		PulseInterval:      pulse.Interval,
+		PulseJitter:        pulse.Jitter,
+		Evasion:             pulse.Evasion,
 		MaxConnectionErrors: uint32(1000),
 		ReconnectInterval:   int64(60),
 		Format:              clientpb.OutputFormat_SHELLCODE,
@@ -955,7 +955,7 @@ func (con *SliverClient) GetActiveBeaconConfig() *clientpb.ImplantConfig {
 	/* If this config will be used to build an implant,
 	we need to make sure to include the correct transport
 	for the build */
-	switch beacon.Transport {
+	switch pulse.Transport {
 	case "mtls":
 		config.IncludeMTLS = true
 	case "http":
@@ -1044,24 +1044,24 @@ func (con *SliverClient) GrpcContext(cmd *cobra.Command) (context.Context, conte
 
 type ActiveTarget struct {
 	session    *clientpb.Session
-	beacon     *clientpb.Beacon
+	pulse     *clientpb.Pulse
 	observers  map[int]Observer
 	observerID int
 	con        *SliverClient
 }
 
 // GetSessionInteractive - Get the active target(s).
-func (s *ActiveTarget) GetInteractive() (*clientpb.Session, *clientpb.Beacon) {
-	if s.session == nil && s.beacon == nil {
-		fmt.Print(Warn + "Please select a session or beacon via `use`\n")
+func (s *ActiveTarget) GetInteractive() (*clientpb.Session, *clientpb.Pulse) {
+	if s.session == nil && s.pulse == nil {
+		fmt.Print(Warn + "Please select a session or pulse via `use`\n")
 		return nil, nil
 	}
-	return s.session, s.beacon
+	return s.session, s.pulse
 }
 
 // GetSessionInteractive - Get the active target(s).
-func (s *ActiveTarget) Get() (*clientpb.Session, *clientpb.Beacon) {
-	return s.session, s.beacon
+func (s *ActiveTarget) Get() (*clientpb.Session, *clientpb.Pulse) {
+	return s.session, s.pulse
 }
 
 // GetSessionInteractive - GetSessionInteractive the active session.
@@ -1078,18 +1078,18 @@ func (s *ActiveTarget) GetSession() *clientpb.Session {
 	return s.session
 }
 
-// GetBeaconInteractive - Get beacon interactive the active session.
-func (s *ActiveTarget) GetBeaconInteractive() *clientpb.Beacon {
-	if s.beacon == nil {
-		fmt.Print(Warn + "Please select a beacon via `use`\n")
+// GetPulseInteractive - Get pulse interactive the active session.
+func (s *ActiveTarget) GetPulseInteractive() *clientpb.Pulse {
+	if s.pulse == nil {
+		fmt.Print(Warn + "Please select a pulse via `use`\n")
 		return nil
 	}
-	return s.beacon
+	return s.pulse
 }
 
-// GetBeacon - Same as GetBeacon() but doesn't print a warning.
-func (s *ActiveTarget) GetBeacon() *clientpb.Beacon {
-	return s.beacon
+// GetPulse - Same as GetPulse() but doesn't print a warning.
+func (s *ActiveTarget) GetPulse() *clientpb.Pulse {
+	return s.pulse
 }
 
 // IsSession - Is the current target a session?
@@ -1097,9 +1097,9 @@ func (s *ActiveTarget) IsSession() bool {
 	return s.session != nil
 }
 
-// IsBeacon - Is the current target a beacon?
-func (s *ActiveTarget) IsBeacon() bool {
-	return s.beacon != nil
+// IsPulse - Is the current target a pulse?
+func (s *ActiveTarget) IsPulse() bool {
+	return s.pulse != nil
 }
 
 // AddObserver - Observers to notify when the active session changes
@@ -1114,7 +1114,7 @@ func (s *ActiveTarget) RemoveObserver(observerID int) {
 }
 
 func (s *ActiveTarget) Request(cmd *cobra.Command) *commonpb.Request {
-	if s.session == nil && s.beacon == nil {
+	if s.session == nil && s.pulse == nil {
 		return nil
 	}
 
@@ -1132,28 +1132,28 @@ func (s *ActiveTarget) Request(cmd *cobra.Command) *commonpb.Request {
 		req.Async = false
 		req.SessionID = s.session.ID
 	}
-	if s.beacon != nil {
+	if s.pulse != nil {
 		req.Async = true
-		req.BeaconID = s.beacon.ID
+		req.PulseID = s.pulse.ID
 	}
 	return req
 }
 
 // Set - Change the active session.
-func (s *ActiveTarget) Set(session *clientpb.Session, beacon *clientpb.Beacon) {
-	if session != nil && beacon != nil {
-		s.con.PrintErrorf("cannot set both an active beacon and an active session")
+func (s *ActiveTarget) Set(session *clientpb.Session, pulse *clientpb.Pulse) {
+	if session != nil && pulse != nil {
+		s.con.PrintErrorf("cannot set both an active pulse and an active session")
 		return
 	}
 
 	defer s.con.ExposeCommands()
 
 	// Backgrounding
-	if session == nil && beacon == nil {
+	if session == nil && pulse == nil {
 		s.session = nil
-		s.beacon = nil
+		s.pulse = nil
 		for _, observer := range s.observers {
-			observer(s.session, s.beacon)
+			observer(s.session, s.pulse)
 		}
 
 		if s.con.IsCLI {
@@ -1171,15 +1171,15 @@ func (s *ActiveTarget) Set(session *clientpb.Session, beacon *clientpb.Beacon) {
 	// Foreground
 	if session != nil {
 		s.session = session
-		s.beacon = nil
+		s.pulse = nil
 		for _, observer := range s.observers {
-			observer(s.session, s.beacon)
+			observer(s.session, s.pulse)
 		}
-	} else if beacon != nil {
-		s.beacon = beacon
+	} else if pulse != nil {
+		s.pulse = pulse
 		s.session = nil
 		for _, observer := range s.observers {
-			observer(s.session, s.beacon)
+			observer(s.session, s.pulse)
 		}
 	}
 
@@ -1198,7 +1198,7 @@ func (s *ActiveTarget) Background() {
 	defer s.con.App.ShowCommands()
 
 	s.session = nil
-	s.beacon = nil
+	s.pulse = nil
 	for _, observer := range s.observers {
 		observer(nil, nil)
 	}
@@ -1213,8 +1213,8 @@ func (s *ActiveTarget) Background() {
 func (s *ActiveTarget) GetHostUUID() string {
 	if s.IsSession() {
 		return s.session.UUID
-	} else if s.IsBeacon() {
-		return s.beacon.UUID
+	} else if s.IsPulse() {
+		return s.pulse.UUID
 	}
 
 	return ""
@@ -1225,7 +1225,7 @@ func (s *ActiveTarget) GetHostUUID() string {
 func (con *SliverClient) ExposeCommands() {
 	con.App.ShowCommands()
 
-	if con.ActiveTarget.session == nil && con.ActiveTarget.beacon == nil {
+	if con.ActiveTarget.session == nil && con.ActiveTarget.pulse == nil {
 		return
 	}
 
@@ -1235,7 +1235,7 @@ func (con *SliverClient) ExposeCommands() {
 	switch {
 	case con.ActiveTarget.session != nil:
 		session := con.ActiveTarget.session
-		filters = append(filters, consts.BeaconCmdsFilter)
+		filters = append(filters, consts.PulseCmdsFilter)
 		filters = append(filters, consts.NativeExtensionTargetFilter(session.OS, session.Arch))
 
 		// Operating system
@@ -1248,18 +1248,18 @@ func (con *SliverClient) ExposeCommands() {
 			filters = append(filters, consts.WireguardCmdsFilter)
 		}
 
-	case con.ActiveTarget.beacon != nil:
-		beacon := con.ActiveTarget.beacon
+	case con.ActiveTarget.pulse != nil:
+		pulse := con.ActiveTarget.pulse
 		filters = append(filters, consts.SessionCmdsFilter)
-		filters = append(filters, consts.NativeExtensionTargetFilter(beacon.OS, beacon.Arch))
+		filters = append(filters, consts.NativeExtensionTargetFilter(pulse.OS, pulse.Arch))
 
 		// Operating system
-		if beacon.OS != "windows" {
+		if pulse.OS != "windows" {
 			filters = append(filters, consts.WindowsCmdsFilter)
 		}
 
 		// C2 stack
-		if beacon.Transport != "wg" {
+		if pulse.Transport != "wg" {
 			filters = append(filters, consts.WireguardCmdsFilter)
 		}
 	}

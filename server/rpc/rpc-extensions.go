@@ -53,10 +53,10 @@ func (rpc *Server) CallExtension(ctx context.Context, req *sliverpb.CallExtensio
 }
 
 func requireCallExtensionBOFCapability(req *sliverpb.CallExtensionReq) error {
-	return requireCallExtensionBOFCapabilityWithLookups(req, sessionCapabilities, beaconCapabilities)
+	return requireCallExtensionBOFCapabilityWithLookups(req, sessionCapabilities, pulseCapabilities)
 }
 
-func requireCallExtensionBOFCapabilityWithLookups(req *sliverpb.CallExtensionReq, sessionLookup, beaconLookup capabilityLookup) error {
+func requireCallExtensionBOFCapabilityWithLookups(req *sliverpb.CallExtensionReq, sessionLookup, pulseLookup capabilityLookup) error {
 	if !req.GetIsBOF() {
 		return nil
 	}
@@ -71,10 +71,10 @@ func requireCallExtensionBOFCapabilityWithLookups(req *sliverpb.CallExtensionReq
 	lookup := sessionLookup
 	invalidTargetErr := ErrInvalidSessionID
 	if request.Async {
-		targetKind = "beacon"
-		targetID = request.BeaconID
-		lookup = beaconLookup
-		invalidTargetErr = ErrInvalidBeaconID
+		targetKind = "pulse"
+		targetID = request.PulseID
+		lookup = pulseLookup
+		invalidTargetErr = ErrInvalidPulseID
 	}
 
 	capabilities, ok := lookup(targetID)
@@ -95,10 +95,10 @@ func sessionCapabilities(id string) (uint64, bool) {
 	return session.Capabilities, true
 }
 
-func beaconCapabilities(id string) (uint64, bool) {
-	beacon, err := db.BeaconByID(id)
-	if err != nil || beacon == nil {
+func pulseCapabilities(id string) (uint64, bool) {
+	pulse, err := db.PulseByID(id)
+	if err != nil || pulse == nil {
 		return 0, false
 	}
-	return beacon.Capabilities, true
+	return pulse.Capabilities, true
 }

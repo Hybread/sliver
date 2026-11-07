@@ -297,7 +297,7 @@ func persistAIConversationRuntime(conversation *clientpb.AIConversation, operato
 		ActiveTurnID:       conversation.GetActiveTurnID(),
 		TurnState:          conversation.GetTurnState(),
 		TargetSessionID:    conversation.GetTargetSessionID(),
-		TargetBeaconID:     conversation.GetTargetBeaconID(),
+		TargetPulseID:     conversation.GetTargetPulseID(),
 		ContextWindowUsage: conversation.GetContextWindowUsage(),
 	}, operatorName)
 }
@@ -330,7 +330,7 @@ func persistAIConversationUsage(conversation *clientpb.AIConversation, operatorN
 		ActiveTurnID:    conversation.GetActiveTurnID(),
 		TurnState:       conversation.GetTurnState(),
 		TargetSessionID: conversation.GetTargetSessionID(),
-		TargetBeaconID:  conversation.GetTargetBeaconID(),
+		TargetPulseID:  conversation.GetTargetPulseID(),
 		ContextWindowUsage: &clientpb.AIContextWindowUsage{
 			InputTokens:                  usage.InputTokens,
 			OutputTokens:                 usage.OutputTokens,

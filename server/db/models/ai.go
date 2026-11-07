@@ -40,7 +40,7 @@ type AIConversation struct {
 	ActiveTurnID                 string `gorm:"index"`
 	TurnState                    int32
 	TargetSessionID              string `gorm:"index"`
-	TargetBeaconID               string `gorm:"index"`
+	TargetPulseID               string `gorm:"index"`
 	ContextInputTokens           int64
 	ContextOutputTokens          int64
 	ContextTotalTokens           int64
@@ -81,7 +81,7 @@ func (a *AIConversation) ToProtobuf() *clientpb.AIConversation {
 		ActiveTurnID:    a.ActiveTurnID,
 		TurnState:       clientpb.AIConversationTurnState(a.TurnState),
 		TargetSessionID: a.TargetSessionID,
-		TargetBeaconID:  a.TargetBeaconID,
+		TargetPulseID:  a.TargetPulseID,
 		ContextWindowUsage: aiContextWindowUsageToProtobuf(
 			a.ContextInputTokens,
 			a.ContextOutputTokens,
@@ -112,7 +112,7 @@ func AIConversationFromProtobuf(pbConversation *clientpb.AIConversation) *AIConv
 		ActiveTurnID:                 pbConversation.ActiveTurnID,
 		TurnState:                    int32(pbConversation.TurnState),
 		TargetSessionID:              pbConversation.TargetSessionID,
-		TargetBeaconID:               pbConversation.TargetBeaconID,
+		TargetPulseID:               pbConversation.TargetPulseID,
 		ContextInputTokens:           pbConversation.GetContextWindowUsage().GetInputTokens(),
 		ContextOutputTokens:          pbConversation.GetContextWindowUsage().GetOutputTokens(),
 		ContextTotalTokens:           pbConversation.GetContextWindowUsage().GetTotalTokens(),

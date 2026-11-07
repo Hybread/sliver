@@ -32,8 +32,8 @@ import (
 
 // MsfInjectCmd - Inject a metasploit payload into a remote process.
 func MsfInjectCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -58,8 +58,8 @@ func MsfInjectCmd(cmd *cobra.Command, con *console.SliverClient, args []string) 
 		goos = session.OS
 		goarch = session.Arch
 	} else {
-		goos = beacon.OS
-		goarch = beacon.Arch
+		goos = pulse.OS
+		goarch = pulse.Arch
 	}
 
 	ctrl := make(chan bool)
@@ -83,7 +83,7 @@ func MsfInjectCmd(cmd *cobra.Command, con *console.SliverClient, args []string) 
 	}
 
 	if msfTask.Response != nil && msfTask.Response.Async {
-		con.AddBeaconCallback(msfTask.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(msfTask.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, msfTask)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

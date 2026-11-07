@@ -1,4 +1,4 @@
-package beacons
+package pulses
 
 /*
 	Sliver Implant Framework
@@ -30,8 +30,8 @@ import (
 	"github.com/bishopfox/sliver/protobuf/commonpb"
 )
 
-// BeaconsWatchCmd - Watch your beacons in real-ish time
-func BeaconsWatchCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+// PulsesWatchCmd - Watch your pulses in real-ish time
+func PulsesWatchCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	done := waitForInput()
 	defer func() {
 		con.Printf(console.UpN+console.Clearln+"\r", 1)
@@ -42,11 +42,11 @@ func BeaconsWatchCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 		case <-done:
 			return
 		case <-time.After(time.Second):
-			beacons, err := con.Rpc.GetBeacons(context.Background(), &commonpb.Empty{})
+			pulses, err := con.Rpc.GetPulses(context.Background(), &commonpb.Empty{})
 			if err != nil {
 				panic(err) // If we return we may leak the waiting goroutine, so we panic instead
 			}
-			tw := renderBeacons(beacons.Beacons, "", nil, con)
+			tw := renderPulses(pulses.Pulses, "", nil, con)
 			lines := strings.Split(tw.Render(), "\n")
 			for _, line := range lines {
 				con.Printf(console.Clearln+"\r%s\n", line)

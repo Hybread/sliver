@@ -76,8 +76,8 @@ var (
 		url:    "https://raw.githubusercontent.com/sliverarmory/bof_collection/2cb3fb1b39a96484c4c40b8710c1ca9f83e846ee/cat/entry.c",
 		sha256: "a728f11fc10670a2435adebf78374878bbb3aaf16c445697d75819f6f9a3a578",
 	}
-	catBeaconHeaderAsset = pinnedAsset{
-		url:    "https://raw.githubusercontent.com/sliverarmory/bof_collection/2cb3fb1b39a96484c4c40b8710c1ca9f83e846ee/beacon.h",
+	catPulseHeaderAsset = pinnedAsset{
+		url:    "https://raw.githubusercontent.com/sliverarmory/bof_collection/2cb3fb1b39a96484c4c40b8710c1ca9f83e846ee/pulse.h",
 		sha256: "ff0d64312744d7934e633c604201391b35aef1f40051769d277b2205eb8aa6c2",
 	}
 	firefoxArchiveAsset = pinnedAsset{
@@ -118,7 +118,7 @@ type nativeBOFRunner struct {
 
 type nativeBOFCall struct {
 	taskID   string
-	beaconID string
+	pulseID string
 	async    bool
 	isBOF    bool
 	err      error
@@ -288,7 +288,7 @@ func (s *suite) exerciseNativePartialError(runner *nativeBOFRunner, target impla
 			return errors.New("partial-output fixture unexpectedly succeeded")
 		}
 		message := strings.ToLower(result.err.Error())
-		if !strings.Contains(message, "beaconoutput") || !strings.Contains(message, "length 1") {
+		if !strings.Contains(message, "pulseoutput") || !strings.Contains(message, "length 1") {
 			return fmt.Errorf("partial-output error did not preserve the Reflektor callback failure: %w", result.err)
 		}
 		if !strings.Contains(result.output, partialCallbackMarker) {
@@ -316,8 +316,8 @@ func (s *suite) exerciseNativeMalformed(runner *nativeBOFRunner, target implantT
 			return fmt.Errorf("malformed-object lifecycle callback marker missing: %q", summarizeOutput(result.output))
 		}
 		limit := 30 * time.Second
-		if target.beacon != nil {
-			limit += 2 * s.opts.beaconInterval
+		if target.pulse != nil {
+			limit += 2 * s.opts.pulseInterval
 		}
 		if elapsed > limit {
 			return fmt.Errorf("malformed object took %s, bounded limit is %s", elapsed.Round(time.Millisecond), limit)
@@ -330,8 +330,8 @@ func (s *suite) exerciseNativeTimeout(runner *nativeBOFRunner, target implantTar
 	return s.step(target, transport, "CallExtension", timeoutScenario, func() error {
 		timeoutSeconds := int64(1)
 		sleepDuration := 2500 * time.Millisecond
-		if target.beacon != nil {
-			timeoutSeconds = int64((s.opts.beaconInterval+time.Second-1)/time.Second) + 2
+		if target.pulse != nil {
+			timeoutSeconds = int64((s.opts.pulseInterval+time.Second-1)/time.Second) + 2
 			sleepDuration = time.Duration(timeoutSeconds+3) * time.Second
 		}
 		callCursor := runner.rpc.callCount()
@@ -353,12 +353,12 @@ func (s *suite) exerciseNativeTimeout(runner *nativeBOFRunner, target implantTar
 		if err := waitForNativeBOF(s.ctx, settle); err != nil {
 			return err
 		}
-		if target.beacon != nil {
-			taskID, err := runner.rpc.beaconTaskAfter(callCursor, target.beacon.ID)
+		if target.pulse != nil {
+			taskID, err := runner.rpc.pulseTaskAfter(callCursor, target.pulse.ID)
 			if err != nil {
 				return err
 			}
-			if err := s.verifyCompletedTimeoutBeaconTask(target, taskID); err != nil {
+			if err := s.verifyCompletedTimeoutPulseTask(target, taskID); err != nil {
 				return err
 			}
 		}
@@ -380,18 +380,18 @@ func (s *suite) nativeBOFRecoveryPing(target implantTarget) error {
 	return nil
 }
 
-func (s *suite) verifyCompletedTimeoutBeaconTask(target implantTarget, taskID string) error {
-	ctx, cancel := context.WithTimeout(s.ctx, 2*s.opts.beaconInterval+10*time.Second)
+func (s *suite) verifyCompletedTimeoutPulseTask(target implantTarget, taskID string) error {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*s.opts.pulseInterval+10*time.Second)
 	defer cancel()
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 	for {
-		task, err := s.rpc.GetBeaconTaskContent(ctx, &clientpb.BeaconTask{ID: taskID})
+		task, err := s.rpc.GetPulseTaskContent(ctx, &clientpb.PulseTask{ID: taskID})
 		if err != nil {
-			return fmt.Errorf("fetch timed-out BOF beacon task %s: %w", taskID, err)
+			return fmt.Errorf("fetch timed-out BOF pulse task %s: %w", taskID, err)
 		}
-		if task.GetBeaconID() != target.beacon.ID {
-			return fmt.Errorf("timed-out BOF task %s beacon %q, want %q", taskID, task.GetBeaconID(), target.beacon.ID)
+		if task.GetPulseID() != target.pulse.ID {
+			return fmt.Errorf("timed-out BOF task %s pulse %q, want %q", taskID, task.GetPulseID(), target.pulse.ID)
 		}
 		switch strings.ToLower(task.GetState()) {
 		case "completed":
@@ -545,16 +545,16 @@ func (s *suite) buildPinnedCatX86(
 	if err != nil {
 		return fmt.Errorf("download bof_collection v0.0.1 cat/entry.c: %w", err)
 	}
-	header, err := downloadPinned(ctx, httpClient, catBeaconHeaderAsset)
+	header, err := downloadPinned(ctx, httpClient, catPulseHeaderAsset)
 	if err != nil {
-		return fmt.Errorf("download bof_collection v0.0.1 beacon.h: %w", err)
+		return fmt.Errorf("download bof_collection v0.0.1 pulse.h: %w", err)
 	}
 	sourceRoot := filepath.Join(root, "cat-v0.0.1-source")
 	entryPath := filepath.Join(sourceRoot, "cat", "entry.c")
 	if err := writeNativeFixture(entryPath, entry); err != nil {
 		return err
 	}
-	if err := writeNativeFixture(filepath.Join(sourceRoot, "beacon.h"), header); err != nil {
+	if err := writeNativeFixture(filepath.Join(sourceRoot, "pulse.h"), header); err != nil {
 		return err
 	}
 	// The bundled Zig distribution has no MinGW/Windows SDK headers. Supply
@@ -671,7 +671,7 @@ func buildMalformedNativeBOF(root, barch string) (string, error) {
 	if err := writeNativeFixture(object, []byte{0x00, 0x01, 0x02}); err != nil {
 		return "", err
 	}
-	content := `beacon_command_register(
+	content := `pulse_command_register(
     "opfor-e2e-malformed",
     "Exercise a bounded malformed-object loader failure through OPFOR.",
     "Internal Sliver comprehensive E2E fixture."
@@ -695,7 +695,7 @@ alias opfor-e2e-malformed {
     $handle = openf(script_resource("opfor_malformed." . barch($1) . ".o"));
     $object = readb($handle, -1);
     closef($handle);
-    beacon_inline_execute($1, $object, "go", $null, &opfor_e2e_malformed_callback);
+    pulse_inline_execute($1, $object, "go", $null, &opfor_e2e_malformed_callback);
 }
 `
 	if err := writeNativeFixture(script, []byte(content)); err != nil {
@@ -813,7 +813,7 @@ func (s *suite) newNativeBOFRunner(target implantTarget) (*nativeBOFRunner, erro
 	if err := clientconsole.StartClient(console, capturingRPC, nil, nil, nil, nil, false, ""); err != nil {
 		return nil, fmt.Errorf("initialize OPFOR E2E console: %w", err)
 	}
-	console.ActiveTarget.Set(target.session, target.beacon)
+	console.ActiveTarget.Set(target.session, target.pulse)
 	return &nativeBOFRunner{suite: s, console: console, rpc: capturingRPC, loaded: map[string]bool{}}, nil
 }
 
@@ -826,7 +826,7 @@ func (rpc *nativeBOFCapturingRPC) CallExtension(
 	call := nativeBOFCall{err: err}
 	if request != nil {
 		call.isBOF = request.GetIsBOF()
-		call.beaconID = request.GetRequest().GetBeaconID()
+		call.pulseID = request.GetRequest().GetPulseID()
 	}
 	if response != nil {
 		call.taskID = response.GetResponse().GetTaskID()
@@ -844,7 +844,7 @@ func (rpc *nativeBOFCapturingRPC) callCount() int {
 	return len(rpc.calls)
 }
 
-func (rpc *nativeBOFCapturingRPC) beaconTaskAfter(cursor int, beaconID string) (string, error) {
+func (rpc *nativeBOFCapturingRPC) pulseTaskAfter(cursor int, pulseID string) (string, error) {
 	rpc.mu.Lock()
 	defer rpc.mu.Unlock()
 	if cursor < 0 || cursor > len(rpc.calls) {
@@ -858,10 +858,10 @@ func (rpc *nativeBOFCapturingRPC) beaconTaskAfter(cursor int, beaconID string) (
 	if call.err != nil {
 		return "", fmt.Errorf("native BOF timeout CallExtension dispatch failed before task correlation: %w", call.err)
 	}
-	if !call.isBOF || !call.async || call.beaconID != beaconID || call.taskID == "" {
+	if !call.isBOF || !call.async || call.pulseID != pulseID || call.taskID == "" {
 		return "", fmt.Errorf(
-			"native BOF timeout task metadata mismatch: bof=%v async=%v beacon=%q task=%q",
-			call.isBOF, call.async, call.beaconID, call.taskID,
+			"native BOF timeout task metadata mismatch: bof=%v async=%v pulse=%q task=%q",
+			call.isBOF, call.async, call.pulseID, call.taskID,
 		)
 	}
 	return call.taskID, nil

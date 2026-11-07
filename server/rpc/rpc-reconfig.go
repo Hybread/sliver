@@ -31,7 +31,7 @@ import (
 
 const maxNameLength = 32
 
-// Reconfigure - Reconfigure a beacon/session
+// Reconfigure - Reconfigure a pulse/session
 func (rpc *Server) Reconfigure(ctx context.Context, req *sliverpb.ReconfigureReq) (*sliverpb.Reconfigure, error) {
 	if req == nil || req.Request == nil {
 		return nil, ErrMissingRequestField
@@ -39,7 +39,7 @@ func (rpc *Server) Reconfigure(ctx context.Context, req *sliverpb.ReconfigureReq
 
 	// We have to preserve these because GenericHandler clears them in req.Request
 	sessionID := req.Request.SessionID
-	beaconID := req.Request.BeaconID
+	pulseID := req.Request.PulseID
 
 	resp := &sliverpb.Reconfigure{Response: &commonpb.Response{}}
 	err := rpc.GenericHandler(req, resp)
@@ -57,18 +57,18 @@ func (rpc *Server) Reconfigure(ctx context.Context, req *sliverpb.ReconfigureReq
 			session.ReconnectInterval = req.ReconnectInterval
 		}
 		core.Sessions.UpdateSession(session)
-	} else if beaconID != "" {
-		beacon, err := db.BeaconByID(beaconID)
-		if err != nil || beacon == nil {
-			return nil, ErrInvalidBeaconID
+	} else if pulseID != "" {
+		pulse, err := db.PulseByID(pulseID)
+		if err != nil || pulse == nil {
+			return nil, ErrInvalidPulseID
 		}
-		if req.BeaconInterval != 0 {
-			beacon.Interval = req.BeaconInterval
+		if req.PulseInterval != 0 {
+			pulse.Interval = req.PulseInterval
 		}
-		if req.BeaconJitter != 0 {
-			beacon.Jitter = req.BeaconJitter
+		if req.PulseJitter != 0 {
+			pulse.Jitter = req.PulseJitter
 		}
-		err = db.Session().Save(beacon).Error
+		err = db.Session().Save(pulse).Error
 		if err != nil {
 			return nil, rpcError(err)
 		}
@@ -78,7 +78,7 @@ func (rpc *Server) Reconfigure(ctx context.Context, req *sliverpb.ReconfigureReq
 	return resp, nil
 }
 
-// Rename - Rename a beacon/session
+// Rename - Rename a pulse/session
 func (rpc *Server) Rename(ctx context.Context, req *clientpb.RenameReq) (*commonpb.Empty, error) {
 	resp := &commonpb.Empty{}
 
@@ -95,12 +95,12 @@ func (rpc *Server) Rename(ctx context.Context, req *clientpb.RenameReq) (*common
 			return nil, ErrInvalidSessionID
 		}
 		session.Name = req.Name
-	} else if req.BeaconID != "" {
-		beacon, err := db.BeaconByID(req.BeaconID)
-		if err != nil || beacon == nil {
-			return nil, ErrInvalidBeaconID
+	} else if req.PulseID != "" {
+		pulse, err := db.PulseByID(req.PulseID)
+		if err != nil || pulse == nil {
+			return nil, ErrInvalidPulseID
 		}
-		err = db.RenameBeacon(beacon.ID.String(), req.Name)
+		err = db.RenamePulse(pulse.ID.String(), req.Name)
 		if err != nil {
 			return nil, rpcError(err)
 		}

@@ -32,8 +32,8 @@ import (
 
 // SpawnDllCmd - Spawn execution of a DLL on the remote system.
 func SpawnDllCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 	binPath := args[0]
@@ -68,9 +68,9 @@ func SpawnDllCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	ctrl <- true
 	<-ctrl
 
-	hostName := getHostname(session, beacon)
+	hostName := getHostname(session, pulse)
 	if spawndll.Response != nil && spawndll.Response.Async {
-		con.AddBeaconCallback(spawndll.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(spawndll.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, spawndll)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

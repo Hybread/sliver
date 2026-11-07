@@ -40,7 +40,7 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 			consts.SessionOpenedEvent,
 			consts.SessionClosedEvent,
 			consts.SessionUpdateEvent,
-			consts.BeaconRegisteredEvent,
+			consts.PulseRegisteredEvent,
 			consts.CanaryEvent,
 			consts.WatchtowerEvent,
 		)

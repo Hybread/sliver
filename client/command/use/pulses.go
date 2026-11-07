@@ -1,4 +1,4 @@
-package settings
+package use
 
 /*
 	Sliver Implant Framework
@@ -19,21 +19,26 @@ package settings
 */
 
 import (
-	"github.com/bishopfox/sliver/client/assets"
-	"github.com/bishopfox/sliver/client/console"
 	"github.com/spf13/cobra"
+
+	"github.com/bishopfox/sliver/client/command/pulses"
+	"github.com/bishopfox/sliver/client/console"
 )
 
-// SettingsBeaconsAutoResultCmd - The client settings command.
-func SettingsBeaconsAutoResultCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	var err error
-	if con.Settings == nil {
-		con.Settings, err = assets.LoadSettings()
-		if err != nil {
+// UsePulseCmd - Change the active pulse
+func UsePulseCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+	pulse, err := pulses.SelectPulse(con)
+	if pulse != nil {
+		con.ActiveTarget.Set(nil, pulse)
+		con.PrintInfof("Active pulse %s (%s)\n", pulse.Name, pulse.ID)
+	} else if err != nil {
+		switch err {
+		case pulses.ErrNoPulses:
+			con.PrintErrorf("No pulse available\n")
+		case pulses.ErrNoSelection:
+			con.PrintErrorf("No pulse selected\n")
+		default:
 			con.PrintErrorf("%s\n", err)
-			return
 		}
 	}
-	con.Settings.BeaconAutoResults = !con.Settings.BeaconAutoResults
-	con.PrintInfof("Beacon Auto Result = %v\n", con.Settings.BeaconAutoResults)
 }

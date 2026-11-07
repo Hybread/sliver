@@ -39,8 +39,8 @@ import (
 )
 
 func DownloadCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -62,7 +62,7 @@ func DownloadCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		return
 	}
 	if download.Response != nil && download.Response.Async {
-		con.AddBeaconCallback(download.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(download.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, download)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -161,12 +161,12 @@ func HandleDownloadResponse(download *sliverpb.Download, cmd *cobra.Command, arg
 		if err == nil && fi.IsDir() {
 			if download.IsDir {
 				// Come up with a good file name - filters might make the filename ugly
-				session, beacon := con.ActiveTarget.Get()
+				session, pulse := con.ActiveTarget.Get()
 				implantName := ""
 				if session != nil {
 					implantName = session.Name
-				} else if beacon != nil {
-					implantName = beacon.Name
+				} else if pulse != nil {
+					implantName = pulse.Name
 				}
 
 				fileName = fmt.Sprintf("%s_download_%s_%d.tar.gz", filepath.Base(implantName), filepath.Base(prettifyDownloadName(remotePath)), time.Now().Unix())

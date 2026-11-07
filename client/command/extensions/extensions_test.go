@@ -142,13 +142,13 @@ func (f *registerExtensionTestRPC) RegisterExtension(ctx context.Context, req *s
 	return f.register(ctx, req, opts...)
 }
 
-func newExtensionTestConsole(t *testing.T, rpc rpcpb.SliverRPCClient, session *clientpb.Session, beacon *clientpb.Beacon) *console.SliverClient {
+func newExtensionTestConsole(t *testing.T, rpc rpcpb.SliverRPCClient, session *clientpb.Session, pulse *clientpb.Pulse) *console.SliverClient {
 	t.Helper()
 
 	con := console.NewConsole(false)
 	con.IsCLI = true
 	con.Rpc = rpc
-	con.ActiveTarget.Set(session, beacon)
+	con.ActiveTarget.Set(session, pulse)
 	return con
 }
 
@@ -335,7 +335,7 @@ func TestRegisterExtensionPropagatesInit(t *testing.T) {
 	tests := []struct {
 		name      string
 		session   *clientpb.Session
-		beacon    *clientpb.Beacon
+		pulse    *clientpb.Pulse
 		wantAsync bool
 		wantID    string
 	}{
@@ -345,10 +345,10 @@ func TestRegisterExtensionPropagatesInit(t *testing.T) {
 			wantID:  "session-id",
 		},
 		{
-			name:      "beacon",
-			beacon:    &clientpb.Beacon{ID: "beacon-id"},
+			name:      "pulse",
+			pulse:    &clientpb.Pulse{ID: "pulse-id"},
 			wantAsync: true,
-			wantID:    "beacon-id",
+			wantID:    "pulse-id",
 		},
 	}
 
@@ -361,7 +361,7 @@ func TestRegisterExtensionPropagatesInit(t *testing.T) {
 					return &sliverpb.RegisterExtension{Response: &commonpb.Response{}}, nil
 				},
 			}
-			con := newExtensionTestConsole(t, rpc, test.session, test.beacon)
+			con := newExtensionTestConsole(t, rpc, test.session, test.pulse)
 
 			err := registerExtension("linux", &ExtCommand{CommandName: "test", Init: initExport}, []byte("extension"), nil, con)
 			if err != nil {
@@ -376,8 +376,8 @@ func TestRegisterExtensionPropagatesInit(t *testing.T) {
 			if gotReq.Request.GetAsync() != test.wantAsync {
 				t.Errorf("Expected async=%t, got %t", test.wantAsync, gotReq.Request.GetAsync())
 			}
-			if test.wantAsync && gotReq.Request.GetBeaconID() != test.wantID {
-				t.Errorf("Expected beacon ID %q, got %q", test.wantID, gotReq.Request.GetBeaconID())
+			if test.wantAsync && gotReq.Request.GetPulseID() != test.wantID {
+				t.Errorf("Expected pulse ID %q, got %q", test.wantID, gotReq.Request.GetPulseID())
 			}
 			if !test.wantAsync && gotReq.Request.GetSessionID() != test.wantID {
 				t.Errorf("Expected session ID %q, got %q", test.wantID, gotReq.Request.GetSessionID())
@@ -386,7 +386,7 @@ func TestRegisterExtensionPropagatesInit(t *testing.T) {
 	}
 }
 
-func TestRegisterExtensionWaitsForBeaconRegistration(t *testing.T) {
+func TestRegisterExtensionWaitsForPulseRegistration(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	rpc := &registerExtensionTestRPC{
@@ -396,7 +396,7 @@ func TestRegisterExtensionWaitsForBeaconRegistration(t *testing.T) {
 			return &sliverpb.RegisterExtension{Response: &commonpb.Response{Async: true}}, nil
 		},
 	}
-	con := newExtensionTestConsole(t, rpc, nil, &clientpb.Beacon{ID: "beacon-id"})
+	con := newExtensionTestConsole(t, rpc, nil, &clientpb.Pulse{ID: "pulse-id"})
 	done := make(chan error, 1)
 	go func() {
 		done <- registerExtension("linux", &ExtCommand{CommandName: "test"}, []byte("extension"), nil, con)
@@ -409,7 +409,7 @@ func TestRegisterExtensionWaitsForBeaconRegistration(t *testing.T) {
 	}
 	select {
 	case err := <-done:
-		t.Fatalf("RegisterExtension returned before the beacon registration was enqueued: %v", err)
+		t.Fatalf("RegisterExtension returned before the pulse registration was enqueued: %v", err)
 	case <-time.After(100 * time.Millisecond):
 	}
 	close(release)
@@ -423,14 +423,14 @@ func TestRegisterExtensionWaitsForBeaconRegistration(t *testing.T) {
 	}
 }
 
-func TestRegisterExtensionReturnsBeaconRPCError(t *testing.T) {
+func TestRegisterExtensionReturnsPulseRPCError(t *testing.T) {
 	wantErr := errors.New("register failed")
 	rpc := &registerExtensionTestRPC{
 		register: func(_ context.Context, _ *sliverpb.RegisterExtensionReq, _ ...grpc.CallOption) (*sliverpb.RegisterExtension, error) {
 			return nil, wantErr
 		},
 	}
-	con := newExtensionTestConsole(t, rpc, nil, &clientpb.Beacon{ID: "beacon-id"})
+	con := newExtensionTestConsole(t, rpc, nil, &clientpb.Pulse{ID: "pulse-id"})
 
 	err := registerExtension("linux", &ExtCommand{CommandName: "test"}, []byte("extension"), nil, con)
 	if !errors.Is(err, wantErr) {
@@ -461,7 +461,7 @@ func TestExtensionCommandVisibilityUsesExactTargetPairs(t *testing.T) {
 	tests := []struct {
 		name        string
 		session     *clientpb.Session
-		beacon      *clientpb.Beacon
+		pulse      *clientpb.Pulse
 		wantVisible bool
 	}{
 		{
@@ -470,8 +470,8 @@ func TestExtensionCommandVisibilityUsesExactTargetPairs(t *testing.T) {
 			wantVisible: true,
 		},
 		{
-			name:        "cross-platform macOS beacon",
-			beacon:      &clientpb.Beacon{OS: "darwin", Arch: "arm64"},
+			name:        "cross-platform macOS pulse",
+			pulse:      &clientpb.Pulse{OS: "darwin", Arch: "arm64"},
 			wantVisible: true,
 		},
 		{
@@ -486,7 +486,7 @@ func TestExtensionCommandVisibilityUsesExactTargetPairs(t *testing.T) {
 		},
 		{
 			name:        "macOS architecture mismatch",
-			beacon:      &clientpb.Beacon{OS: "darwin", Arch: "amd64"},
+			pulse:      &clientpb.Pulse{OS: "darwin", Arch: "amd64"},
 			wantVisible: false,
 		},
 		{
@@ -496,14 +496,14 @@ func TestExtensionCommandVisibilityUsesExactTargetPairs(t *testing.T) {
 		},
 		{
 			name:        "unsupported native extension target",
-			beacon:      &clientpb.Beacon{OS: "linux", Arch: "riscv64"},
+			pulse:      &clientpb.Pulse{OS: "linux", Arch: "riscv64"},
 			wantVisible: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			con := newExtensionTestConsole(t, nil, test.session, test.beacon)
+			con := newExtensionTestConsole(t, nil, test.session, test.pulse)
 			command := &cobra.Command{Annotations: makeCommandPlatformFilters(extension)}
 			activeFilters := con.App.Menu(consts.ImplantMenu).ActiveFiltersFor(command)
 			visible := len(activeFilters) == 0

@@ -36,12 +36,12 @@ func ExitCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		if err != nil {
 			flushAndExit(con, 1)
 		}
-		beacons, err := con.Rpc.GetBeacons(context.Background(), &commonpb.Empty{})
+		pulses, err := con.Rpc.GetPulses(context.Background(), &commonpb.Empty{})
 		if err != nil {
 			flushAndExit(con, 1)
 		}
-		if 0 < len(sessions.Sessions) || 0 < len(beacons.Beacons) {
-			con.Printf("There are %d active sessions and %d active beacons.\n", len(sessions.Sessions), len(beacons.Beacons))
+		if 0 < len(sessions.Sessions) || 0 < len(pulses.Pulses) {
+			con.Printf("There are %d active sessions and %d active pulses.\n", len(sessions.Sessions), len(pulses.Pulses))
 			confirm := false
 			forms.Confirm("Are you sure you want to exit?", &confirm)
 			if !confirm {

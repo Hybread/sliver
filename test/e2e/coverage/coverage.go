@@ -52,7 +52,7 @@ const (
 	TransportHTTP = "http"
 
 	ImplantModeSession = "session"
-	ImplantModeBeacon  = "beacon"
+	ImplantModePulse  = "pulse"
 )
 
 // Valid reports whether s is a supported result status.

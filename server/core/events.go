@@ -34,7 +34,7 @@ type Event struct {
 	Session *Session
 	Job     *Job
 	Client  *Client
-	Beacon  *models.Beacon
+	Pulse  *models.Pulse
 
 	EventType string
 

@@ -1,4 +1,4 @@
-package beacons
+package pulses
 
 /*
 	Sliver Implant Framework
@@ -29,59 +29,59 @@ import (
 	"github.com/bishopfox/sliver/protobuf/commonpb"
 )
 
-// BeaconsPruneCmd - Prune stale beacons automatically
-func BeaconsPruneCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+// PulsesPruneCmd - Prune stale pulses automatically
+func PulsesPruneCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	duration, _ := cmd.Flags().GetString("duration")
 	pruneDuration, err := time.ParseDuration(duration)
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 		return
 	}
-	con.PrintInfof("Pruning beacons that missed their last checking by %s or more...\n\n", pruneDuration)
+	con.PrintInfof("Pruning pulses that missed their last checking by %s or more...\n\n", pruneDuration)
 	grpcCtx, cancel := con.GrpcContext(cmd)
 	defer cancel()
-	beacons, err := con.Rpc.GetBeacons(grpcCtx, &commonpb.Empty{})
+	pulses, err := con.Rpc.GetPulses(grpcCtx, &commonpb.Empty{})
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 		return
 	}
-	pruneBeacons := []*clientpb.Beacon{}
-	for _, beacon := range beacons.Beacons {
-		nextCheckin := time.Unix(beacon.NextCheckin, 0)
+	prunePulses := []*clientpb.Pulse{}
+	for _, pulse := range pulses.Pulses {
+		nextCheckin := time.Unix(pulse.NextCheckin, 0)
 		if time.Now().Before(nextCheckin) {
 			continue
 		}
 		delta := time.Since(nextCheckin)
 		if pruneDuration <= delta {
-			pruneBeacons = append(pruneBeacons, beacon)
+			prunePulses = append(prunePulses, pulse)
 		}
 	}
-	if len(pruneBeacons) == 0 {
-		con.PrintInfof("No beacons to prune.\n")
+	if len(prunePulses) == 0 {
+		con.PrintInfof("No pulses to prune.\n")
 		return
 	}
-	con.PrintWarnf("The following beacons and their tasks will be removed:\n")
-	for index, beacon := range pruneBeacons {
-		beacon, err := con.Rpc.GetBeacon(grpcCtx, &clientpb.Beacon{ID: beacon.ID})
+	con.PrintWarnf("The following pulses and their tasks will be removed:\n")
+	for index, pulse := range prunePulses {
+		pulse, err := con.Rpc.GetPulse(grpcCtx, &clientpb.Pulse{ID: pulse.ID})
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			continue
 		}
-		con.Printf("\t%d. %s (%s)\n", (index + 1), beacon.Name, beacon.ID)
+		con.Printf("\t%d. %s (%s)\n", (index + 1), pulse.Name, pulse.ID)
 	}
 	con.Println()
 	confirm := false
-	_ = forms.Confirm("Prune these beacons?", &confirm)
+	_ = forms.Confirm("Prune these pulses?", &confirm)
 	if !confirm {
 		return
 	}
 	errCount := 0
-	for _, beacon := range pruneBeacons {
-		_, err := con.Rpc.RmBeacon(grpcCtx, &clientpb.Beacon{ID: beacon.ID})
+	for _, pulse := range prunePulses {
+		_, err := con.Rpc.RmPulse(grpcCtx, &clientpb.Pulse{ID: pulse.ID})
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			errCount++
 		}
 	}
-	con.PrintInfof("Pruned %d beacon(s)\n", len(pruneBeacons)-errCount)
+	con.PrintInfof("Pruned %d pulse(s)\n", len(prunePulses)-errCount)
 }

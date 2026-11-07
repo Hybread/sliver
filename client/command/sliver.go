@@ -175,7 +175,7 @@ func SliverCommands(con *client.SliverClient) console.Commands {
 			}
 		}
 
-		// Rehydrate CNA-defined Beacon aliases from the persistent OPFOR runtime.
+		// Rehydrate CNA-defined Pulse aliases from the persistent OPFOR runtime.
 		opfor.RegisterCommands(sliver, con)
 
 		// [ Post-command declaration setup ]----------------------------------------
@@ -187,7 +187,7 @@ func SliverCommands(con *client.SliverClient) console.Commands {
 		sliver.InitDefaultHelpCmd()
 		sliver.SetHelpCommandGroupID(consts.SliverCoreHelpGroup)
 
-		// Compute which commands should be available based on the current session/beacon.
+		// Compute which commands should be available based on the current session/pulse.
 		con.ExposeCommands()
 
 		return sliver

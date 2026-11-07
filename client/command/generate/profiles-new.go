@@ -66,21 +66,21 @@ func ProfilesNewCmd(cmd *cobra.Command, con *console.SliverClient, args []string
 	}
 }
 
-// ProfilesNewBeaconCmd - Create a new beacon profile.
-func ProfilesNewBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+// ProfilesNewPulseCmd - Create a new pulse profile.
+func ProfilesNewPulseCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 	var name string
-	if shouldRunGenerateProfilesNewBeaconForm(cmd, con, args) {
-		result, err := forms.GenerateProfilesNewBeaconForm()
+	if shouldRunGenerateProfilesNewPulseForm(cmd, con, args) {
+		result, err := forms.GenerateProfilesNewPulseForm()
 		if err != nil {
 			if errors.Is(err, forms.ErrUserAborted) {
 				return
 			}
-			con.PrintErrorf("Profiles new beacon form failed: %s\n", err)
+			con.PrintErrorf("Profiles new pulse form failed: %s\n", err)
 			return
 		}
-		profileName, err := applyGenerateProfilesNewBeaconForm(cmd, result)
+		profileName, err := applyGenerateProfilesNewPulseForm(cmd, result)
 		if err != nil {
-			con.PrintErrorf("Failed to apply profiles new beacon form values: %s\n", err)
+			con.PrintErrorf("Failed to apply profiles new pulse form values: %s\n", err)
 			return
 		}
 		name = profileName
@@ -96,8 +96,8 @@ func ProfilesNewBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []
 	if config == nil {
 		return
 	}
-	config.IsBeacon = true
-	err := parseBeaconFlags(cmd, config)
+	config.IsPulse = true
+	err := parsePulseFlags(cmd, config)
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 		return
@@ -110,7 +110,7 @@ func ProfilesNewBeaconCmd(cmd *cobra.Command, con *console.SliverClient, args []
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 	} else {
-		con.PrintInfof("Saved new implant profile (beacon) %s\n", resp.Name)
+		con.PrintInfof("Saved new implant profile (pulse) %s\n", resp.Name)
 	}
 }
 
@@ -180,7 +180,7 @@ func applyGenerateProfilesNewForm(cmd *cobra.Command, result *forms.GenerateProf
 	return profileName, nil
 }
 
-func shouldRunGenerateProfilesNewBeaconForm(cmd *cobra.Command, con *console.SliverClient, args []string) bool {
+func shouldRunGenerateProfilesNewPulseForm(cmd *cobra.Command, con *console.SliverClient, args []string) bool {
 	if con == nil || con.IsCLI {
 		return false
 	}
@@ -190,7 +190,7 @@ func shouldRunGenerateProfilesNewBeaconForm(cmd *cobra.Command, con *console.Sli
 	return cmd.Flags().NFlag() == 0
 }
 
-func applyGenerateProfilesNewBeaconForm(cmd *cobra.Command, result *forms.GenerateProfilesNewBeaconFormResult) (string, error) {
+func applyGenerateProfilesNewPulseForm(cmd *cobra.Command, result *forms.GenerateProfilesNewPulseFormResult) (string, error) {
 	if err := cmd.Flags().Set("os", result.OS); err != nil {
 		return "", err
 	}

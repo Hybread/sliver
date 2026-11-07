@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	beaconTaskPollInterval   = 250 * time.Millisecond
+	pulseTaskPollInterval   = 250 * time.Millisecond
 	bofRequestFallback       = 59 * time.Second
 	bofRequestDeadlineMargin = time.Second
 
@@ -35,8 +35,8 @@ const (
 
 type opforRPC interface {
 	GetSessions(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Sessions, error)
-	GetBeacons(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Beacons, error)
-	GetBeaconTaskContent(context.Context, *clientpb.BeaconTask, ...grpc.CallOption) (*clientpb.BeaconTask, error)
+	GetPulses(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Pulses, error)
+	GetPulseTaskContent(context.Context, *clientpb.PulseTask, ...grpc.CallOption) (*clientpb.PulseTask, error)
 	CallExtension(context.Context, *sliverpb.CallExtensionReq, ...grpc.CallOption) (*sliverpb.CallExtension, error)
 }
 
@@ -44,15 +44,15 @@ var _ opforRPC = (rpcpb.SliverRPCClient)(nil)
 
 type resolvedTarget struct {
 	session *clientpb.Session
-	beacon  *clientpb.Beacon
+	pulse  *clientpb.Pulse
 }
 
 func (target resolvedTarget) id() string {
 	if target.session != nil {
 		return target.session.ID
 	}
-	if target.beacon != nil {
-		return target.beacon.ID
+	if target.pulse != nil {
+		return target.pulse.ID
 	}
 	return ""
 }
@@ -61,8 +61,8 @@ func (target resolvedTarget) capabilities() uint64 {
 	if target.session != nil {
 		return target.session.Capabilities
 	}
-	if target.beacon != nil {
-		return target.beacon.Capabilities
+	if target.pulse != nil {
+		return target.pulse.Capabilities
 	}
 	return 0
 }
@@ -71,8 +71,8 @@ func (target resolvedTarget) arch() string {
 	if target.session != nil {
 		return target.session.Arch
 	}
-	if target.beacon != nil {
-		return target.beacon.Arch
+	if target.pulse != nil {
+		return target.pulse.Arch
 	}
 	return ""
 }
@@ -101,23 +101,23 @@ func (manager *Manager) resolveTarget(ctx context.Context, id string) (resolvedT
 			return resolvedTarget{session: session}, nil
 		}
 	}
-	beacons, err := rpc.GetBeacons(ctx, &commonpb.Empty{})
+	pulses, err := rpc.GetPulses(ctx, &commonpb.Empty{})
 	if err != nil {
-		return resolvedTarget{}, fmt.Errorf("opfor: list beacons: %w", err)
+		return resolvedTarget{}, fmt.Errorf("opfor: list pulses: %w", err)
 	}
-	for _, beacon := range beacons.GetBeacons() {
-		if beacon != nil && beacon.ID == id {
-			return resolvedTarget{beacon: beacon}, nil
+	for _, pulse := range pulses.GetPulses() {
+		if pulse != nil && pulse.ID == id {
+			return resolvedTarget{pulse: pulse}, nil
 		}
 	}
 	return resolvedTarget{}, fmt.Errorf("opfor: target %q was not found", id)
 }
 
-func (manager *Manager) executeBeacon(
+func (manager *Manager) executePulse(
 	ctx context.Context,
-	request opforengine.AggressorBeaconExecutionRequest,
+	request opforengine.AggressorPulseExecutionRequest,
 ) (opforengine.Value, error) {
-	targetID, call, err := manager.prepareBeaconExecution(ctx, request)
+	targetID, call, err := manager.preparePulseExecution(ctx, request)
 	if err != nil {
 		return opforengine.Null(), err
 	}
@@ -140,25 +140,25 @@ func (manager *Manager) executeBeacon(
 		taskID = response.GetResponse().GetTaskID()
 	}
 
-	return manager.completeBeaconExecution(ctx, request, taskID, response)
+	return manager.completePulseExecution(ctx, request, taskID, response)
 }
 
-func (manager *Manager) prepareBeaconExecution(
+func (manager *Manager) preparePulseExecution(
 	ctx context.Context,
-	request opforengine.AggressorBeaconExecutionRequest,
+	request opforengine.AggressorPulseExecutionRequest,
 ) (string, *sliverpb.CallExtensionReq, error) {
-	if request.Kind != opforengine.AggressorBeaconInlineExecute {
-		return "", nil, fmt.Errorf("opfor: unsupported Beacon execution function %q", request.Name)
+	if request.Kind != opforengine.AggressorPulseInlineExecute {
+		return "", nil, fmt.Errorf("opfor: unsupported Pulse execution function %q", request.Name)
 	}
 	if err := ctx.Err(); err != nil {
 		return "", nil, err
 	}
-	targetID := request.BeaconID.String()
+	targetID := request.PulseID.String()
 	target, err := manager.resolveTarget(ctx, targetID)
 	if err != nil {
 		return "", nil, err
 	}
-	if _, err := beaconArchitecture(target.arch()); err != nil {
+	if _, err := pulseArchitecture(target.arch()); err != nil {
 		return "", nil, err
 	}
 	if target.capabilities()&sliverpb.CapabilityBOFV1 == 0 {
@@ -167,7 +167,7 @@ func (manager *Manager) prepareBeaconExecution(
 
 	bofData, ok := request.Content.Bytes()
 	if !ok {
-		return "", nil, errors.New("opfor: beacon_inline_execute BOF content is not a byte string")
+		return "", nil, errors.New("opfor: pulse_inline_execute BOF content is not a byte string")
 	}
 	packed, ok := request.PackedArguments.Bytes()
 	if !ok {
@@ -191,9 +191,9 @@ func (manager *Manager) prepareBeaconExecution(
 	}, nil
 }
 
-func (manager *Manager) completeBeaconExecution(
+func (manager *Manager) completePulseExecution(
 	ctx context.Context,
-	request opforengine.AggressorBeaconExecutionRequest,
+	request opforengine.AggressorPulseExecutionRequest,
 	taskID string,
 	response *sliverpb.CallExtension,
 ) (opforengine.Value, error) {
@@ -259,7 +259,7 @@ func bofOutputRecords(response *sliverpb.CallExtension) []*sliverpb.BOFOutput {
 // is_final marks the final data record, independently of task lifecycle events.
 func invokeBOFOutputCallback(
 	ctx context.Context,
-	request opforengine.AggressorBeaconExecutionRequest,
+	request opforengine.AggressorPulseExecutionRequest,
 	record *sliverpb.BOFOutput,
 	chunkNumber int,
 	isFinal bool,
@@ -281,7 +281,7 @@ func invokeBOFOutputCallback(
 	information.Set("is_final", opforengine.Bool(isFinal))
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.BeaconID,
+		request.PulseID,
 		opforengine.BinaryString(record.GetData()),
 		opforengine.HashValue(information),
 	)
@@ -290,7 +290,7 @@ func invokeBOFOutputCallback(
 
 func invokeBOFLifecycleCallback(
 	ctx context.Context,
-	request opforengine.AggressorBeaconExecutionRequest,
+	request opforengine.AggressorPulseExecutionRequest,
 	kind string,
 	taskID string,
 	result []byte,
@@ -305,7 +305,7 @@ func invokeBOFLifecycleCallback(
 	}
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.BeaconID,
+		request.PulseID,
 		opforengine.BinaryString(result),
 		opforengine.HashValue(information),
 	)
@@ -314,7 +314,7 @@ func invokeBOFLifecycleCallback(
 
 func notifyBOFLifecycleError(
 	ctx context.Context,
-	request opforengine.AggressorBeaconExecutionRequest,
+	request opforengine.AggressorPulseExecutionRequest,
 	taskID string,
 	executionErr error,
 ) error {
@@ -397,8 +397,8 @@ func targetRequest(ctx context.Context, target resolvedTarget) *commonpb.Request
 	if target.session != nil {
 		request.SessionID = target.session.ID
 		request.Async = false
-	} else if target.beacon != nil {
-		request.BeaconID = target.beacon.ID
+	} else if target.pulse != nil {
+		request.PulseID = target.pulse.ID
 		request.Async = true
 	}
 	return request
@@ -438,22 +438,22 @@ func (manager *Manager) resolveCallExtensionResponse(
 		return nil, errors.New("opfor: asynchronous BOF execution returned no task ID")
 	}
 
-	ticker := time.NewTicker(beaconTaskPollInterval)
+	ticker := time.NewTicker(pulseTaskPollInterval)
 	defer ticker.Stop()
 	for {
-		task, err := rpc.GetBeaconTaskContent(ctx, &clientpb.BeaconTask{ID: taskID})
+		task, err := rpc.GetPulseTaskContent(ctx, &clientpb.PulseTask{ID: taskID})
 		if err != nil {
-			return nil, fmt.Errorf("opfor: fetch beacon task %s: %w", taskID, err)
+			return nil, fmt.Errorf("opfor: fetch pulse task %s: %w", taskID, err)
 		}
 		state := strings.ToLower(task.GetState())
 		switch state {
 		case "completed":
 			if len(task.Response) == 0 {
-				return nil, fmt.Errorf("opfor: beacon task %s returned an empty response", taskID)
+				return nil, fmt.Errorf("opfor: pulse task %s returned an empty response", taskID)
 			}
 			completed := &sliverpb.CallExtension{}
 			if err := proto.Unmarshal(task.Response, completed); err != nil {
-				return nil, fmt.Errorf("opfor: decode beacon task %s response: %w", taskID, err)
+				return nil, fmt.Errorf("opfor: decode pulse task %s response: %w", taskID, err)
 			}
 			if completed.Response == nil {
 				completed.Response = &commonpb.Response{}
@@ -463,7 +463,7 @@ func (manager *Manager) resolveCallExtensionResponse(
 			}
 			return completed, nil
 		case "failed", "canceled", "cancelled":
-			return nil, fmt.Errorf("opfor: beacon task %s %s", taskID, state)
+			return nil, fmt.Errorf("opfor: pulse task %s %s", taskID, state)
 		}
 
 		select {
@@ -476,20 +476,20 @@ func (manager *Manager) resolveCallExtensionResponse(
 
 func (manager *Manager) publishTranscript(
 	_ context.Context,
-	record opforengine.AggressorBeaconTranscriptRecord,
+	record opforengine.AggressorPulseTranscriptRecord,
 ) error {
-	target := record.BeaconID.String()
+	target := record.PulseID.String()
 	text := record.Text.String()
 	prefix := ""
 	if target != "" {
 		prefix = "[" + target + "] "
 	}
 	switch record.Kind {
-	case opforengine.AggressorBeaconTranscriptError,
-		opforengine.AggressorBeaconTranscriptJobError:
+	case opforengine.AggressorPulseTranscriptError,
+		opforengine.AggressorPulseTranscriptJobError:
 		manager.output.PrintErrorf("%s%s\n", prefix, text)
-	case opforengine.AggressorBeaconTranscriptTask,
-		opforengine.AggressorBeaconTranscriptTaskCompleted:
+	case opforengine.AggressorPulseTranscriptTask,
+		opforengine.AggressorPulseTranscriptTaskCompleted:
 		manager.output.PrintInfof("%s%s\n", prefix, text)
 	default:
 		manager.output.Printf("%s%s\n", prefix, text)

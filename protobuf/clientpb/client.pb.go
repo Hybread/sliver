@@ -3341,7 +3341,7 @@ func (x *Session) GetCapabilities() uint64 {
 	return 0
 }
 
-type Beacon struct {
+type Pulse struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	ID                  string                 `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Name                string                 `protobuf:"bytes,2,opt,name=Name,proto3" json:"Name,omitempty"`
@@ -3377,20 +3377,20 @@ type Beacon struct {
 	sizeCache           protoimpl.SizeCache
 }
 
-func (x *Beacon) Reset() {
-	*x = Beacon{}
+func (x *Pulse) Reset() {
+	*x = Pulse{}
 	mi := &file_clientpb_client_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Beacon) String() string {
+func (x *Pulse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Beacon) ProtoMessage() {}
+func (*Pulse) ProtoMessage() {}
 
-func (x *Beacon) ProtoReflect() protoreflect.Message {
+func (x *Pulse) ProtoReflect() protoreflect.Message {
 	mi := &file_clientpb_client_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3402,242 +3402,242 @@ func (x *Beacon) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Beacon.ProtoReflect.Descriptor instead.
-func (*Beacon) Descriptor() ([]byte, []int) {
+// Deprecated: Use Pulse.ProtoReflect.Descriptor instead.
+func (*Pulse) Descriptor() ([]byte, []int) {
 	return file_clientpb_client_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Beacon) GetID() string {
+func (x *Pulse) GetID() string {
 	if x != nil {
 		return x.ID
 	}
 	return ""
 }
 
-func (x *Beacon) GetName() string {
+func (x *Pulse) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *Beacon) GetHostname() string {
+func (x *Pulse) GetHostname() string {
 	if x != nil {
 		return x.Hostname
 	}
 	return ""
 }
 
-func (x *Beacon) GetUUID() string {
+func (x *Pulse) GetUUID() string {
 	if x != nil {
 		return x.UUID
 	}
 	return ""
 }
 
-func (x *Beacon) GetUsername() string {
+func (x *Pulse) GetUsername() string {
 	if x != nil {
 		return x.Username
 	}
 	return ""
 }
 
-func (x *Beacon) GetUID() string {
+func (x *Pulse) GetUID() string {
 	if x != nil {
 		return x.UID
 	}
 	return ""
 }
 
-func (x *Beacon) GetGID() string {
+func (x *Pulse) GetGID() string {
 	if x != nil {
 		return x.GID
 	}
 	return ""
 }
 
-func (x *Beacon) GetOS() string {
+func (x *Pulse) GetOS() string {
 	if x != nil {
 		return x.OS
 	}
 	return ""
 }
 
-func (x *Beacon) GetArch() string {
+func (x *Pulse) GetArch() string {
 	if x != nil {
 		return x.Arch
 	}
 	return ""
 }
 
-func (x *Beacon) GetTransport() string {
+func (x *Pulse) GetTransport() string {
 	if x != nil {
 		return x.Transport
 	}
 	return ""
 }
 
-func (x *Beacon) GetRemoteAddress() string {
+func (x *Pulse) GetRemoteAddress() string {
 	if x != nil {
 		return x.RemoteAddress
 	}
 	return ""
 }
 
-func (x *Beacon) GetPID() int32 {
+func (x *Pulse) GetPID() int32 {
 	if x != nil {
 		return x.PID
 	}
 	return 0
 }
 
-func (x *Beacon) GetFilename() string {
+func (x *Pulse) GetFilename() string {
 	if x != nil {
 		return x.Filename
 	}
 	return ""
 }
 
-func (x *Beacon) GetLastCheckin() int64 {
+func (x *Pulse) GetLastCheckin() int64 {
 	if x != nil {
 		return x.LastCheckin
 	}
 	return 0
 }
 
-func (x *Beacon) GetActiveC2() string {
+func (x *Pulse) GetActiveC2() string {
 	if x != nil {
 		return x.ActiveC2
 	}
 	return ""
 }
 
-func (x *Beacon) GetVersion() string {
+func (x *Pulse) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
 	return ""
 }
 
-func (x *Beacon) GetEvasion() bool {
+func (x *Pulse) GetEvasion() bool {
 	if x != nil {
 		return x.Evasion
 	}
 	return false
 }
 
-func (x *Beacon) GetIsDead() bool {
+func (x *Pulse) GetIsDead() bool {
 	if x != nil {
 		return x.IsDead
 	}
 	return false
 }
 
-func (x *Beacon) GetProxyURL() string {
+func (x *Pulse) GetProxyURL() string {
 	if x != nil {
 		return x.ProxyURL
 	}
 	return ""
 }
 
-func (x *Beacon) GetReconnectInterval() int64 {
+func (x *Pulse) GetReconnectInterval() int64 {
 	if x != nil {
 		return x.ReconnectInterval
 	}
 	return 0
 }
 
-func (x *Beacon) GetInterval() int64 {
+func (x *Pulse) GetInterval() int64 {
 	if x != nil {
 		return x.Interval
 	}
 	return 0
 }
 
-func (x *Beacon) GetJitter() int64 {
+func (x *Pulse) GetJitter() int64 {
 	if x != nil {
 		return x.Jitter
 	}
 	return 0
 }
 
-func (x *Beacon) GetBurned() bool {
+func (x *Pulse) GetBurned() bool {
 	if x != nil {
 		return x.Burned
 	}
 	return false
 }
 
-func (x *Beacon) GetNextCheckin() int64 {
+func (x *Pulse) GetNextCheckin() int64 {
 	if x != nil {
 		return x.NextCheckin
 	}
 	return 0
 }
 
-func (x *Beacon) GetTasksCount() int64 {
+func (x *Pulse) GetTasksCount() int64 {
 	if x != nil {
 		return x.TasksCount
 	}
 	return 0
 }
 
-func (x *Beacon) GetTasksCountCompleted() int64 {
+func (x *Pulse) GetTasksCountCompleted() int64 {
 	if x != nil {
 		return x.TasksCountCompleted
 	}
 	return 0
 }
 
-func (x *Beacon) GetLocale() string {
+func (x *Pulse) GetLocale() string {
 	if x != nil {
 		return x.Locale
 	}
 	return ""
 }
 
-func (x *Beacon) GetFirstContact() int64 {
+func (x *Pulse) GetFirstContact() int64 {
 	if x != nil {
 		return x.FirstContact
 	}
 	return 0
 }
 
-func (x *Beacon) GetIntegrity() string {
+func (x *Pulse) GetIntegrity() string {
 	if x != nil {
 		return x.Integrity
 	}
 	return ""
 }
 
-func (x *Beacon) GetCapabilities() uint64 {
+func (x *Pulse) GetCapabilities() uint64 {
 	if x != nil {
 		return x.Capabilities
 	}
 	return 0
 }
 
-type Beacons struct {
+type Pulses struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Beacons       []*Beacon              `protobuf:"bytes,2,rep,name=Beacons,proto3" json:"Beacons,omitempty"`
+	Pulses       []*Pulse              `protobuf:"bytes,2,rep,name=Pulses,proto3" json:"Pulses,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Beacons) Reset() {
-	*x = Beacons{}
+func (x *Pulses) Reset() {
+	*x = Pulses{}
 	mi := &file_clientpb_client_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Beacons) String() string {
+func (x *Pulses) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Beacons) ProtoMessage() {}
+func (*Pulses) ProtoMessage() {}
 
-func (x *Beacons) ProtoReflect() protoreflect.Message {
+func (x *Pulses) ProtoReflect() protoreflect.Message {
 	mi := &file_clientpb_client_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3649,22 +3649,22 @@ func (x *Beacons) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Beacons.ProtoReflect.Descriptor instead.
-func (*Beacons) Descriptor() ([]byte, []int) {
+// Deprecated: Use Pulses.ProtoReflect.Descriptor instead.
+func (*Pulses) Descriptor() ([]byte, []int) {
 	return file_clientpb_client_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Beacons) GetBeacons() []*Beacon {
+func (x *Pulses) GetPulses() []*Pulse {
 	if x != nil {
-		return x.Beacons
+		return x.Pulses
 	}
 	return nil
 }
 
-type BeaconTask struct {
+type PulseTask struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ID            string                 `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	BeaconID      string                 `protobuf:"bytes,2,opt,name=BeaconID,proto3" json:"BeaconID,omitempty"`
+	PulseID      string                 `protobuf:"bytes,2,opt,name=PulseID,proto3" json:"PulseID,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,3,opt,name=CreatedAt,proto3" json:"CreatedAt,omitempty"`
 	State         string                 `protobuf:"bytes,4,opt,name=State,proto3" json:"State,omitempty"`
 	SentAt        int64                  `protobuf:"varint,5,opt,name=SentAt,proto3" json:"SentAt,omitempty"`
@@ -3676,20 +3676,20 @@ type BeaconTask struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeaconTask) Reset() {
-	*x = BeaconTask{}
+func (x *PulseTask) Reset() {
+	*x = PulseTask{}
 	mi := &file_clientpb_client_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeaconTask) String() string {
+func (x *PulseTask) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeaconTask) ProtoMessage() {}
+func (*PulseTask) ProtoMessage() {}
 
-func (x *BeaconTask) ProtoReflect() protoreflect.Message {
+func (x *PulseTask) ProtoReflect() protoreflect.Message {
 	mi := &file_clientpb_client_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3701,96 +3701,96 @@ func (x *BeaconTask) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeaconTask.ProtoReflect.Descriptor instead.
-func (*BeaconTask) Descriptor() ([]byte, []int) {
+// Deprecated: Use PulseTask.ProtoReflect.Descriptor instead.
+func (*PulseTask) Descriptor() ([]byte, []int) {
 	return file_clientpb_client_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *BeaconTask) GetID() string {
+func (x *PulseTask) GetID() string {
 	if x != nil {
 		return x.ID
 	}
 	return ""
 }
 
-func (x *BeaconTask) GetBeaconID() string {
+func (x *PulseTask) GetPulseID() string {
 	if x != nil {
-		return x.BeaconID
+		return x.PulseID
 	}
 	return ""
 }
 
-func (x *BeaconTask) GetCreatedAt() int64 {
+func (x *PulseTask) GetCreatedAt() int64 {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return 0
 }
 
-func (x *BeaconTask) GetState() string {
+func (x *PulseTask) GetState() string {
 	if x != nil {
 		return x.State
 	}
 	return ""
 }
 
-func (x *BeaconTask) GetSentAt() int64 {
+func (x *PulseTask) GetSentAt() int64 {
 	if x != nil {
 		return x.SentAt
 	}
 	return 0
 }
 
-func (x *BeaconTask) GetCompletedAt() int64 {
+func (x *PulseTask) GetCompletedAt() int64 {
 	if x != nil {
 		return x.CompletedAt
 	}
 	return 0
 }
 
-func (x *BeaconTask) GetRequest() []byte {
+func (x *PulseTask) GetRequest() []byte {
 	if x != nil {
 		return x.Request
 	}
 	return nil
 }
 
-func (x *BeaconTask) GetResponse() []byte {
+func (x *PulseTask) GetResponse() []byte {
 	if x != nil {
 		return x.Response
 	}
 	return nil
 }
 
-func (x *BeaconTask) GetDescription() string {
+func (x *PulseTask) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-type BeaconTasks struct {
+type PulseTasks struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BeaconID      string                 `protobuf:"bytes,1,opt,name=BeaconID,proto3" json:"BeaconID,omitempty"`
-	Tasks         []*BeaconTask          `protobuf:"bytes,2,rep,name=Tasks,proto3" json:"Tasks,omitempty"`
+	PulseID      string                 `protobuf:"bytes,1,opt,name=PulseID,proto3" json:"PulseID,omitempty"`
+	Tasks         []*PulseTask          `protobuf:"bytes,2,rep,name=Tasks,proto3" json:"Tasks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeaconTasks) Reset() {
-	*x = BeaconTasks{}
+func (x *PulseTasks) Reset() {
+	*x = PulseTasks{}
 	mi := &file_clientpb_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeaconTasks) String() string {
+func (x *PulseTasks) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeaconTasks) ProtoMessage() {}
+func (*PulseTasks) ProtoMessage() {}
 
-func (x *BeaconTasks) ProtoReflect() protoreflect.Message {
+func (x *PulseTasks) ProtoReflect() protoreflect.Message {
 	mi := &file_clientpb_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3802,47 +3802,47 @@ func (x *BeaconTasks) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeaconTasks.ProtoReflect.Descriptor instead.
-func (*BeaconTasks) Descriptor() ([]byte, []int) {
+// Deprecated: Use PulseTasks.ProtoReflect.Descriptor instead.
+func (*PulseTasks) Descriptor() ([]byte, []int) {
 	return file_clientpb_client_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *BeaconTasks) GetBeaconID() string {
+func (x *PulseTasks) GetPulseID() string {
 	if x != nil {
-		return x.BeaconID
+		return x.PulseID
 	}
 	return ""
 }
 
-func (x *BeaconTasks) GetTasks() []*BeaconTask {
+func (x *PulseTasks) GetTasks() []*PulseTask {
 	if x != nil {
 		return x.Tasks
 	}
 	return nil
 }
 
-type BeaconIntegrity struct {
+type PulseIntegrity struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BeaconID      string                 `protobuf:"bytes,1,opt,name=BeaconID,proto3" json:"BeaconID,omitempty"`
+	PulseID      string                 `protobuf:"bytes,1,opt,name=PulseID,proto3" json:"PulseID,omitempty"`
 	Integrity     string                 `protobuf:"bytes,2,opt,name=Integrity,proto3" json:"Integrity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BeaconIntegrity) Reset() {
-	*x = BeaconIntegrity{}
+func (x *PulseIntegrity) Reset() {
+	*x = PulseIntegrity{}
 	mi := &file_clientpb_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BeaconIntegrity) String() string {
+func (x *PulseIntegrity) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BeaconIntegrity) ProtoMessage() {}
+func (*PulseIntegrity) ProtoMessage() {}
 
-func (x *BeaconIntegrity) ProtoReflect() protoreflect.Message {
+func (x *PulseIntegrity) ProtoReflect() protoreflect.Message {
 	mi := &file_clientpb_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3854,19 +3854,19 @@ func (x *BeaconIntegrity) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BeaconIntegrity.ProtoReflect.Descriptor instead.
-func (*BeaconIntegrity) Descriptor() ([]byte, []int) {
+// Deprecated: Use PulseIntegrity.ProtoReflect.Descriptor instead.
+func (*PulseIntegrity) Descriptor() ([]byte, []int) {
 	return file_clientpb_client_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *BeaconIntegrity) GetBeaconID() string {
+func (x *PulseIntegrity) GetPulseID() string {
 	if x != nil {
-		return x.BeaconID
+		return x.PulseID
 	}
 	return ""
 }
 
-func (x *BeaconIntegrity) GetIntegrity() string {
+func (x *PulseIntegrity) GetIntegrity() string {
 	if x != nil {
 		return x.Integrity
 	}
@@ -4058,9 +4058,9 @@ type ImplantConfig struct {
 	ID                  string                 `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	ImplantBuilds       []*ImplantBuild        `protobuf:"bytes,2,rep,name=ImplantBuilds,proto3" json:"ImplantBuilds,omitempty"`
 	ImplantProfileID    string                 `protobuf:"bytes,3,opt,name=ImplantProfileID,proto3" json:"ImplantProfileID,omitempty"`
-	IsBeacon            bool                   `protobuf:"varint,4,opt,name=IsBeacon,proto3" json:"IsBeacon,omitempty"`
-	BeaconInterval      int64                  `protobuf:"varint,5,opt,name=BeaconInterval,proto3" json:"BeaconInterval,omitempty"`
-	BeaconJitter        int64                  `protobuf:"varint,6,opt,name=BeaconJitter,proto3" json:"BeaconJitter,omitempty"`
+	IsPulse            bool                   `protobuf:"varint,4,opt,name=IsPulse,proto3" json:"IsPulse,omitempty"`
+	PulseInterval      int64                  `protobuf:"varint,5,opt,name=PulseInterval,proto3" json:"PulseInterval,omitempty"`
+	PulseJitter        int64                  `protobuf:"varint,6,opt,name=PulseJitter,proto3" json:"PulseJitter,omitempty"`
 	GOOS                string                 `protobuf:"bytes,7,opt,name=GOOS,proto3" json:"GOOS,omitempty"`
 	GOARCH              string                 `protobuf:"bytes,8,opt,name=GOARCH,proto3" json:"GOARCH,omitempty"`
 	Debug               bool                   `protobuf:"varint,10,opt,name=Debug,proto3" json:"Debug,omitempty"`
@@ -4162,23 +4162,23 @@ func (x *ImplantConfig) GetImplantProfileID() string {
 	return ""
 }
 
-func (x *ImplantConfig) GetIsBeacon() bool {
+func (x *ImplantConfig) GetIsPulse() bool {
 	if x != nil {
-		return x.IsBeacon
+		return x.IsPulse
 	}
 	return false
 }
 
-func (x *ImplantConfig) GetBeaconInterval() int64 {
+func (x *ImplantConfig) GetPulseInterval() int64 {
 	if x != nil {
-		return x.BeaconInterval
+		return x.PulseInterval
 	}
 	return 0
 }
 
-func (x *ImplantConfig) GetBeaconJitter() int64 {
+func (x *ImplantConfig) GetPulseJitter() int64 {
 	if x != nil {
-		return x.BeaconJitter
+		return x.PulseJitter
 	}
 	return 0
 }
@@ -7343,7 +7343,7 @@ func (x *Sessions) GetSessions() []*Session {
 type RenameReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SessionID     string                 `protobuf:"bytes,1,opt,name=SessionID,proto3" json:"SessionID,omitempty"`
-	BeaconID      string                 `protobuf:"bytes,2,opt,name=BeaconID,proto3" json:"BeaconID,omitempty"`
+	PulseID      string                 `protobuf:"bytes,2,opt,name=PulseID,proto3" json:"PulseID,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=Name,proto3" json:"Name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -7386,9 +7386,9 @@ func (x *RenameReq) GetSessionID() string {
 	return ""
 }
 
-func (x *RenameReq) GetBeaconID() string {
+func (x *RenameReq) GetPulseID() string {
 	if x != nil {
-		return x.BeaconID
+		return x.PulseID
 	}
 	return ""
 }
@@ -15516,7 +15516,7 @@ type AIConversation struct {
 	ActiveTurnID       string                   `protobuf:"bytes,11,opt,name=ActiveTurnID,proto3" json:"ActiveTurnID,omitempty"`
 	TurnState          AIConversationTurnState  `protobuf:"varint,12,opt,name=TurnState,proto3,enum=clientpb.AIConversationTurnState" json:"TurnState,omitempty"`
 	TargetSessionID    string                   `protobuf:"bytes,13,opt,name=TargetSessionID,proto3" json:"TargetSessionID,omitempty"`
-	TargetBeaconID     string                   `protobuf:"bytes,14,opt,name=TargetBeaconID,proto3" json:"TargetBeaconID,omitempty"`
+	TargetPulseID     string                   `protobuf:"bytes,14,opt,name=TargetPulseID,proto3" json:"TargetPulseID,omitempty"`
 	ThinkingLevel      string                   `protobuf:"bytes,15,opt,name=ThinkingLevel,proto3" json:"ThinkingLevel,omitempty"`
 	ContextWindowUsage *AIContextWindowUsage    `protobuf:"bytes,16,opt,name=ContextWindowUsage,proto3" json:"ContextWindowUsage,omitempty"`
 	unknownFields      protoimpl.UnknownFields
@@ -15644,9 +15644,9 @@ func (x *AIConversation) GetTargetSessionID() string {
 	return ""
 }
 
-func (x *AIConversation) GetTargetBeaconID() string {
+func (x *AIConversation) GetTargetPulseID() string {
 	if x != nil {
-		return x.TargetBeaconID
+		return x.TargetPulseID
 	}
 	return ""
 }
@@ -16821,7 +16821,7 @@ const file_clientpb_client_proto_rawDesc = "" +
 	"\fFirstContact\x18\x1b \x01(\x03R\fFirstContact\x12\x1c\n" +
 	"\tIntegrity\x18\x1c \x01(\tR\tIntegrity\x12\"\n" +
 	"\fCapabilities\x18\x1d \x01(\x04R\fCapabilities\"\xc4\x06\n" +
-	"\x06Beacon\x12\x0e\n" +
+	"\x06Pulse\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12\x12\n" +
 	"\x04Name\x18\x02 \x01(\tR\x04Name\x12\x1a\n" +
 	"\bHostname\x18\x03 \x01(\tR\bHostname\x12\x12\n" +
@@ -16855,12 +16855,12 @@ const file_clientpb_client_proto_rawDesc = "" +
 	"\fFirstContact\x18\x1d \x01(\x03R\fFirstContact\x12\x1c\n" +
 	"\tIntegrity\x18\x1e \x01(\tR\tIntegrity\x12\"\n" +
 	"\fCapabilities\x18\x1f \x01(\x04R\fCapabilities\"5\n" +
-	"\aBeacons\x12*\n" +
-	"\aBeacons\x18\x02 \x03(\v2\x10.clientpb.BeaconR\aBeacons\"\xfe\x01\n" +
+	"\aPulses\x12*\n" +
+	"\aPulses\x18\x02 \x03(\v2\x10.clientpb.PulseR\aPulses\"\xfe\x01\n" +
 	"\n" +
-	"BeaconTask\x12\x0e\n" +
+	"PulseTask\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12\x1a\n" +
-	"\bBeaconID\x18\x02 \x01(\tR\bBeaconID\x12\x1c\n" +
+	"\bPulseID\x18\x02 \x01(\tR\bPulseID\x12\x1c\n" +
 	"\tCreatedAt\x18\x03 \x01(\x03R\tCreatedAt\x12\x14\n" +
 	"\x05State\x18\x04 \x01(\tR\x05State\x12\x16\n" +
 	"\x06SentAt\x18\x05 \x01(\x03R\x06SentAt\x12 \n" +
@@ -16868,11 +16868,11 @@ const file_clientpb_client_proto_rawDesc = "" +
 	"\aRequest\x18\a \x01(\fR\aRequest\x12\x1a\n" +
 	"\bResponse\x18\b \x01(\fR\bResponse\x12 \n" +
 	"\vDescription\x18\t \x01(\tR\vDescription\"U\n" +
-	"\vBeaconTasks\x12\x1a\n" +
-	"\bBeaconID\x18\x01 \x01(\tR\bBeaconID\x12*\n" +
-	"\x05Tasks\x18\x02 \x03(\v2\x14.clientpb.BeaconTaskR\x05Tasks\"K\n" +
-	"\x0fBeaconIntegrity\x12\x1a\n" +
-	"\bBeaconID\x18\x01 \x01(\tR\bBeaconID\x12\x1c\n" +
+	"\vPulseTasks\x12\x1a\n" +
+	"\bPulseID\x18\x01 \x01(\tR\bPulseID\x12*\n" +
+	"\x05Tasks\x18\x02 \x03(\v2\x14.clientpb.PulseTaskR\x05Tasks\"K\n" +
+	"\x0fPulseIntegrity\x12\x1a\n" +
+	"\bPulseID\x18\x01 \x01(\tR\bPulseID\x12\x1c\n" +
 	"\tIntegrity\x18\x02 \x01(\tR\tIntegrity\"c\n" +
 	"\tImplantC2\x12\x0e\n" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12\x1a\n" +
@@ -16892,9 +16892,9 @@ const file_clientpb_client_proto_rawDesc = "" +
 	"\x02ID\x18\x01 \x01(\tR\x02ID\x12<\n" +
 	"\rImplantBuilds\x18\x02 \x03(\v2\x16.clientpb.ImplantBuildR\rImplantBuilds\x12*\n" +
 	"\x10ImplantProfileID\x18\x03 \x01(\tR\x10ImplantProfileID\x12\x1a\n" +
-	"\bIsBeacon\x18\x04 \x01(\bR\bIsBeacon\x12&\n" +
-	"\x0eBeaconInterval\x18\x05 \x01(\x03R\x0eBeaconInterval\x12\"\n" +
-	"\fBeaconJitter\x18\x06 \x01(\x03R\fBeaconJitter\x12\x12\n" +
+	"\bIsPulse\x18\x04 \x01(\bR\bIsPulse\x12&\n" +
+	"\x0ePulseInterval\x18\x05 \x01(\x03R\x0ePulseInterval\x12\"\n" +
+	"\fPulseJitter\x18\x06 \x01(\x03R\fPulseJitter\x12\x12\n" +
 	"\x04GOOS\x18\a \x01(\tR\x04GOOS\x12\x16\n" +
 	"\x06GOARCH\x18\b \x01(\tR\x06GOARCH\x12\x14\n" +
 	"\x05Debug\x18\n" +
@@ -17188,7 +17188,7 @@ const file_clientpb_client_proto_rawDesc = "" +
 	"\bSessions\x18\x01 \x03(\v2\x11.clientpb.SessionR\bSessions\"Y\n" +
 	"\tRenameReq\x12\x1c\n" +
 	"\tSessionID\x18\x01 \x01(\tR\tSessionID\x12\x1a\n" +
-	"\bBeaconID\x18\x02 \x01(\tR\bBeaconID\x12\x12\n" +
+	"\bPulseID\x18\x02 \x01(\tR\bPulseID\x12\x12\n" +
 	"\x04Name\x18\x03 \x01(\tR\x04Name\"R\n" +
 	"\vGenerateReq\x12/\n" +
 	"\x06Config\x18\x01 \x01(\v2\x17.clientpb.ImplantConfigR\x06Config\x12\x12\n" +
@@ -18076,7 +18076,7 @@ const file_clientpb_client_proto_rawDesc = "" +
 	"\fActiveTurnID\x18\v \x01(\tR\fActiveTurnID\x12?\n" +
 	"\tTurnState\x18\f \x01(\x0e2!.clientpb.AIConversationTurnStateR\tTurnState\x12(\n" +
 	"\x0fTargetSessionID\x18\r \x01(\tR\x0fTargetSessionID\x12&\n" +
-	"\x0eTargetBeaconID\x18\x0e \x01(\tR\x0eTargetBeaconID\x12$\n" +
+	"\x0eTargetPulseID\x18\x0e \x01(\tR\x0eTargetPulseID\x12$\n" +
 	"\rThinkingLevel\x18\x0f \x01(\tR\rThinkingLevel\x12N\n" +
 	"\x12ContextWindowUsage\x18\x10 \x01(\v2\x1e.clientpb.AIContextWindowUsageR\x12ContextWindowUsage\"}\n" +
 	"\x16AIConversationMessages\x12&\n" +
@@ -18970,11 +18970,11 @@ var file_clientpb_client_proto_goTypes = []any{
 	(*Version)(nil),                        // 21: clientpb.Version
 	(*ClientLogData)(nil),                  // 22: clientpb.ClientLogData
 	(*Session)(nil),                        // 23: clientpb.Session
-	(*Beacon)(nil),                         // 24: clientpb.Beacon
-	(*Beacons)(nil),                        // 25: clientpb.Beacons
-	(*BeaconTask)(nil),                     // 26: clientpb.BeaconTask
-	(*BeaconTasks)(nil),                    // 27: clientpb.BeaconTasks
-	(*BeaconIntegrity)(nil),                // 28: clientpb.BeaconIntegrity
+	(*Pulse)(nil),                         // 24: clientpb.Pulse
+	(*Pulses)(nil),                        // 25: clientpb.Pulses
+	(*PulseTask)(nil),                     // 26: clientpb.PulseTask
+	(*PulseTasks)(nil),                    // 27: clientpb.PulseTasks
+	(*PulseIntegrity)(nil),                // 28: clientpb.PulseIntegrity
 	(*ImplantC2)(nil),                      // 29: clientpb.ImplantC2
 	(*ShellcodeConfig)(nil),                // 30: clientpb.ShellcodeConfig
 	(*ImplantConfig)(nil),                  // 31: clientpb.ImplantConfig
@@ -19142,8 +19142,8 @@ var file_clientpb_client_proto_goTypes = []any{
 	(*commonpb.Response)(nil),              // 193: commonpb.Response
 }
 var file_clientpb_client_proto_depIdxs = []int32{
-	24,  // 0: clientpb.Beacons.Beacons:type_name -> clientpb.Beacon
-	26,  // 1: clientpb.BeaconTasks.Tasks:type_name -> clientpb.BeaconTask
+	24,  // 0: clientpb.Pulses.Pulses:type_name -> clientpb.Pulse
+	26,  // 1: clientpb.PulseTasks.Tasks:type_name -> clientpb.PulseTask
 	47,  // 2: clientpb.ImplantConfig.ImplantBuilds:type_name -> clientpb.ImplantBuild
 	29,  // 3: clientpb.ImplantConfig.C2:type_name -> clientpb.ImplantC2
 	0,   // 4: clientpb.ImplantConfig.Format:type_name -> clientpb.OutputFormat

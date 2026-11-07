@@ -153,13 +153,13 @@ func SliverCommands(con *console.SliverClient) []*cobra.Command {
 
 	openSessionCmd := &cobra.Command{
 		Use:   consts.InteractiveStr,
-		Short: "Task a beacon to open an interactive session (Beacon only)",
+		Short: "Task a pulse to open an interactive session (Pulse only)",
 		Long:  help.GetHelpFor([]string{consts.InteractiveStr}),
 		Run: func(cmd *cobra.Command, args []string) {
 			InteractiveCmd(cmd, con, args)
 		},
 		GroupID:     consts.SliverCoreHelpGroup,
-		Annotations: flags.RestrictTargets(consts.BeaconCmdsFilter),
+		Annotations: flags.RestrictTargets(consts.PulseCmdsFilter),
 	}
 	flags.Bind("interactive", false, openSessionCmd, func(f *pflag.FlagSet) {
 		f.StringP("mtls", "m", "", "mtls connection strings")

@@ -14,13 +14,13 @@ import (
 func Commands(con *console.SliverClient) []*cobra.Command {
 	tasksCmd := &cobra.Command{
 		Use:   consts.TasksStr,
-		Short: "Beacon task management",
+		Short: "Pulse task management",
 		Long:  help.GetHelpFor([]string{consts.TasksStr}),
 		Run: func(cmd *cobra.Command, args []string) {
 			TasksCmd(cmd, con, args)
 		},
 		GroupID:     consts.SliverCoreHelpGroup,
-		Annotations: flags.RestrictTargets(consts.BeaconCmdsFilter),
+		Annotations: flags.RestrictTargets(consts.PulseCmdsFilter),
 	}
 	flags.Bind("tasks", true, tasksCmd, func(f *pflag.FlagSet) {
 		f.Int64P("timeout", "t", flags.DefaultTimeout, "grpc timeout in seconds")
@@ -31,7 +31,7 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 
 	fetchCmd := &cobra.Command{
 		Use:   consts.FetchStr,
-		Short: "Fetch the details of a beacon task",
+		Short: "Fetch the details of a pulse task",
 		Long:  help.GetHelpFor([]string{consts.TasksStr, consts.FetchStr}),
 		Args:  cobra.RangeArgs(0, 1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -39,11 +39,11 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 		},
 	}
 	tasksCmd.AddCommand(fetchCmd)
-	carapace.Gen(fetchCmd).PositionalCompletion(BeaconTaskIDCompleter(con).Usage("beacon task ID"))
+	carapace.Gen(fetchCmd).PositionalCompletion(PulseTaskIDCompleter(con).Usage("pulse task ID"))
 
 	cancelCmd := &cobra.Command{
 		Use:   consts.CancelStr,
-		Short: "Cancel a pending beacon task",
+		Short: "Cancel a pending pulse task",
 		Long:  help.GetHelpFor([]string{consts.TasksStr, consts.CancelStr}),
 		Args:  cobra.RangeArgs(0, 1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -51,7 +51,7 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 		},
 	}
 	tasksCmd.AddCommand(cancelCmd)
-	carapace.Gen(cancelCmd).PositionalCompletion(BeaconPendingTasksCompleter(con).Usage("beacon task ID"))
+	carapace.Gen(cancelCmd).PositionalCompletion(PulsePendingTasksCompleter(con).Usage("pulse task ID"))
 
 	return []*cobra.Command{tasksCmd}
 }

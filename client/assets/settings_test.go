@@ -15,7 +15,7 @@ func TestLoadSettingsParsesYAML(t *testing.T) {
 
 	data := []byte(`tables: "Compact"
 autoadult: true
-beacon_autoresults: false
+pulse_autoresults: false
 small_term_width: 120
 always_overflow: true
 vim_mode: true
@@ -38,8 +38,8 @@ prompt_template: "{{.Host}}"
 	if !settings.AutoAdult {
 		t.Fatalf("expected AutoAdult true")
 	}
-	if settings.BeaconAutoResults {
-		t.Fatalf("expected BeaconAutoResults false")
+	if settings.PulseAutoResults {
+		t.Fatalf("expected PulseAutoResults false")
 	}
 	if settings.SmallTermWidth != 120 {
 		t.Fatalf("expected SmallTermWidth %d, got %d", 120, settings.SmallTermWidth)
@@ -73,7 +73,7 @@ func TestLoadSettingsMigratesLegacyJSON(t *testing.T) {
 	legacy := &ClientSettings{
 		TableStyle:        "Legacy",
 		AutoAdult:         true,
-		BeaconAutoResults: false,
+		PulseAutoResults: false,
 		SmallTermWidth:    200,
 		AlwaysOverflow:    true,
 		VimMode:           true,

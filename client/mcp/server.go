@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	listSessionsAndBeaconsToolName = "list_sessions_and_beacons"
+	listSessionsAndPulsesToolName = "list_sessions_and_pulses"
 )
 
 type sessionSummary struct {
@@ -30,7 +30,7 @@ type sessionSummary struct {
 	Integrity     string `json:"integrity"`
 }
 
-type beaconSummary struct {
+type pulseSummary struct {
 	ID                  string `json:"id"`
 	Name                string `json:"name"`
 	Transport           string `json:"transport"`
@@ -51,11 +51,11 @@ type beaconSummary struct {
 	Integrity           string `json:"integrity"`
 }
 
-type listSessionsAndBeaconsResult struct {
+type listSessionsAndPulsesResult struct {
 	Sessions      []sessionSummary `json:"sessions"`
 	SessionsCount int              `json:"sessions_count"`
-	Beacons       []beaconSummary  `json:"beacons"`
-	BeaconsCount  int              `json:"beacons_count"`
+	Pulses       []pulseSummary  `json:"pulses"`
+	PulsesCount  int              `json:"pulses_count"`
 }
 
 // SliverMCPServer wraps the MCP server with Sliver RPC access for handlers.
@@ -72,9 +72,9 @@ func newServer(cfg Config, rpc rpcpb.SliverRPCClient, logger *log.Logger) *Slive
 		mcpserver.WithToolCapabilities(false),
 	)
 
-	listSessionsAndBeaconsTool := mcpapi.NewTool(
-		listSessionsAndBeaconsToolName,
-		mcpapi.WithDescription("List active sessions and beacons."),
+	listSessionsAndPulsesTool := mcpapi.NewTool(
+		listSessionsAndPulsesToolName,
+		mcpapi.WithDescription("List active sessions and pulses."),
 		mcpapi.WithReadOnlyHintAnnotation(true),
 		mcpapi.WithDestructiveHintAnnotation(false),
 		mcpapi.WithIdempotentHintAnnotation(true),
@@ -89,7 +89,7 @@ func newServer(cfg Config, rpc rpcpb.SliverRPCClient, logger *log.Logger) *Slive
 	)
 	cdTool := mcpapi.NewTool(
 		cdToolName,
-		mcpapi.WithDescription("Change the current directory on a remote session or beacon."),
+		mcpapi.WithDescription("Change the current directory on a remote session or pulse."),
 		mcpapi.WithInputSchema[cdArgs](),
 		mcpapi.WithReadOnlyHintAnnotation(false),
 		mcpapi.WithDestructiveHintAnnotation(false),
@@ -104,7 +104,7 @@ func newServer(cfg Config, rpc rpcpb.SliverRPCClient, logger *log.Logger) *Slive
 	)
 	pwdTool := mcpapi.NewTool(
 		pwdToolName,
-		mcpapi.WithDescription("Return the current working directory of a remote session or beacon."),
+		mcpapi.WithDescription("Return the current working directory of a remote session or pulse."),
 		mcpapi.WithInputSchema[pwdArgs](),
 		mcpapi.WithReadOnlyHintAnnotation(true),
 		mcpapi.WithDestructiveHintAnnotation(false),
@@ -157,7 +157,7 @@ func newServer(cfg Config, rpc rpcpb.SliverRPCClient, logger *log.Logger) *Slive
 		server: base,
 		logger: logger,
 	}
-	srv.server.AddTool(listSessionsAndBeaconsTool, srv.listSessionsAndBeaconsHandler)
+	srv.server.AddTool(listSessionsAndPulsesTool, srv.listSessionsAndPulsesHandler)
 	srv.server.AddTool(lsTool, srv.lsHandler)
 	srv.server.AddTool(cdTool, srv.cdHandler)
 	srv.server.AddTool(catTool, srv.catHandler)
@@ -171,26 +171,26 @@ func newServer(cfg Config, rpc rpcpb.SliverRPCClient, logger *log.Logger) *Slive
 	return srv
 }
 
-func (s *SliverMCPServer) listSessionsAndBeaconsHandler(ctx context.Context, _ mcpapi.CallToolRequest) (*mcpapi.CallToolResult, error) {
+func (s *SliverMCPServer) listSessionsAndPulsesHandler(ctx context.Context, _ mcpapi.CallToolRequest) (*mcpapi.CallToolResult, error) {
 	if s.Rpc == nil {
 		return mcpapi.NewToolResultError("rpc client not configured"), nil
 	}
 
-	s.logToolCall(listSessionsAndBeaconsToolName, "", "")
+	s.logToolCall(listSessionsAndPulsesToolName, "", "")
 
 	sessionsResp, err := s.Rpc.GetSessions(ctx, &commonpb.Empty{})
 	if err != nil {
 		return mcpapi.NewToolResultErrorFromErr("failed to list sessions", err), nil
 	}
 
-	beaconsResp, err := s.Rpc.GetBeacons(ctx, &commonpb.Empty{})
+	pulsesResp, err := s.Rpc.GetPulses(ctx, &commonpb.Empty{})
 	if err != nil {
-		return mcpapi.NewToolResultErrorFromErr("failed to list beacons", err), nil
+		return mcpapi.NewToolResultErrorFromErr("failed to list pulses", err), nil
 	}
 
-	result := listSessionsAndBeaconsResult{
+	result := listSessionsAndPulsesResult{
 		Sessions: make([]sessionSummary, 0, len(sessionsResp.GetSessions())),
-		Beacons:  make([]beaconSummary, 0, len(beaconsResp.GetBeacons())),
+		Pulses:  make([]pulseSummary, 0, len(pulsesResp.GetPulses())),
 	}
 
 	for _, session := range sessionsResp.GetSessions() {
@@ -214,34 +214,34 @@ func (s *SliverMCPServer) listSessionsAndBeaconsHandler(ctx context.Context, _ m
 		})
 	}
 
-	for _, beacon := range beaconsResp.GetBeacons() {
-		if beacon == nil {
+	for _, pulse := range pulsesResp.GetPulses() {
+		if pulse == nil {
 			continue
 		}
-		result.Beacons = append(result.Beacons, beaconSummary{
-			ID:                  beacon.ID,
-			Name:                beacon.Name,
-			Transport:           beacon.Transport,
-			RemoteAddress:       beacon.RemoteAddress,
-			Hostname:            beacon.Hostname,
-			Username:            beacon.Username,
-			PID:                 beacon.PID,
-			OS:                  beacon.OS,
-			Arch:                beacon.Arch,
-			Locale:              beacon.Locale,
-			LastCheckin:         beacon.LastCheckin,
-			NextCheckin:         beacon.NextCheckin,
-			Interval:            beacon.Interval,
-			Jitter:              beacon.Jitter,
-			TasksCount:          beacon.TasksCount,
-			TasksCountCompleted: beacon.TasksCountCompleted,
-			IsDead:              beacon.IsDead,
-			Integrity:           beacon.Integrity,
+		result.Pulses = append(result.Pulses, pulseSummary{
+			ID:                  pulse.ID,
+			Name:                pulse.Name,
+			Transport:           pulse.Transport,
+			RemoteAddress:       pulse.RemoteAddress,
+			Hostname:            pulse.Hostname,
+			Username:            pulse.Username,
+			PID:                 pulse.PID,
+			OS:                  pulse.OS,
+			Arch:                pulse.Arch,
+			Locale:              pulse.Locale,
+			LastCheckin:         pulse.LastCheckin,
+			NextCheckin:         pulse.NextCheckin,
+			Interval:            pulse.Interval,
+			Jitter:              pulse.Jitter,
+			TasksCount:          pulse.TasksCount,
+			TasksCountCompleted: pulse.TasksCountCompleted,
+			IsDead:              pulse.IsDead,
+			Integrity:           pulse.Integrity,
 		})
 	}
 
 	result.SessionsCount = len(result.Sessions)
-	result.BeaconsCount = len(result.Beacons)
+	result.PulsesCount = len(result.Pulses)
 
 	return mcpapi.NewToolResultStructuredOnly(result), nil
 }

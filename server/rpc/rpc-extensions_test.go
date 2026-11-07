@@ -27,9 +27,9 @@ func TestRequireCallExtensionBOFCapability(t *testing.T) {
 		"capable-session": sliverpb.CapabilityBOFV1,
 		"old-session":     0,
 	})
-	beaconLookup := capabilityMap(map[string]uint64{
-		"capable-beacon": sliverpb.CapabilityBOFV1,
-		"old-beacon":     0,
+	pulseLookup := capabilityMap(map[string]uint64{
+		"capable-pulse": sliverpb.CapabilityBOFV1,
+		"old-pulse":     0,
 	})
 
 	tests := []struct {
@@ -72,35 +72,35 @@ func TestRequireCallExtensionBOFCapability(t *testing.T) {
 			wantCode: codes.InvalidArgument,
 		},
 		{
-			name: "capable beacon",
+			name: "capable pulse",
 			req: &sliverpb.CallExtensionReq{IsBOF: true, Request: &commonpb.Request{
 				Async:    true,
-				BeaconID: "capable-beacon",
+				PulseID: "capable-pulse",
 			}},
 		},
 		{
-			name: "old beacon fails closed",
+			name: "old pulse fails closed",
 			req: &sliverpb.CallExtensionReq{IsBOF: true, Request: &commonpb.Request{
 				Async:    true,
-				BeaconID: "old-beacon",
+				PulseID: "old-pulse",
 			}},
 			wantCode:    codes.FailedPrecondition,
-			wantMessage: "target beacon does not support built-in BOF execution",
+			wantMessage: "target pulse does not support built-in BOF execution",
 		},
 		{
-			name: "unknown beacon",
+			name: "unknown pulse",
 			req: &sliverpb.CallExtensionReq{IsBOF: true, Request: &commonpb.Request{
 				Async:    true,
-				BeaconID: "missing-beacon",
+				PulseID: "missing-pulse",
 			}},
-			wantErr:  ErrInvalidBeaconID,
+			wantErr:  ErrInvalidPulseID,
 			wantCode: codes.InvalidArgument,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := requireCallExtensionBOFCapabilityWithLookups(tt.req, sessionLookup, beaconLookup)
+			err := requireCallExtensionBOFCapabilityWithLookups(tt.req, sessionLookup, pulseLookup)
 			if tt.wantErr == nil && tt.wantCode == codes.OK {
 				if err != nil {
 					t.Fatalf("unexpected error: %v", err)
@@ -138,12 +138,12 @@ func TestCallExtensionRejectsUnsupportedSessionBeforeDispatch(t *testing.T) {
 	}
 }
 
-func TestCallExtensionRejectsUnsupportedBeaconBeforeTasking(t *testing.T) {
+func TestCallExtensionRejectsUnsupportedPulseBeforeTasking(t *testing.T) {
 	testDB, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "call-extension-capabilities.db")), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("open test database: %v", err)
 	}
-	if err := testDB.AutoMigrate(&models.Beacon{}, &models.BeaconTask{}); err != nil {
+	if err := testDB.AutoMigrate(&models.Pulse{}, &models.PulseTask{}); err != nil {
 		t.Fatalf("migrate test database: %v", err)
 	}
 
@@ -157,16 +157,16 @@ func TestCallExtensionRejectsUnsupportedBeaconBeforeTasking(t *testing.T) {
 		}
 	})
 
-	beaconID := uuid.NewV4()
-	if err := testDB.Create(&models.Beacon{ID: models.UUIDFrom(beaconID)}).Error; err != nil {
-		t.Fatalf("create beacon: %v", err)
+	pulseID := uuid.NewV4()
+	if err := testDB.Create(&models.Pulse{ID: models.UUIDFrom(pulseID)}).Error; err != nil {
+		t.Fatalf("create pulse: %v", err)
 	}
 
 	_, err = (&Server{}).CallExtension(context.Background(), &sliverpb.CallExtensionReq{
 		IsBOF: true,
 		Request: &commonpb.Request{
 			Async:    true,
-			BeaconID: beaconID.String(),
+			PulseID: pulseID.String(),
 		},
 	})
 	if status.Code(err) != codes.FailedPrecondition {
@@ -174,11 +174,11 @@ func TestCallExtensionRejectsUnsupportedBeaconBeforeTasking(t *testing.T) {
 	}
 
 	var taskCount int64
-	if err := testDB.Model(&models.BeaconTask{}).Count(&taskCount).Error; err != nil {
-		t.Fatalf("count beacon tasks: %v", err)
+	if err := testDB.Model(&models.PulseTask{}).Count(&taskCount).Error; err != nil {
+		t.Fatalf("count pulse tasks: %v", err)
 	}
 	if taskCount != 0 {
-		t.Fatalf("expected no beacon tasks, got %d", taskCount)
+		t.Fatalf("expected no pulse tasks, got %d", taskCount)
 	}
 }
 

@@ -43,7 +43,7 @@ func (s *SliverMCPServer) logf(format string, args ...any) {
 	s.logger.Printf(format, args...)
 }
 
-func (s *SliverMCPServer) logToolCall(tool, sessionID, beaconID string, extras ...string) {
+func (s *SliverMCPServer) logToolCall(tool, sessionID, pulseID string, extras ...string) {
 	if s == nil || s.logger == nil {
 		return
 	}
@@ -51,8 +51,8 @@ func (s *SliverMCPServer) logToolCall(tool, sessionID, beaconID string, extras .
 	if sessionID != "" {
 		parts = append(parts, fmt.Sprintf("session_id=%s", sessionID))
 	}
-	if beaconID != "" {
-		parts = append(parts, fmt.Sprintf("beacon_id=%s", beaconID))
+	if pulseID != "" {
+		parts = append(parts, fmt.Sprintf("pulse_id=%s", pulseID))
 	}
 	for _, extra := range extras {
 		if extra != "" {

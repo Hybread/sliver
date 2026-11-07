@@ -56,9 +56,9 @@ func (con *SliverClient) SetConnection(rpc rpcpb.SliverRPCClient, grpcConn *grpc
 
 	// Clear per-server state that should not be carried across connections.
 	con.EventListeners = &sync.Map{}
-	con.BeaconTaskCallbacksMutex.Lock()
-	con.BeaconTaskCallbacks = map[string]BeaconTaskCallback{}
-	con.BeaconTaskCallbacksMutex.Unlock()
+	con.PulseTaskCallbacksMutex.Lock()
+	con.PulseTaskCallbacks = map[string]PulseTaskCallback{}
+	con.PulseTaskCallbacksMutex.Unlock()
 	con.ActiveTarget.Set(nil, nil)
 
 	if useDedicatedCommandConnection(details) {

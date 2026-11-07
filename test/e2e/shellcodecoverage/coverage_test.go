@@ -35,7 +35,7 @@ func TestFixedAxesAndEncoderSupport(t *testing.T) {
 	}
 	if got, want := shellcodecoverage.ImplantModes(), []string{
 		shellcodecoverage.ImplantModeSession,
-		shellcodecoverage.ImplantModeBeacon,
+		shellcodecoverage.ImplantModePulse,
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("ImplantModes() = %#v, want %#v", got, want)
 	}

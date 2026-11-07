@@ -26,11 +26,11 @@ func TestCanariesSurviveObfuscation(t *testing.T) {
 		name         string
 		goos         string
 		protocol     string
-		beacon       bool
+		pulse       bool
 		wantCanaries int
 	}{
 		{name: "windows_http_session", goos: "windows", protocol: "http", wantCanaries: 1},
-		{name: "linux_http_beacon", goos: "linux", protocol: "http", beacon: true, wantCanaries: 1},
+		{name: "linux_http_pulse", goos: "linux", protocol: "http", pulse: true, wantCanaries: 1},
 		{name: "windows_mtls_session", goos: "windows", protocol: "mtls", wantCanaries: 2},
 		{name: "linux_wireguard_session", goos: "linux", protocol: "wg", wantCanaries: 2},
 		{name: "linux_http_without_canaries", goos: "linux", protocol: "http"},
@@ -44,7 +44,7 @@ func TestCanariesSurviveObfuscation(t *testing.T) {
 				Debug:            false,
 				ObfuscateSymbols: true,
 				NetGoEnabled:     true,
-				IsBeacon:         tt.beacon,
+				IsPulse:         tt.pulse,
 				C2: []*clientpb.ImplantC2{
 					{URL: tt.protocol + "://c2.invalid"},
 				},

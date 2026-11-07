@@ -14,7 +14,7 @@ import (
 type SettingsFormResult struct {
 	TableStyle        string
 	AutoAdult         bool
-	BeaconAutoResults bool
+	PulseAutoResults bool
 	SmallTermWidth    string
 	AlwaysOverflow    bool
 	VimMode           bool
@@ -35,7 +35,7 @@ func SettingsForm(settings *assets.ClientSettings, tableStyleOptions []string) (
 	result := &SettingsFormResult{
 		TableStyle:        settings.TableStyle,
 		AutoAdult:         settings.AutoAdult,
-		BeaconAutoResults: settings.BeaconAutoResults,
+		PulseAutoResults: settings.PulseAutoResults,
 		SmallTermWidth:    strconv.Itoa(settings.SmallTermWidth),
 		AlwaysOverflow:    settings.AlwaysOverflow,
 		VimMode:           settings.VimMode,
@@ -89,9 +89,9 @@ func SettingsForm(settings *assets.ClientSettings, tableStyleOptions []string) (
 				Description("Skip confirmation prompts for risky actions").
 				Value(&result.AutoAdult),
 			huh.NewConfirm().
-				Title("Auto display beacon results").
-				Description("Show beacon task results when tasks complete").
-				Value(&result.BeaconAutoResults),
+				Title("Auto display pulse results").
+				Description("Show pulse task results when tasks complete").
+				Value(&result.PulseAutoResults),
 			huh.NewConfirm().
 				Title("Vim navigation mode").
 				Description("Use vim-style navigation in the console").

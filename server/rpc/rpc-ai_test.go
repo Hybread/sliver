@@ -434,21 +434,21 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 				if !ok || len(tools) == 0 {
 					t.Fatalf("expected first request to advertise tools, got %#v", payload["tools"])
 				}
-				assertStrictResponseToolSchema(t, tools, "list_sessions_and_beacons", []string{}, map[string][]string{})
-				assertStrictResponseToolSchema(t, tools, "fs_ls", []string{"beacon_id", "path", "session_id"}, map[string][]string{
-					"beacon_id":  []string{"string", "null"},
+				assertStrictResponseToolSchema(t, tools, "list_sessions_and_pulses", []string{}, map[string][]string{})
+				assertStrictResponseToolSchema(t, tools, "fs_ls", []string{"pulse_id", "path", "session_id"}, map[string][]string{
+					"pulse_id":  []string{"string", "null"},
 					"path":       []string{"string", "null"},
 					"session_id": []string{"string", "null"},
 				})
-				assertStrictResponseToolSchema(t, tools, "fs_cat", []string{"beacon_id", "max_bytes", "max_lines", "path", "session_id"}, map[string][]string{
-					"beacon_id":  []string{"string", "null"},
+				assertStrictResponseToolSchema(t, tools, "fs_cat", []string{"pulse_id", "max_bytes", "max_lines", "path", "session_id"}, map[string][]string{
+					"pulse_id":  []string{"string", "null"},
 					"max_bytes":  []string{"integer", "null"},
 					"max_lines":  []string{"integer", "null"},
 					"path":       []string{"string"},
 					"session_id": []string{"string", "null"},
 				})
-				assertStrictResponseToolSchema(t, tools, "fs_pwd", []string{"beacon_id", "session_id"}, map[string][]string{
-					"beacon_id":  []string{"string", "null"},
+				assertStrictResponseToolSchema(t, tools, "fs_pwd", []string{"pulse_id", "session_id"}, map[string][]string{
+					"pulse_id":  []string{"string", "null"},
 					"session_id": []string{"string", "null"},
 				})
 				assertStrictResponseToolSchema(t, tools, "base32_encode", []string{"data_base64", "text"}, map[string][]string{
@@ -516,26 +516,26 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 				assertStrictResponseToolSchema(t, tools, "credentials_delete", []string{"credential_id"}, map[string][]string{
 					"credential_id": []string{"string"},
 				})
-				assertStrictResponseToolSchema(t, tools, "search_aliases", []string{"beacon_id", "max_results", "only_compatible", "query", "session_id"}, map[string][]string{
-					"beacon_id":       []string{"string", "null"},
+				assertStrictResponseToolSchema(t, tools, "search_aliases", []string{"pulse_id", "max_results", "only_compatible", "query", "session_id"}, map[string][]string{
+					"pulse_id":       []string{"string", "null"},
 					"max_results":     []string{"integer", "null"},
 					"only_compatible": []string{"boolean", "null"},
 					"query":           []string{"string", "null"},
 					"session_id":      []string{"string", "null"},
 				})
-				assertStrictResponseToolSchema(t, tools, "search_extensions", []string{"beacon_id", "max_results", "only_compatible", "query", "session_id"}, map[string][]string{
-					"beacon_id":       []string{"string", "null"},
+				assertStrictResponseToolSchema(t, tools, "search_extensions", []string{"pulse_id", "max_results", "only_compatible", "query", "session_id"}, map[string][]string{
+					"pulse_id":       []string{"string", "null"},
 					"max_results":     []string{"integer", "null"},
 					"only_compatible": []string{"boolean", "null"},
 					"query":           []string{"string", "null"},
 					"session_id":      []string{"string", "null"},
 				})
-				assertStrictResponseToolSchema(t, tools, "execute_alias", []string{"amsi_bypass", "app_domain", "arch", "args", "beacon_id", "class_name", "command_name", "etw_bypass", "in_process", "method", "ppid", "process", "process_args", "root_path", "runtime", "session_id"}, map[string][]string{
+				assertStrictResponseToolSchema(t, tools, "execute_alias", []string{"amsi_bypass", "app_domain", "arch", "args", "pulse_id", "class_name", "command_name", "etw_bypass", "in_process", "method", "ppid", "process", "process_args", "root_path", "runtime", "session_id"}, map[string][]string{
 					"amsi_bypass":  []string{"boolean", "null"},
 					"app_domain":   []string{"string", "null"},
 					"arch":         []string{"string", "null"},
 					"args":         []string{"array", "null"},
-					"beacon_id":    []string{"string", "null"},
+					"pulse_id":    []string{"string", "null"},
 					"class_name":   []string{"string", "null"},
 					"command_name": []string{"string"},
 					"etw_bypass":   []string{"boolean", "null"},
@@ -548,9 +548,9 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 					"runtime":      []string{"string", "null"},
 					"session_id":   []string{"string", "null"},
 				})
-				assertStrictResponseToolSchema(t, tools, "execute_extension", []string{"args", "beacon_id", "command_name", "named_args", "root_path", "session_id"}, map[string][]string{
+				assertStrictResponseToolSchema(t, tools, "execute_extension", []string{"args", "pulse_id", "command_name", "named_args", "root_path", "session_id"}, map[string][]string{
 					"args":         []string{"array", "null"},
-					"beacon_id":    []string{"string", "null"},
+					"pulse_id":    []string{"string", "null"},
 					"command_name": []string{"string"},
 					"named_args":   []string{"object", "null"},
 					"root_path":    []string{"string", "null"},
@@ -573,7 +573,7 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 					"id": "call_item_1",
 					"type": "function_call",
 					"call_id": "call_1",
-					"name": "list_sessions_and_beacons",
+					"name": "list_sessions_and_pulses",
 					"arguments": "{}",
 					"status": "completed"
 				},
@@ -680,7 +680,7 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 			visibility:       clientpb.AIConversationMessageVisibility_AI_MESSAGE_VISIBILITY_UI_ONLY,
 			state:            clientpb.AIConversationMessageState_AI_MESSAGE_STATE_IN_PROGRESS,
 			itemID:           "call_item_1",
-			toolName:         "list_sessions_and_beacons",
+			toolName:         "list_sessions_and_pulses",
 			includeInContext: boolPtr(false),
 		},
 		{
@@ -690,7 +690,7 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 			visibility:       clientpb.AIConversationMessageVisibility_AI_MESSAGE_VISIBILITY_UI_ONLY,
 			state:            clientpb.AIConversationMessageState_AI_MESSAGE_STATE_COMPLETED,
 			itemID:           "call_item_1",
-			toolName:         "list_sessions_and_beacons",
+			toolName:         "list_sessions_and_pulses",
 			includeInContext: boolPtr(false),
 		},
 		{
@@ -747,7 +747,7 @@ func TestSaveAIConversationMessagePersistsReasoningAndToolBlocks(t *testing.T) {
 	if toolCall.GetKind() != clientpb.AIConversationMessageKind_AI_MESSAGE_KIND_TOOL_CALL {
 		t.Fatalf("expected tool call block, got %+v", toolCall)
 	}
-	if toolCall.GetToolName() != "list_sessions_and_beacons" {
+	if toolCall.GetToolName() != "list_sessions_and_pulses" {
 		t.Fatalf("unexpected tool name: %+v", toolCall)
 	}
 	if strings.TrimSpace(toolCall.GetToolResult()) == "" {
@@ -900,8 +900,8 @@ func setupAIRPCTestEnv(t *testing.T) {
 	if err := testDB.AutoMigrate(
 		&models.AIConversation{},
 		&models.AIConversationMessage{},
-		&models.Beacon{},
-		&models.BeaconTask{},
+		&models.Pulse{},
+		&models.PulseTask{},
 	); err != nil {
 		t.Fatalf("migrate test db: %v", err)
 	}

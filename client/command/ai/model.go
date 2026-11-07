@@ -225,7 +225,7 @@ type aiTargetSelectionOption struct {
 	metadata []string
 	target   aiTargetSummary
 	session  *clientpb.Session
-	beacon   *clientpb.Beacon
+	pulse   *clientpb.Pulse
 	active   bool
 }
 
@@ -534,17 +534,17 @@ func (m *aiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case aiConversationTargetUpdatedMsg:
 		m.loading = false
 		if msg.conversation != nil {
-			sessionID, beaconID := normalizedAITargetIDs(msg.target.SessionID, msg.target.BeaconID)
+			sessionID, pulseID := normalizedAITargetIDs(msg.target.SessionID, msg.target.PulseID)
 			msg.conversation.TargetSessionID = sessionID
-			msg.conversation.TargetBeaconID = beaconID
+			msg.conversation.TargetPulseID = pulseID
 			m.applyConversationSnapshot(msg.conversation)
 			if m.currentConversation != nil && strings.TrimSpace(m.currentConversation.GetID()) == strings.TrimSpace(msg.conversation.GetID()) {
 				m.currentConversation.TargetSessionID = sessionID
-				m.currentConversation.TargetBeaconID = beaconID
+				m.currentConversation.TargetPulseID = pulseID
 			}
 			if idx := conversationIndexByID(m.conversations, msg.conversation.GetID()); idx >= 0 && m.conversations[idx] != nil {
 				m.conversations[idx].TargetSessionID = sessionID
-				m.conversations[idx].TargetBeaconID = beaconID
+				m.conversations[idx].TargetPulseID = pulseID
 			}
 		}
 		if strings.TrimSpace(msg.status) != "" {
@@ -1525,7 +1525,7 @@ func (m *aiModel) confirmTargetSelectionUpdate() (tea.Model, tea.Cmd) {
 	if len(m.targetSelectionOptions) == 0 {
 		status := strings.TrimSpace(m.modal.status)
 		if status == "" {
-			status = "No sessions or beacons are currently available."
+			status = "No sessions or pulses are currently available."
 		}
 		m.status = status
 		return m, nil
@@ -1805,9 +1805,9 @@ func (m *aiModel) renderTargetSelectModal() string {
 	boxWidth := minInt(maxInt(60, m.width-6), 112)
 	bodyWidth := maxInt(32, boxWidth-6)
 
-	description := "Select the session or beacon to make active in this AI view."
+	description := "Select the session or pulse to make active in this AI view."
 	if m.currentConversation != nil && strings.TrimSpace(m.currentConversation.GetID()) != "" {
-		description = "Select the session or beacon used as the active target and current thread target."
+		description = "Select the session or pulse used as the active target and current thread target."
 	}
 
 	lines := []string{
@@ -1823,7 +1823,7 @@ func (m *aiModel) renderTargetSelectModal() string {
 	if len(m.targetSelectionOptions) == 0 {
 		status := strings.TrimSpace(m.modal.status)
 		if status == "" {
-			status = "Loading sessions and beacons from the server..."
+			status = "Loading sessions and pulses from the server..."
 		}
 		lines = append(lines, m.styles.subtleText.Width(bodyWidth).Render(status))
 	} else {
@@ -3178,20 +3178,20 @@ func (m *aiModel) showTargetSelectModal() (tea.Model, tea.Cmd) {
 	}
 
 	conversationTargetSessionID := ""
-	conversationTargetBeaconID := ""
+	conversationTargetPulseID := ""
 	if m.currentConversation != nil {
 		conversationTargetSessionID = m.currentConversation.GetTargetSessionID()
-		conversationTargetBeaconID = m.currentConversation.GetTargetBeaconID()
+		conversationTargetPulseID = m.currentConversation.GetTargetPulseID()
 	}
 
 	m.targetSelectionOptions = nil
 	m.modal = &aiModalState{
 		kind:   aiModalKindTargetSelect,
 		title:  "Active Target",
-		status: "Loading sessions and beacons from the server...",
+		status: "Loading sessions and pulses from the server...",
 	}
 	m.status = "Selecting an active target."
-	return m, loadAITargetSelectionOptionsCmd(m.con, m.ctx.target, conversationTargetSessionID, conversationTargetBeaconID)
+	return m, loadAITargetSelectionOptionsCmd(m.con, m.ctx.target, conversationTargetSessionID, conversationTargetPulseID)
 }
 
 func (m *aiModel) showDeleteConversationModal() (tea.Model, tea.Cmd) {
@@ -3994,7 +3994,7 @@ func loadAIStateWithStatusCmd(con *console.SliverClient, target aiTargetSummary,
 				Title:           "New conversation",
 				SystemPrompt:    strings.TrimSpace(config.GetSystemPrompt()),
 				TargetSessionID: strings.TrimSpace(target.SessionID),
-				TargetBeaconID:  strings.TrimSpace(target.BeaconID),
+				TargetPulseID:  strings.TrimSpace(target.PulseID),
 			})
 			if err != nil {
 				return aiAsyncErrMsg{err: err}
@@ -4043,7 +4043,7 @@ func loadAIStateWithStatusCmd(con *console.SliverClient, target aiTargetSummary,
 	}
 }
 
-func loadAITargetSelectionOptionsCmd(con *console.SliverClient, activeTarget aiTargetSummary, conversationTargetSessionID string, conversationTargetBeaconID string) tea.Cmd {
+func loadAITargetSelectionOptionsCmd(con *console.SliverClient, activeTarget aiTargetSummary, conversationTargetSessionID string, conversationTargetPulseID string) tea.Cmd {
 	return func() tea.Msg {
 		if con == nil || con.Rpc == nil {
 			return aiTargetOptionsLoadedMsg{status: "AI RPC client is unavailable."}
@@ -4057,20 +4057,20 @@ func loadAITargetSelectionOptionsCmd(con *console.SliverClient, activeTarget aiT
 			return aiTargetOptionsLoadedMsg{status: "Failed to load sessions: " + err.Error()}
 		}
 
-		beaconsResp, err := con.Rpc.GetBeacons(grpcCtx, &commonpb.Empty{})
+		pulsesResp, err := con.Rpc.GetPulses(grpcCtx, &commonpb.Empty{})
 		if err != nil {
-			return aiTargetOptionsLoadedMsg{status: "Failed to load beacons: " + err.Error()}
+			return aiTargetOptionsLoadedMsg{status: "Failed to load pulses: " + err.Error()}
 		}
 
-		options := buildAITargetSelectionOptions(sessionsResp.GetSessions(), beaconsResp.GetBeacons(), activeTarget)
-		status := "Select the session or beacon to make active."
+		options := buildAITargetSelectionOptions(sessionsResp.GetSessions(), pulsesResp.GetPulses(), activeTarget)
+		status := "Select the session or pulse to make active."
 		if len(options) == 0 {
-			status = "No sessions or beacons are currently available."
+			status = "No sessions or pulses are currently available."
 		}
 
 		return aiTargetOptionsLoadedMsg{
 			options:        options,
-			selectedOption: aiTargetSelectionOptionIndex(options, activeTarget, conversationTargetSessionID, conversationTargetBeaconID),
+			selectedOption: aiTargetSelectionOptionIndex(options, activeTarget, conversationTargetSessionID, conversationTargetPulseID),
 			status:         status,
 		}
 	}
@@ -4091,7 +4091,7 @@ func createConversationCmd(con *console.SliverClient, target aiTargetSummary, pr
 			Title:           strings.TrimSpace(title),
 			SystemPrompt:    strings.TrimSpace(systemPrompt),
 			TargetSessionID: strings.TrimSpace(target.SessionID),
-			TargetBeaconID:  strings.TrimSpace(target.BeaconID),
+			TargetPulseID:  strings.TrimSpace(target.PulseID),
 		})
 		if err != nil {
 			return aiAsyncErrMsg{err: err}
@@ -4169,10 +4169,10 @@ func updateConversationTargetCmd(con *console.SliverClient, conversation *client
 		grpcCtx, cancel := con.GrpcContext(nil)
 		defer cancel()
 
-		sessionID, beaconID := normalizedAITargetIDs(target.SessionID, target.BeaconID)
+		sessionID, pulseID := normalizedAITargetIDs(target.SessionID, target.PulseID)
 		req := conversationSaveRequest(conversation)
 		req.TargetSessionID = sessionID
-		req.TargetBeaconID = beaconID
+		req.TargetPulseID = pulseID
 
 		savedConversation, err := con.Rpc.SaveAIConversation(grpcCtx, req)
 		if err != nil {
@@ -4181,7 +4181,7 @@ func updateConversationTargetCmd(con *console.SliverClient, conversation *client
 
 		return aiConversationTargetUpdatedMsg{
 			conversation: savedConversation,
-			target:       aiTargetSummary{SessionID: sessionID, BeaconID: beaconID, Label: target.Label},
+			target:       aiTargetSummary{SessionID: sessionID, PulseID: pulseID, Label: target.Label},
 			status:       "Active target set to " + fallback(target.Label, "selected target") + ".",
 		}
 	}
@@ -4210,7 +4210,7 @@ func submitPromptMsg(con *console.SliverClient, target aiTargetSummary, conversa
 			Title:           promptConversationTitle(prompt),
 			SystemPrompt:    strings.TrimSpace(systemPrompt),
 			TargetSessionID: strings.TrimSpace(target.SessionID),
-			TargetBeaconID:  strings.TrimSpace(target.BeaconID),
+			TargetPulseID:  strings.TrimSpace(target.PulseID),
 		})
 		if err != nil {
 			return aiAsyncErrMsg{err: err}
@@ -4719,17 +4719,17 @@ func aiThinkingLevelOptions(defaultThinkingLevel string) []aiThinkingLevelOption
 	}
 }
 
-func buildAITargetSelectionOptions(sessions []*clientpb.Session, beacons []*clientpb.Beacon, activeTarget aiTargetSummary) []aiTargetSelectionOption {
+func buildAITargetSelectionOptions(sessions []*clientpb.Session, pulses []*clientpb.Pulse, activeTarget aiTargetSummary) []aiTargetSelectionOption {
 	sessionList := make([]*clientpb.Session, 0, len(sessions))
 	for _, session := range sessions {
 		if session != nil {
 			sessionList = append(sessionList, session)
 		}
 	}
-	beaconList := make([]*clientpb.Beacon, 0, len(beacons))
-	for _, beacon := range beacons {
-		if beacon != nil {
-			beaconList = append(beaconList, beacon)
+	pulseList := make([]*clientpb.Pulse, 0, len(pulses))
+	for _, pulse := range pulses {
+		if pulse != nil {
+			pulseList = append(pulseList, pulse)
 		}
 	}
 
@@ -4737,12 +4737,12 @@ func buildAITargetSelectionOptions(sessions []*clientpb.Session, beacons []*clie
 		return aiTargetSelectionSortKey(sessionList[i].GetName(), sessionList[i].GetHostname(), sessionList[i].GetID()) <
 			aiTargetSelectionSortKey(sessionList[j].GetName(), sessionList[j].GetHostname(), sessionList[j].GetID())
 	})
-	sort.SliceStable(beaconList, func(i, j int) bool {
-		return aiTargetSelectionSortKey(beaconList[i].GetName(), beaconList[i].GetHostname(), beaconList[i].GetID()) <
-			aiTargetSelectionSortKey(beaconList[j].GetName(), beaconList[j].GetHostname(), beaconList[j].GetID())
+	sort.SliceStable(pulseList, func(i, j int) bool {
+		return aiTargetSelectionSortKey(pulseList[i].GetName(), pulseList[i].GetHostname(), pulseList[i].GetID()) <
+			aiTargetSelectionSortKey(pulseList[j].GetName(), pulseList[j].GetHostname(), pulseList[j].GetID())
 	})
 
-	options := make([]aiTargetSelectionOption, 0, len(sessionList)+len(beaconList))
+	options := make([]aiTargetSelectionOption, 0, len(sessionList)+len(pulseList))
 	for _, session := range sessionList {
 		target := aiSessionTargetSummary(session)
 		options = append(options, aiTargetSelectionOption{
@@ -4753,21 +4753,21 @@ func buildAITargetSelectionOptions(sessions []*clientpb.Session, beacons []*clie
 			},
 			target:  target,
 			session: session,
-			active:  sameAITargetSelectionIDs(session.GetID(), "", activeTarget.SessionID, activeTarget.BeaconID),
+			active:  sameAITargetSelectionIDs(session.GetID(), "", activeTarget.SessionID, activeTarget.PulseID),
 		})
 	}
-	for _, beacon := range beaconList {
-		target := aiBeaconTargetSummary(beacon)
+	for _, pulse := range pulseList {
+		target := aiPulseTargetSummary(pulse)
 		options = append(options, aiTargetSelectionOption{
-			label: beaconTargetSelectionLabel(target),
+			label: pulseTargetSelectionLabel(target),
 			metadata: []string{
-				aiTargetSelectionMetadataLine("ID "+shortenID(beacon.GetID()), fallback(target.Host, "<unknown host>"), fallback(target.OS, "unknown")+"/"+fallback(target.Arch, "unknown"), fallback(target.Mode, "asynchronous beacon")),
-				aiTargetSelectionMetadataLine("C2 "+fallback(target.C2, "unknown"), "User: "+fallback(beacon.GetUsername(), "<unknown>"), fmt.Sprintf("PID: %d", beacon.GetPID()), "Remote: "+fallback(beacon.GetRemoteAddress(), "<unknown>")),
-				aiTargetSelectionMetadataLine(fmt.Sprintf("Interval: %s", time.Duration(beacon.GetInterval()).String()), "Next checkin: "+formatUnix(beacon.GetNextCheckin())),
+				aiTargetSelectionMetadataLine("ID "+shortenID(pulse.GetID()), fallback(target.Host, "<unknown host>"), fallback(target.OS, "unknown")+"/"+fallback(target.Arch, "unknown"), fallback(target.Mode, "asynchronous pulse")),
+				aiTargetSelectionMetadataLine("C2 "+fallback(target.C2, "unknown"), "User: "+fallback(pulse.GetUsername(), "<unknown>"), fmt.Sprintf("PID: %d", pulse.GetPID()), "Remote: "+fallback(pulse.GetRemoteAddress(), "<unknown>")),
+				aiTargetSelectionMetadataLine(fmt.Sprintf("Interval: %s", time.Duration(pulse.GetInterval()).String()), "Next checkin: "+formatUnix(pulse.GetNextCheckin())),
 			},
 			target: target,
-			beacon: beacon,
-			active: sameAITargetSelectionIDs("", beacon.GetID(), activeTarget.SessionID, activeTarget.BeaconID),
+			pulse: pulse,
+			active: sameAITargetSelectionIDs("", pulse.GetID(), activeTarget.SessionID, activeTarget.PulseID),
 		})
 	}
 	return options
@@ -4781,8 +4781,8 @@ func sessionTargetSelectionLabel(target aiTargetSummary) string {
 	return fallback(target.Label, "Session "+fallback(target.SessionID, "<unknown>"))
 }
 
-func beaconTargetSelectionLabel(target aiTargetSummary) string {
-	return fallback(target.Label, "Beacon "+fallback(target.BeaconID, "<unknown>"))
+func pulseTargetSelectionLabel(target aiTargetSummary) string {
+	return fallback(target.Label, "Pulse "+fallback(target.PulseID, "<unknown>"))
 }
 
 func aiTargetSelectionMetadataLine(parts ...string) string {
@@ -4795,19 +4795,19 @@ func aiTargetSelectionMetadataLine(parts ...string) string {
 	return strings.Join(filtered, " | ")
 }
 
-func aiTargetSelectionOptionIndex(options []aiTargetSelectionOption, activeTarget aiTargetSummary, conversationTargetSessionID string, conversationTargetBeaconID string) int {
-	activeSessionID, activeBeaconID := normalizedAITargetIDs(activeTarget.SessionID, activeTarget.BeaconID)
+func aiTargetSelectionOptionIndex(options []aiTargetSelectionOption, activeTarget aiTargetSummary, conversationTargetSessionID string, conversationTargetPulseID string) int {
+	activeSessionID, activePulseID := normalizedAITargetIDs(activeTarget.SessionID, activeTarget.PulseID)
 	for idx, option := range options {
-		optionSessionID, optionBeaconID := normalizedAITargetIDs(option.target.SessionID, option.target.BeaconID)
-		if sameAITargetSelectionIDs(optionSessionID, optionBeaconID, activeSessionID, activeBeaconID) {
+		optionSessionID, optionPulseID := normalizedAITargetIDs(option.target.SessionID, option.target.PulseID)
+		if sameAITargetSelectionIDs(optionSessionID, optionPulseID, activeSessionID, activePulseID) {
 			return idx
 		}
 	}
 
-	conversationTargetSessionID, conversationTargetBeaconID = normalizedAITargetIDs(conversationTargetSessionID, conversationTargetBeaconID)
+	conversationTargetSessionID, conversationTargetPulseID = normalizedAITargetIDs(conversationTargetSessionID, conversationTargetPulseID)
 	for idx, option := range options {
-		optionSessionID, optionBeaconID := normalizedAITargetIDs(option.target.SessionID, option.target.BeaconID)
-		if sameAITargetSelectionIDs(optionSessionID, optionBeaconID, conversationTargetSessionID, conversationTargetBeaconID) {
+		optionSessionID, optionPulseID := normalizedAITargetIDs(option.target.SessionID, option.target.PulseID)
+		if sameAITargetSelectionIDs(optionSessionID, optionPulseID, conversationTargetSessionID, conversationTargetPulseID) {
 			return idx
 		}
 	}
@@ -4923,48 +4923,48 @@ func conversationSaveRequest(conversation *clientpb.AIConversation) *clientpb.AI
 		ActiveTurnID:       strings.TrimSpace(conversation.GetActiveTurnID()),
 		TurnState:          conversation.GetTurnState(),
 		TargetSessionID:    strings.TrimSpace(conversation.GetTargetSessionID()),
-		TargetBeaconID:     strings.TrimSpace(conversation.GetTargetBeaconID()),
+		TargetPulseID:     strings.TrimSpace(conversation.GetTargetPulseID()),
 		ContextWindowUsage: cloneAIContextWindowUsage(conversation.GetContextWindowUsage()),
 	}
 }
 
-func normalizedAITargetIDs(sessionID, beaconID string) (string, string) {
+func normalizedAITargetIDs(sessionID, pulseID string) (string, string) {
 	sessionID = strings.TrimSpace(sessionID)
-	beaconID = strings.TrimSpace(beaconID)
+	pulseID = strings.TrimSpace(pulseID)
 	switch {
 	case sessionID != "":
 		return sessionID, ""
-	case beaconID != "":
-		return "", beaconID
+	case pulseID != "":
+		return "", pulseID
 	default:
 		return "", ""
 	}
 }
 
-func sameAITargetSelectionIDs(leftSessionID, leftBeaconID, rightSessionID, rightBeaconID string) bool {
-	leftSessionID, leftBeaconID = normalizedAITargetIDs(leftSessionID, leftBeaconID)
-	rightSessionID, rightBeaconID = normalizedAITargetIDs(rightSessionID, rightBeaconID)
-	return leftSessionID == rightSessionID && leftBeaconID == rightBeaconID
+func sameAITargetSelectionIDs(leftSessionID, leftPulseID, rightSessionID, rightPulseID string) bool {
+	leftSessionID, leftPulseID = normalizedAITargetIDs(leftSessionID, leftPulseID)
+	rightSessionID, rightPulseID = normalizedAITargetIDs(rightSessionID, rightPulseID)
+	return leftSessionID == rightSessionID && leftPulseID == rightPulseID
 }
 
 func sameAITargetSelectionSummary(left aiTargetSummary, right aiTargetSummary) bool {
-	return sameAITargetSelectionIDs(left.SessionID, left.BeaconID, right.SessionID, right.BeaconID)
+	return sameAITargetSelectionIDs(left.SessionID, left.PulseID, right.SessionID, right.PulseID)
 }
 
 func conversationUsesTarget(conversation *clientpb.AIConversation, target aiTargetSummary) bool {
 	if conversation == nil {
 		return false
 	}
-	return sameAITargetSelectionIDs(conversation.GetTargetSessionID(), conversation.GetTargetBeaconID(), target.SessionID, target.BeaconID)
+	return sameAITargetSelectionIDs(conversation.GetTargetSessionID(), conversation.GetTargetPulseID(), target.SessionID, target.PulseID)
 }
 
 func (m *aiModel) applyTargetSelectionOption(option aiTargetSelectionOption) {
-	sessionID, beaconID := normalizedAITargetIDs(option.target.SessionID, option.target.BeaconID)
+	sessionID, pulseID := normalizedAITargetIDs(option.target.SessionID, option.target.PulseID)
 	m.ctx.target = option.target
 	m.ctx.target.SessionID = sessionID
-	m.ctx.target.BeaconID = beaconID
+	m.ctx.target.PulseID = pulseID
 	if m.con != nil && m.con.ActiveTarget != nil {
-		m.con.ActiveTarget.Set(option.session, option.beacon)
+		m.con.ActiveTarget.Set(option.session, option.pulse)
 	}
 }
 
@@ -5049,8 +5049,8 @@ func mergeConversationMetadata(dst *clientpb.AIConversation, src *clientpb.AICon
 	if targetSessionID := strings.TrimSpace(src.GetTargetSessionID()); targetSessionID != "" {
 		dst.TargetSessionID = targetSessionID
 	}
-	if targetBeaconID := strings.TrimSpace(src.GetTargetBeaconID()); targetBeaconID != "" {
-		dst.TargetBeaconID = targetBeaconID
+	if targetPulseID := strings.TrimSpace(src.GetTargetPulseID()); targetPulseID != "" {
+		dst.TargetPulseID = targetPulseID
 	}
 	if src.GetContextWindowUsage() != nil {
 		dst.ContextWindowUsage = cloneAIContextWindowUsage(src.GetContextWindowUsage())

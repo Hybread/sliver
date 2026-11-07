@@ -39,9 +39,9 @@ func StartEventAutomation() {
 		for event := range EventBroker.Subscribe() {
 			switch event.EventType {
 
-			case consts.BeaconRegisteredEvent:
-				if event.Beacon != nil {
-					hostsBeaconCallback(event.Beacon)
+			case consts.PulseRegisteredEvent:
+				if event.Pulse != nil {
+					hostsPulseCallback(event.Pulse)
 				}
 			case consts.SessionOpenedEvent:
 				if event.Session != nil {
@@ -84,27 +84,27 @@ func hostsSessionCallback(session *Session) {
 	}
 }
 
-// Triggered on new beacon events, checks to see if the host is in
+// Triggered on new pulse events, checks to see if the host is in
 // the database and adds it if not.
-func hostsBeaconCallback(beacon *models.Beacon) {
-	coreLog.Debugf("Hosts beacon callback for %v", beacon.UUID)
+func hostsPulseCallback(pulse *models.Pulse) {
+	coreLog.Debugf("Hosts pulse callback for %v", pulse.UUID)
 	dbSession := db.Session()
-	host, err := db.HostByHostUUID(beacon.UUID.String())
+	host, err := db.HostByHostUUID(pulse.UUID.String())
 	coreLog.Debugf("Hosts query result: %v %v", host, err)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		coreLog.Error(err)
 		return
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		coreLog.Infof("Beacon %v is from a new host", beacon.ID)
+		coreLog.Infof("Pulse %v is from a new host", pulse.ID)
 		err := dbSession.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "host_uuid"}},
 			DoNothing: true,
 		}).Create(&models.Host{
-			HostUUID:      models.ParseUUIDOrNil(beacon.UUID.String()),
-			Hostname:      beacon.Hostname,
-			OSVersion:     beacon.OS,
-			Locale:        beacon.Locale,
+			HostUUID:      models.ParseUUIDOrNil(pulse.UUID.String()),
+			Hostname:      pulse.Hostname,
+			OSVersion:     pulse.OS,
+			Locale:        pulse.Locale,
 			IOCs:          []models.IOC{},
 			ExtensionData: []models.ExtensionData{},
 		}).Error

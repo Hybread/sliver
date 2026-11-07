@@ -35,9 +35,9 @@ type testRPC struct {
 	rpcpb.SliverRPCClient
 
 	sessions *clientpb.Sessions
-	beacons  *clientpb.Beacons
+	pulses  *clientpb.Pulses
 	call     func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error)
-	task     func(context.Context, *clientpb.BeaconTask) (*clientpb.BeaconTask, error)
+	task     func(context.Context, *clientpb.PulseTask) (*clientpb.PulseTask, error)
 
 	mu        sync.Mutex
 	calls     []*sliverpb.CallExtensionReq
@@ -48,8 +48,8 @@ func (rpc *testRPC) GetSessions(context.Context, *commonpb.Empty, ...grpc.CallOp
 	return rpc.sessions, nil
 }
 
-func (rpc *testRPC) GetBeacons(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Beacons, error) {
-	return rpc.beacons, nil
+func (rpc *testRPC) GetPulses(context.Context, *commonpb.Empty, ...grpc.CallOption) (*clientpb.Pulses, error) {
+	return rpc.pulses, nil
 }
 
 func (rpc *testRPC) CallExtension(ctx context.Context, request *sliverpb.CallExtensionReq, _ ...grpc.CallOption) (*sliverpb.CallExtension, error) {
@@ -62,12 +62,12 @@ func (rpc *testRPC) CallExtension(ctx context.Context, request *sliverpb.CallExt
 	return rpc.call(ctx, request)
 }
 
-func (rpc *testRPC) GetBeaconTaskContent(ctx context.Context, task *clientpb.BeaconTask, _ ...grpc.CallOption) (*clientpb.BeaconTask, error) {
+func (rpc *testRPC) GetPulseTaskContent(ctx context.Context, task *clientpb.PulseTask, _ ...grpc.CallOption) (*clientpb.PulseTask, error) {
 	rpc.mu.Lock()
 	rpc.taskCalls++
 	rpc.mu.Unlock()
 	if rpc.task == nil {
-		return nil, fmt.Errorf("unexpected GetBeaconTaskContent")
+		return nil, fmt.Errorf("unexpected GetPulseTaskContent")
 	}
 	return rpc.task(ctx, task)
 }
@@ -189,7 +189,7 @@ func TestManagerLoadsRegistersAndInvokesSyncBOF(t *testing.T) {
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "session-1", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{Output: []byte("sync output")}, nil
 		},
@@ -205,9 +205,9 @@ func TestManagerLoadsRegistersAndInvokesSyncBOF(t *testing.T) {
 	source := `
 alias runbof {
     $packed = bof_pack($1, "iz", 16909060, $2);
-    beacon_inline_execute($1, "OBJ", "go", $packed);
+    pulse_inline_execute($1, "OBJ", "go", $packed);
 }
-beacon_command_register("runbof", "Run the example BOF", "Runs exact BOF bytes");
+pulse_command_register("runbof", "Run the example BOF", "Runs exact BOF bytes");
 `
 	if err := os.WriteFile(scriptPath, []byte(source), 0o600); err != nil {
 		t.Fatal(err)
@@ -392,8 +392,8 @@ func TestCheckAndLoadCommandsReportTheirEffects(t *testing.T) {
 	installTestManager(t, manager)
 	scriptPath := filepath.Join(t.TempDir(), "reported.cna")
 	if err := os.WriteFile(scriptPath, []byte(`
-beacon_command_register("zulu", "Zulu short", "Zulu detail");
-beacon_command_register("alpha", "Alpha short", "Alpha detail");
+pulse_command_register("zulu", "Zulu short", "Zulu detail");
+pulse_command_register("alpha", "Alpha short", "Alpha detail");
 alias zulu { println("zulu"); }
 alias alpha { println("alpha"); }
 `), 0o600); err != nil {
@@ -491,7 +491,7 @@ func testLoadCommandDoesNotRepeatEarlierAliases(t *testing.T) {
 	if err := load.RunE(load, []string{scriptPath}); err != nil {
 		t.Fatalf("load no-alias script: %v", err)
 	}
-	if got := output.infoOutput(); !strings.Contains(got, "no invokable Beacon aliases") {
+	if got := output.infoOutput(); !strings.Contains(got, "no invokable Pulse aliases") {
 		t.Fatalf("load info output = %q", got)
 	}
 	if got := output.stdout(); strings.Contains(got, "opfor earlier") {
@@ -515,7 +515,7 @@ func testLoadCommandDoesNotAdvertiseCollision(t *testing.T) {
 	if directChild(command, "run") != staticRun {
 		t.Fatal("CNA alias displaced the static run command")
 	}
-	if got := output.infoOutput(); !strings.Contains(got, "no invokable Beacon aliases") {
+	if got := output.infoOutput(); !strings.Contains(got, "no invokable Pulse aliases") {
 		t.Fatalf("collision load info output = %q", got)
 	}
 	if got := output.stdout(); strings.Contains(got, "opfor run") {
@@ -532,7 +532,7 @@ func TestInvokeAliasPreservesExactParsedArguments(t *testing.T) {
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "session-arguments", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{}, nil
 		},
@@ -542,7 +542,7 @@ func TestInvokeAliasPreservesExactParsedArguments(t *testing.T) {
 	if err := os.WriteFile(scriptPath, []byte(`
 alias exactargs {
     $packed = bof_pack($1, "zzz", $2, $3, $4);
-    beacon_inline_execute($1, "OBJ", "go", $packed);
+    pulse_inline_execute($1, "OBJ", "go", $packed);
 }
 `), 0o600); err != nil {
 		t.Fatal(err)
@@ -572,7 +572,7 @@ func TestStaticManagementCommandDispatchesAliasLoadedAfterConstruction(t *testin
 	}
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{session}},
-		beacons:  &clientpb.Beacons{},
+		pulses:  &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{}, nil
 		},
@@ -588,7 +588,7 @@ func TestStaticManagementCommandDispatchesAliasLoadedAfterConstruction(t *testin
 	if err := os.WriteFile(scriptPath, []byte(`
 alias latealias {
     $packed = bof_pack($1, "zzzz", $2, $3, $4, $5);
-    beacon_inline_execute($1, "OBJ", "go", $packed);
+    pulse_inline_execute($1, "OBJ", "go", $packed);
 }
 `), 0o600); err != nil {
 		t.Fatal(err)
@@ -835,46 +835,46 @@ func TestManagementCommandsPropagateErrorsAndSucceedForHelpAndList(t *testing.T)
 	}
 }
 
-func TestExecuteBeaconRejectsMissingCapability(t *testing.T) {
+func TestExecutePulseRejectsMissingCapability(t *testing.T) {
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{ID: "old-session", Arch: "amd64"}}},
-		beacons:  &clientpb.Beacons{},
+		pulses:  &clientpb.Pulses{},
 	}
 	manager, _ := newTestManager(t, rpc)
-	_, err := manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("old-session"),
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("old-session"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString(nil),
 	})
 	if err == nil || !strings.Contains(err.Error(), "bof_v1") {
-		t.Fatalf("executeBeacon error = %v, want bof_v1 rejection", err)
+		t.Fatalf("executePulse error = %v, want bof_v1 rejection", err)
 	}
 	if calls, _ := rpc.snapshotCalls(); len(calls) != 0 {
 		t.Fatalf("CallExtension called %d time(s) after capability rejection", len(calls))
 	}
 }
 
-func TestExecuteBeaconRejectsUnsupportedArchitecture(t *testing.T) {
+func TestExecutePulseRejectsUnsupportedArchitecture(t *testing.T) {
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "arm-session", Arch: "arm64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 	}
 	manager, _ := newTestManager(t, rpc)
-	_, err := manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("arm-session"),
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("arm-session"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString(nil),
 	})
 	if err == nil || !strings.Contains(err.Error(), "unsupported BOF target architecture") {
-		t.Fatalf("executeBeacon error = %v, want unsupported architecture rejection", err)
+		t.Fatalf("executePulse error = %v, want unsupported architecture rejection", err)
 	}
 	if calls, _ := rpc.snapshotCalls(); len(calls) != 0 {
 		t.Fatalf("CallExtension called %d time(s) after architecture rejection", len(calls))
@@ -885,7 +885,7 @@ func TestDynamicAliasRunEPropagatesBOFFailure(t *testing.T) {
 	session := &clientpb.Session{ID: "old-session", OS: "windows", Arch: "amd64"}
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{session}},
-		beacons:  &clientpb.Beacons{},
+		pulses:  &clientpb.Pulses{},
 	}
 	manager, _ := newTestManager(t, rpc)
 	manager.client.IsCLI = true
@@ -898,7 +898,7 @@ func TestDynamicAliasRunEPropagatesBOFFailure(t *testing.T) {
 	scriptPath := filepath.Join(t.TempDir(), "rejected.cna")
 	if err := os.WriteFile(scriptPath, []byte(`
 alias rejected {
-    beacon_inline_execute($1, "OBJ", "go", $null);
+    pulse_inline_execute($1, "OBJ", "go", $null);
 }
 `), 0o600); err != nil {
 		t.Fatal(err)
@@ -924,51 +924,51 @@ func (recorder *callbackRecorder) call(_ context.Context, values ...opforengine.
 	return opforengine.Null(), nil
 }
 
-func newAsyncBeaconTestRPC(t *testing.T, completed []byte) *testRPC {
+func newAsyncPulseTestRPC(t *testing.T, completed []byte) *testRPC {
 	t.Helper()
 	return &testRPC{
 		sessions: &clientpb.Sessions{},
-		beacons: &clientpb.Beacons{Beacons: []*clientpb.Beacon{{
-			ID: "beacon-1", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
+		pulses: &clientpb.Pulses{Pulses: []*clientpb.Pulse{{
+			ID: "pulse-1", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{Response: &commonpb.Response{
-				Async: true, BeaconID: "beacon-1", TaskID: "task-1",
+				Async: true, PulseID: "pulse-1", TaskID: "task-1",
 			}}, nil
 		},
-		task: func(_ context.Context, request *clientpb.BeaconTask) (*clientpb.BeaconTask, error) {
+		task: func(_ context.Context, request *clientpb.PulseTask) (*clientpb.PulseTask, error) {
 			if request.ID != "task-1" {
 				t.Fatalf("task ID = %q, want task-1", request.ID)
 			}
-			return &clientpb.BeaconTask{ID: request.ID, State: "completed", Response: completed}, nil
+			return &clientpb.PulseTask{ID: request.ID, State: "completed", Response: completed}, nil
 		},
 	}
 }
 
-func TestExecuteBeaconPollsAsyncTaskAndInvokesOrderedLegacyCallbacks(t *testing.T) {
+func TestExecutePulsePollsAsyncTaskAndInvokesOrderedLegacyCallbacks(t *testing.T) {
 	completed, err := proto.Marshal(&sliverpb.CallExtension{Output: []byte{'A', 0, 'B'}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	rpc := newAsyncBeaconTestRPC(t, completed)
+	rpc := newAsyncPulseTestRPC(t, completed)
 	manager, output := newTestManager(t, rpc)
-	manager.client.Settings.BeaconAutoResults = false
+	manager.client.Settings.PulseAutoResults = false
 
 	recorder := &callbackRecorder{}
-	_, err = manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("beacon-1"),
+	_, err = manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("pulse-1"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString([]byte{1, 2}),
 		Callback:        opforengine.CallableFunc(recorder.call),
 	})
 	if err != nil {
-		t.Fatalf("executeBeacon: %v", err)
+		t.Fatalf("executePulse: %v", err)
 	}
 	calls, taskCalls := rpc.snapshotCalls()
-	assertAsyncBeaconRequest(t, calls, taskCalls, output)
+	assertAsyncPulseRequest(t, calls, taskCalls, output)
 	if len(recorder.calls) != 2 {
 		t.Fatalf("callback calls = %d, want data plus terminal", len(recorder.calls))
 	}
@@ -976,12 +976,12 @@ func TestExecuteBeaconPollsAsyncTaskAndInvokesOrderedLegacyCallbacks(t *testing.
 	assertLegacyTerminalCallback(t, recorder.calls[1])
 }
 
-func assertAsyncBeaconRequest(t *testing.T, calls []*sliverpb.CallExtensionReq, taskCalls int, output *testOutput) {
+func assertAsyncPulseRequest(t *testing.T, calls []*sliverpb.CallExtensionReq, taskCalls int, output *testOutput) {
 	t.Helper()
 	if len(calls) != 1 || taskCalls != 1 {
 		t.Fatalf("CallExtension/task polls = %d/%d, want 1/1", len(calls), taskCalls)
 	}
-	if !calls[0].Request.Async || calls[0].Request.BeaconID != "beacon-1" || calls[0].Request.SessionID != "" {
+	if !calls[0].Request.Async || calls[0].Request.PulseID != "pulse-1" || calls[0].Request.SessionID != "" {
 		t.Fatalf("asynchronous target request = %#v", calls[0].Request)
 	}
 	if !bytes.Equal(calls[0].Args, []byte{2, 0, 0, 0, 1, 2}) {
@@ -994,7 +994,7 @@ func assertAsyncBeaconRequest(t *testing.T, calls []*sliverpb.CallExtensionReq, 
 
 func assertLegacyDataCallback(t *testing.T, dataCall []opforengine.Value) {
 	t.Helper()
-	if len(dataCall) != 3 || dataCall[0].String() != "beacon-1" {
+	if len(dataCall) != 3 || dataCall[0].String() != "pulse-1" {
 		t.Fatalf("data callback values = %#v", dataCall)
 	}
 	callbackOutput, ok := dataCall[1].Bytes()
@@ -1016,7 +1016,7 @@ func assertLegacyDataCallback(t *testing.T, dataCall []opforengine.Value) {
 
 func assertLegacyTerminalCallback(t *testing.T, terminalCall []opforengine.Value) {
 	t.Helper()
-	if len(terminalCall) != 3 || terminalCall[0].String() != "beacon-1" {
+	if len(terminalCall) != 3 || terminalCall[0].String() != "pulse-1" {
 		t.Fatalf("terminal callback values = %#v", terminalCall)
 	}
 	terminalOutput, ok := terminalCall[1].Bytes()
@@ -1065,7 +1065,7 @@ func assertCallbackFinal(t *testing.T, information *opforengine.Hash, want bool)
 	}
 }
 
-func TestExecuteBeaconInvokesTypedOutputBeforeLifecycleError(t *testing.T) {
+func TestExecutePulseInvokesTypedOutputBeforeLifecycleError(t *testing.T) {
 	records := []*sliverpb.BOFOutput{
 		{Type: 0x00, Data: []byte("first")},
 		{Type: 0x0d, Data: []byte{'A', 0, 'B'}},
@@ -1076,7 +1076,7 @@ func TestExecuteBeaconInvokesTypedOutputBeforeLifecycleError(t *testing.T) {
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "session-typed", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{
 				Output:     []byte("legacy output must be ignored"),
@@ -1088,17 +1088,17 @@ func TestExecuteBeaconInvokesTypedOutputBeforeLifecycleError(t *testing.T) {
 	manager, output := newTestManager(t, rpc)
 	recorder := &callbackRecorder{}
 
-	_, err := manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("session-typed"),
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("session-typed"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString(nil),
 		Callback:        opforengine.CallableFunc(recorder.call),
 	})
 	if err == nil || !strings.Contains(err.Error(), "entry point failed") {
-		t.Fatalf("executeBeacon error = %v, want entry point failure", err)
+		t.Fatalf("executePulse error = %v, want entry point failure", err)
 	}
 	if output.stdout() != "" || output.stderr() != "" {
 		t.Fatalf("callback-owned output was also rendered: stdout=%q stderr=%q", output.stdout(), output.stderr())
@@ -1164,12 +1164,12 @@ func assertTypedLifecycleCallback(t *testing.T, lifecycle []opforengine.Value) {
 	}
 }
 
-func TestExecuteBeaconRendersTypedChannelsSafelyWithoutCallback(t *testing.T) {
+func TestExecutePulseRendersTypedChannelsSafelyWithoutCallback(t *testing.T) {
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "session-render", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{
 				Output: []byte("legacy output must be ignored"),
@@ -1183,16 +1183,16 @@ func TestExecuteBeaconRendersTypedChannelsSafelyWithoutCallback(t *testing.T) {
 		},
 	}
 	manager, output := newTestManager(t, rpc)
-	_, err := manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("session-render"),
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("session-render"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString(nil),
 	})
 	if err != nil {
-		t.Fatalf("executeBeacon: %v", err)
+		t.Fatalf("executePulse: %v", err)
 	}
 	if got, want := output.stdout(), "plain\\xff\\x00 snow \u2603\n"; got != want {
 		t.Fatalf("stdout = %q, want %q", got, want)
@@ -1202,12 +1202,12 @@ func TestExecuteBeaconRendersTypedChannelsSafelyWithoutCallback(t *testing.T) {
 	}
 }
 
-func TestExecuteBeaconSyncEmptyResultInvokesSuccessLifecycle(t *testing.T) {
+func TestExecutePulseSyncEmptyResultInvokesSuccessLifecycle(t *testing.T) {
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "session-empty", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{}, nil
 		},
@@ -1218,17 +1218,17 @@ func TestExecuteBeaconSyncEmptyResultInvokesSuccessLifecycle(t *testing.T) {
 		callbackCalls = append(callbackCalls, append([]opforengine.Value(nil), values...))
 		return opforengine.Null(), nil
 	})
-	_, err := manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("session-empty"),
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("session-empty"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString(nil),
 		Callback:        callback,
 	})
 	if err != nil {
-		t.Fatalf("executeBeacon: %v", err)
+		t.Fatalf("executePulse: %v", err)
 	}
 	if output.stdout() != "" || output.stderr() != "" {
 		t.Fatalf("empty result rendered output: stdout=%q stderr=%q", output.stdout(), output.stderr())
@@ -1255,12 +1255,12 @@ func TestExecuteBeaconSyncEmptyResultInvokesSuccessLifecycle(t *testing.T) {
 	}
 }
 
-func TestExecuteBeaconDoesNotReinvokeFailingDataCallback(t *testing.T) {
+func TestExecutePulseDoesNotReinvokeFailingDataCallback(t *testing.T) {
 	rpc := &testRPC{
 		sessions: &clientpb.Sessions{Sessions: []*clientpb.Session{{
 			ID: "session-callback-error", Arch: "amd64", Capabilities: sliverpb.CapabilityBOFV1,
 		}}},
-		beacons: &clientpb.Beacons{},
+		pulses: &clientpb.Pulses{},
 		call: func(context.Context, *sliverpb.CallExtensionReq) (*sliverpb.CallExtension, error) {
 			return &sliverpb.CallExtension{
 				BOFOutputs: []*sliverpb.BOFOutput{{Data: []byte("partial")}},
@@ -1274,17 +1274,17 @@ func TestExecuteBeaconDoesNotReinvokeFailingDataCallback(t *testing.T) {
 		callbackCalls++
 		return opforengine.Null(), errors.New("script callback failure")
 	})
-	_, err := manager.executeBeacon(context.Background(), opforengine.AggressorBeaconExecutionRequest{
-		Kind:            opforengine.AggressorBeaconInlineExecute,
-		Name:            "beacon_inline_execute",
-		BeaconID:        opforengine.String("session-callback-error"),
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
+		Kind:            opforengine.AggressorPulseInlineExecute,
+		Name:            "pulse_inline_execute",
+		PulseID:        opforengine.String("session-callback-error"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
 		EntryPoint:      opforengine.String("go"),
 		PackedArguments: opforengine.BinaryString(nil),
 		Callback:        callback,
 	})
 	if err == nil || !strings.Contains(err.Error(), "implant failure") || !strings.Contains(err.Error(), "script callback failure") {
-		t.Fatalf("executeBeacon error = %v, want joined implant and callback failures", err)
+		t.Fatalf("executePulse error = %v, want joined implant and callback failures", err)
 	}
 	if callbackCalls != 1 {
 		t.Fatalf("callback calls = %d, want no retry after data callback failure", callbackCalls)
@@ -1303,8 +1303,8 @@ func TestNotifyBOFLifecycleErrorSkipsCanceledCallback(t *testing.T) {
 		return opforengine.Null(), nil
 	})
 	executionErr := errors.New("polling canceled")
-	got := notifyBOFLifecycleError(ctx, opforengine.AggressorBeaconExecutionRequest{
-		BeaconID: opforengine.String("beacon-canceled"),
+	got := notifyBOFLifecycleError(ctx, opforengine.AggressorPulseExecutionRequest{
+		PulseID: opforengine.String("pulse-canceled"),
 		Callback: callback,
 	}, "task-canceled", executionErr)
 	if !errors.Is(got, executionErr) {

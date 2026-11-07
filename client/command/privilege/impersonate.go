@@ -32,8 +32,8 @@ import (
 
 // ImpersonateCmd - Windows only, impersonate a user token
 func ImpersonateCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -48,7 +48,7 @@ func ImpersonateCmd(cmd *cobra.Command, con *console.SliverClient, args []string
 	}
 
 	if impersonate.Response != nil && impersonate.Response.Async {
-		con.AddBeaconCallback(impersonate.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(impersonate.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, impersonate)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

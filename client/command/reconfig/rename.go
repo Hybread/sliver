@@ -29,8 +29,8 @@ import (
 
 // RecnameCmd - Reconfigure metadata about a sessions.
 func RenameCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -41,16 +41,16 @@ func RenameCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		return
 	}
 
-	var beaconID string
+	var pulseID string
 	var sessionID string
-	if beacon != nil {
-		beaconID = beacon.ID
+	if pulse != nil {
+		pulseID = pulse.ID
 	} else if session != nil {
 		sessionID = session.ID
 	}
 	_, err := con.Rpc.Rename(context.Background(), &clientpb.RenameReq{
 		SessionID: sessionID,
-		BeaconID:  beaconID,
+		PulseID:  pulseID,
 		Name:      name,
 	})
 	if err != nil {

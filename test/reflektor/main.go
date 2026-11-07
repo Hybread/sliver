@@ -241,7 +241,7 @@ func run(opts options) error {
 			TemplateName:        "sliver",
 			Debug:               false,
 			ObfuscateSymbols:    false,
-			IsBeacon:            false,
+			IsPulse:            false,
 			Format:              clientpb.OutputFormat_SHARED_LIB,
 			IsSharedLib:         true,
 			RunAtLoad:           false,

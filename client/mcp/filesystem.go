@@ -34,7 +34,7 @@ const (
 
 type lsArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	Wait           bool   `json:"wait,omitempty"`
 	TimeoutSeconds int64  `json:"timeout_seconds,omitempty"`
@@ -42,7 +42,7 @@ type lsArgs struct {
 
 type cdArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	Wait           bool   `json:"wait,omitempty"`
 	TimeoutSeconds int64  `json:"timeout_seconds,omitempty"`
@@ -50,7 +50,7 @@ type cdArgs struct {
 
 type catArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	MaxBytes       int64  `json:"max_bytes,omitempty"`
 	MaxLines       int64  `json:"max_lines,omitempty"`
@@ -60,14 +60,14 @@ type catArgs struct {
 
 type pwdArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Wait           bool   `json:"wait,omitempty"`
 	TimeoutSeconds int64  `json:"timeout_seconds,omitempty"`
 }
 
 type rmArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	Recursive      bool   `json:"recursive,omitempty"`
 	Force          bool   `json:"force,omitempty"`
@@ -77,7 +77,7 @@ type rmArgs struct {
 
 type mvArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Src            string `json:"src,omitempty"`
 	Dst            string `json:"dst,omitempty"`
 	Wait           bool   `json:"wait,omitempty"`
@@ -86,7 +86,7 @@ type mvArgs struct {
 
 type cpArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Src            string `json:"src,omitempty"`
 	Dst            string `json:"dst,omitempty"`
 	Wait           bool   `json:"wait,omitempty"`
@@ -95,7 +95,7 @@ type cpArgs struct {
 
 type mkdirArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	Wait           bool   `json:"wait,omitempty"`
 	TimeoutSeconds int64  `json:"timeout_seconds,omitempty"`
@@ -103,7 +103,7 @@ type mkdirArgs struct {
 
 type chmodArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	FileMode       string `json:"file_mode,omitempty"`
 	Recursive      bool   `json:"recursive,omitempty"`
@@ -113,7 +113,7 @@ type chmodArgs struct {
 
 type chownArgs struct {
 	SessionID      string `json:"session_id,omitempty"`
-	BeaconID       string `json:"beacon_id,omitempty"`
+	PulseID       string `json:"pulse_id,omitempty"`
 	Path           string `json:"path,omitempty"`
 	UID            string `json:"uid,omitempty"`
 	GID            string `json:"gid,omitempty"`
@@ -192,7 +192,7 @@ type asyncTaskResult struct {
 	Async     bool   `json:"async"`
 	Operation string `json:"operation"`
 	TaskID    string `json:"task_id"`
-	BeaconID  string `json:"beacon_id,omitempty"`
+	PulseID  string `json:"pulse_id,omitempty"`
 	State     string `json:"state,omitempty"`
 }
 
@@ -327,7 +327,7 @@ func (s *SliverMCPServer) handleLs(ctx context.Context, args lsArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError("rpc client not configured"), nil
 	}
 
-	s.logToolCall(lsToolName, args.SessionID, args.BeaconID, fmt.Sprintf("path=%q", args.Path))
+	s.logToolCall(lsToolName, args.SessionID, args.PulseID, fmt.Sprintf("path=%q", args.Path))
 
 	args.TimeoutSeconds = applyDefaultTimeout(args.Wait, args.TimeoutSeconds)
 	ctx, cancel := withTimeout(ctx, args.TimeoutSeconds)
@@ -335,7 +335,7 @@ func (s *SliverMCPServer) handleLs(ctx context.Context, args lsArgs) (*mcpapi.Ca
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -352,12 +352,12 @@ func (s *SliverMCPServer) handleLs(ctx context.Context, args lsArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError(lsResp.Response.Err), nil
 	}
 
-	if isBeacon && lsResp.Response != nil && lsResp.Response.Async {
+	if isPulse && lsResp.Response != nil && lsResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("ls", lsResp.Response.TaskID, lsResp.Response.BeaconID), nil
+			return newAsyncResult("ls", lsResp.Response.TaskID, lsResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Ls{}
-		if err := s.waitForBeaconTaskResponse(ctx, lsResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, lsResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await ls task", err), nil
 		}
 		lsResp = resolved
@@ -398,7 +398,7 @@ func (s *SliverMCPServer) handleCd(ctx context.Context, args cdArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError("rpc client not configured"), nil
 	}
 
-	s.logToolCall(cdToolName, args.SessionID, args.BeaconID, fmt.Sprintf("path=%q", args.Path))
+	s.logToolCall(cdToolName, args.SessionID, args.PulseID, fmt.Sprintf("path=%q", args.Path))
 
 	args.TimeoutSeconds = applyDefaultTimeout(args.Wait, args.TimeoutSeconds)
 	ctx, cancel := withTimeout(ctx, args.TimeoutSeconds)
@@ -406,7 +406,7 @@ func (s *SliverMCPServer) handleCd(ctx context.Context, args cdArgs) (*mcpapi.Ca
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -423,12 +423,12 @@ func (s *SliverMCPServer) handleCd(ctx context.Context, args cdArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError(pwdResp.Response.Err), nil
 	}
 
-	if isBeacon && pwdResp.Response != nil && pwdResp.Response.Async {
+	if isPulse && pwdResp.Response != nil && pwdResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("cd", pwdResp.Response.TaskID, pwdResp.Response.BeaconID), nil
+			return newAsyncResult("cd", pwdResp.Response.TaskID, pwdResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Pwd{}
-		if err := s.waitForBeaconTaskResponse(ctx, pwdResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, pwdResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await cd task", err), nil
 		}
 		pwdResp = resolved
@@ -452,7 +452,7 @@ func (s *SliverMCPServer) handleCat(ctx context.Context, args catArgs) (*mcpapi.
 	if args.MaxLines > 0 {
 		extras = append(extras, fmt.Sprintf("max_lines=%d", args.MaxLines))
 	}
-	s.logToolCall(catToolName, args.SessionID, args.BeaconID, extras...)
+	s.logToolCall(catToolName, args.SessionID, args.PulseID, extras...)
 
 	args.TimeoutSeconds = applyDefaultTimeout(args.Wait, args.TimeoutSeconds)
 	ctx, cancel := withTimeout(ctx, args.TimeoutSeconds)
@@ -460,7 +460,7 @@ func (s *SliverMCPServer) handleCat(ctx context.Context, args catArgs) (*mcpapi.
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -480,12 +480,12 @@ func (s *SliverMCPServer) handleCat(ctx context.Context, args catArgs) (*mcpapi.
 		return mcpapi.NewToolResultError(download.Response.Err), nil
 	}
 
-	if isBeacon && download.Response != nil && download.Response.Async {
+	if isPulse && download.Response != nil && download.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("cat", download.Response.TaskID, download.Response.BeaconID), nil
+			return newAsyncResult("cat", download.Response.TaskID, download.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Download{}
-		if err := s.waitForBeaconTaskResponse(ctx, download.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, download.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await cat task", err), nil
 		}
 		download = resolved
@@ -507,7 +507,7 @@ func (s *SliverMCPServer) handlePwd(ctx context.Context, args pwdArgs) (*mcpapi.
 		return mcpapi.NewToolResultError("rpc client not configured"), nil
 	}
 
-	s.logToolCall(pwdToolName, args.SessionID, args.BeaconID)
+	s.logToolCall(pwdToolName, args.SessionID, args.PulseID)
 
 	args.TimeoutSeconds = applyDefaultTimeout(args.Wait, args.TimeoutSeconds)
 	ctx, cancel := withTimeout(ctx, args.TimeoutSeconds)
@@ -515,7 +515,7 @@ func (s *SliverMCPServer) handlePwd(ctx context.Context, args pwdArgs) (*mcpapi.
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -529,12 +529,12 @@ func (s *SliverMCPServer) handlePwd(ctx context.Context, args pwdArgs) (*mcpapi.
 		return mcpapi.NewToolResultError(pwdResp.Response.Err), nil
 	}
 
-	if isBeacon && pwdResp.Response != nil && pwdResp.Response.Async {
+	if isPulse && pwdResp.Response != nil && pwdResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("pwd", pwdResp.Response.TaskID, pwdResp.Response.BeaconID), nil
+			return newAsyncResult("pwd", pwdResp.Response.TaskID, pwdResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Pwd{}
-		if err := s.waitForBeaconTaskResponse(ctx, pwdResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, pwdResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await pwd task", err), nil
 		}
 		pwdResp = resolved
@@ -554,7 +554,7 @@ func (s *SliverMCPServer) handleRm(ctx context.Context, args rmArgs) (*mcpapi.Ca
 	s.logToolCall(
 		rmToolName,
 		args.SessionID,
-		args.BeaconID,
+		args.PulseID,
 		fmt.Sprintf("path=%q", args.Path),
 		fmt.Sprintf("recursive=%t", args.Recursive),
 		fmt.Sprintf("force=%t", args.Force),
@@ -566,7 +566,7 @@ func (s *SliverMCPServer) handleRm(ctx context.Context, args rmArgs) (*mcpapi.Ca
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -585,12 +585,12 @@ func (s *SliverMCPServer) handleRm(ctx context.Context, args rmArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError(rmResp.Response.Err), nil
 	}
 
-	if isBeacon && rmResp.Response != nil && rmResp.Response.Async {
+	if isPulse && rmResp.Response != nil && rmResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("rm", rmResp.Response.TaskID, rmResp.Response.BeaconID), nil
+			return newAsyncResult("rm", rmResp.Response.TaskID, rmResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Rm{}
-		if err := s.waitForBeaconTaskResponse(ctx, rmResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, rmResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await rm task", err), nil
 		}
 		rmResp = resolved
@@ -614,7 +614,7 @@ func (s *SliverMCPServer) handleMv(ctx context.Context, args mvArgs) (*mcpapi.Ca
 	s.logToolCall(
 		mvToolName,
 		args.SessionID,
-		args.BeaconID,
+		args.PulseID,
 		fmt.Sprintf("src=%q", args.Src),
 		fmt.Sprintf("dst=%q", args.Dst),
 	)
@@ -625,7 +625,7 @@ func (s *SliverMCPServer) handleMv(ctx context.Context, args mvArgs) (*mcpapi.Ca
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -643,12 +643,12 @@ func (s *SliverMCPServer) handleMv(ctx context.Context, args mvArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError(mvResp.Response.Err), nil
 	}
 
-	if isBeacon && mvResp.Response != nil && mvResp.Response.Async {
+	if isPulse && mvResp.Response != nil && mvResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("mv", mvResp.Response.TaskID, mvResp.Response.BeaconID), nil
+			return newAsyncResult("mv", mvResp.Response.TaskID, mvResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Mv{}
-		if err := s.waitForBeaconTaskResponse(ctx, mvResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, mvResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await mv task", err), nil
 		}
 		mvResp = resolved
@@ -676,7 +676,7 @@ func (s *SliverMCPServer) handleCp(ctx context.Context, args cpArgs) (*mcpapi.Ca
 	s.logToolCall(
 		cpToolName,
 		args.SessionID,
-		args.BeaconID,
+		args.PulseID,
 		fmt.Sprintf("src=%q", args.Src),
 		fmt.Sprintf("dst=%q", args.Dst),
 	)
@@ -687,7 +687,7 @@ func (s *SliverMCPServer) handleCp(ctx context.Context, args cpArgs) (*mcpapi.Ca
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -705,12 +705,12 @@ func (s *SliverMCPServer) handleCp(ctx context.Context, args cpArgs) (*mcpapi.Ca
 		return mcpapi.NewToolResultError(cpResp.Response.Err), nil
 	}
 
-	if isBeacon && cpResp.Response != nil && cpResp.Response.Async {
+	if isPulse && cpResp.Response != nil && cpResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("cp", cpResp.Response.TaskID, cpResp.Response.BeaconID), nil
+			return newAsyncResult("cp", cpResp.Response.TaskID, cpResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Cp{}
-		if err := s.waitForBeaconTaskResponse(ctx, cpResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, cpResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await cp task", err), nil
 		}
 		cpResp = resolved
@@ -739,7 +739,7 @@ func (s *SliverMCPServer) handleMkdir(ctx context.Context, args mkdirArgs) (*mcp
 		return mcpapi.NewToolResultError("rpc client not configured"), nil
 	}
 
-	s.logToolCall(mkdirToolName, args.SessionID, args.BeaconID, fmt.Sprintf("path=%q", args.Path))
+	s.logToolCall(mkdirToolName, args.SessionID, args.PulseID, fmt.Sprintf("path=%q", args.Path))
 
 	args.TimeoutSeconds = applyDefaultTimeout(args.Wait, args.TimeoutSeconds)
 	ctx, cancel := withTimeout(ctx, args.TimeoutSeconds)
@@ -747,7 +747,7 @@ func (s *SliverMCPServer) handleMkdir(ctx context.Context, args mkdirArgs) (*mcp
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -764,12 +764,12 @@ func (s *SliverMCPServer) handleMkdir(ctx context.Context, args mkdirArgs) (*mcp
 		return mcpapi.NewToolResultError(mkdirResp.Response.Err), nil
 	}
 
-	if isBeacon && mkdirResp.Response != nil && mkdirResp.Response.Async {
+	if isPulse && mkdirResp.Response != nil && mkdirResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("mkdir", mkdirResp.Response.TaskID, mkdirResp.Response.BeaconID), nil
+			return newAsyncResult("mkdir", mkdirResp.Response.TaskID, mkdirResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Mkdir{}
-		if err := s.waitForBeaconTaskResponse(ctx, mkdirResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, mkdirResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await mkdir task", err), nil
 		}
 		mkdirResp = resolved
@@ -793,7 +793,7 @@ func (s *SliverMCPServer) handleChmod(ctx context.Context, args chmodArgs) (*mcp
 	s.logToolCall(
 		chmodToolName,
 		args.SessionID,
-		args.BeaconID,
+		args.PulseID,
 		fmt.Sprintf("path=%q", args.Path),
 		fmt.Sprintf("file_mode=%q", args.FileMode),
 		fmt.Sprintf("recursive=%t", args.Recursive),
@@ -805,7 +805,7 @@ func (s *SliverMCPServer) handleChmod(ctx context.Context, args chmodArgs) (*mcp
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -824,12 +824,12 @@ func (s *SliverMCPServer) handleChmod(ctx context.Context, args chmodArgs) (*mcp
 		return mcpapi.NewToolResultError(chmodResp.Response.Err), nil
 	}
 
-	if isBeacon && chmodResp.Response != nil && chmodResp.Response.Async {
+	if isPulse && chmodResp.Response != nil && chmodResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("chmod", chmodResp.Response.TaskID, chmodResp.Response.BeaconID), nil
+			return newAsyncResult("chmod", chmodResp.Response.TaskID, chmodResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Chmod{}
-		if err := s.waitForBeaconTaskResponse(ctx, chmodResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, chmodResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await chmod task", err), nil
 		}
 		chmodResp = resolved
@@ -853,7 +853,7 @@ func (s *SliverMCPServer) handleChown(ctx context.Context, args chownArgs) (*mcp
 	s.logToolCall(
 		chownToolName,
 		args.SessionID,
-		args.BeaconID,
+		args.PulseID,
 		fmt.Sprintf("path=%q", args.Path),
 		fmt.Sprintf("uid=%q", args.UID),
 		fmt.Sprintf("gid=%q", args.GID),
@@ -866,7 +866,7 @@ func (s *SliverMCPServer) handleChown(ctx context.Context, args chownArgs) (*mcp
 		defer cancel()
 	}
 
-	req, isBeacon, err := buildRequest(args.SessionID, args.BeaconID, args.TimeoutSeconds)
+	req, isPulse, err := buildRequest(args.SessionID, args.PulseID, args.TimeoutSeconds)
 	if err != nil {
 		return mcpapi.NewToolResultError(err.Error()), nil
 	}
@@ -886,12 +886,12 @@ func (s *SliverMCPServer) handleChown(ctx context.Context, args chownArgs) (*mcp
 		return mcpapi.NewToolResultError(chownResp.Response.Err), nil
 	}
 
-	if isBeacon && chownResp.Response != nil && chownResp.Response.Async {
+	if isPulse && chownResp.Response != nil && chownResp.Response.Async {
 		if !args.Wait {
-			return newAsyncResult("chown", chownResp.Response.TaskID, chownResp.Response.BeaconID), nil
+			return newAsyncResult("chown", chownResp.Response.TaskID, chownResp.Response.PulseID), nil
 		}
 		resolved := &sliverpb.Chown{}
-		if err := s.waitForBeaconTaskResponse(ctx, chownResp.Response.TaskID, resolved); err != nil {
+		if err := s.waitForPulseTaskResponse(ctx, chownResp.Response.TaskID, resolved); err != nil {
 			return mcpapi.NewToolResultErrorFromErr("failed to await chown task", err), nil
 		}
 		chownResp = resolved
@@ -907,12 +907,12 @@ func (s *SliverMCPServer) handleChown(ctx context.Context, args chownArgs) (*mcp
 	return mcpapi.NewToolResultStructuredOnly(chownResult{Path: path}), nil
 }
 
-func buildRequest(sessionID, beaconID string, timeoutSeconds int64) (*commonpb.Request, bool, error) {
-	if sessionID == "" && beaconID == "" {
-		return nil, false, fmt.Errorf("session_id or beacon_id is required")
+func buildRequest(sessionID, pulseID string, timeoutSeconds int64) (*commonpb.Request, bool, error) {
+	if sessionID == "" && pulseID == "" {
+		return nil, false, fmt.Errorf("session_id or pulse_id is required")
 	}
-	if sessionID != "" && beaconID != "" {
-		return nil, false, fmt.Errorf("provide only one of session_id or beacon_id")
+	if sessionID != "" && pulseID != "" {
+		return nil, false, fmt.Errorf("provide only one of session_id or pulse_id")
 	}
 
 	req := &commonpb.Request{}
@@ -926,7 +926,7 @@ func buildRequest(sessionID, beaconID string, timeoutSeconds int64) (*commonpb.R
 		return req, false, nil
 	}
 
-	req.BeaconID = beaconID
+	req.PulseID = pulseID
 	req.Async = true
 	return req, true, nil
 }
@@ -945,8 +945,8 @@ func withTimeout(ctx context.Context, timeoutSeconds int64) (context.Context, co
 	return context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
 }
 
-func (s *SliverMCPServer) waitForBeaconTaskResponse(ctx context.Context, taskID string, out proto.Message) error {
-	task, err := s.waitForBeaconTask(ctx, taskID)
+func (s *SliverMCPServer) waitForPulseTaskResponse(ctx context.Context, taskID string, out proto.Message) error {
+	task, err := s.waitForPulseTask(ctx, taskID)
 	if err != nil {
 		return err
 	}
@@ -956,20 +956,20 @@ func (s *SliverMCPServer) waitForBeaconTaskResponse(ctx context.Context, taskID 
 		if state == "" {
 			state = "unknown"
 		}
-		return fmt.Errorf("beacon task %s %s", task.ID, state)
+		return fmt.Errorf("pulse task %s %s", task.ID, state)
 	}
 	if len(task.Response) == 0 {
-		return fmt.Errorf("beacon task %s returned empty response", task.ID)
+		return fmt.Errorf("pulse task %s returned empty response", task.ID)
 	}
 	return proto.Unmarshal(task.Response, out)
 }
 
-func (s *SliverMCPServer) waitForBeaconTask(ctx context.Context, taskID string) (*clientpb.BeaconTask, error) {
+func (s *SliverMCPServer) waitForPulseTask(ctx context.Context, taskID string) (*clientpb.PulseTask, error) {
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
 	for {
-		task, err := s.Rpc.GetBeaconTaskContent(ctx, &clientpb.BeaconTask{ID: taskID})
+		task, err := s.Rpc.GetPulseTaskContent(ctx, &clientpb.PulseTask{ID: taskID})
 		if err != nil {
 			return nil, err
 		}
@@ -986,7 +986,7 @@ func (s *SliverMCPServer) waitForBeaconTask(ctx context.Context, taskID string) 
 	}
 }
 
-func newAsyncResult(operation, taskID, beaconID string) *mcpapi.CallToolResult {
+func newAsyncResult(operation, taskID, pulseID string) *mcpapi.CallToolResult {
 	state := "pending"
 	if taskID == "" {
 		state = "unknown"
@@ -995,7 +995,7 @@ func newAsyncResult(operation, taskID, beaconID string) *mcpapi.CallToolResult {
 		Async:     true,
 		Operation: operation,
 		TaskID:    taskID,
-		BeaconID:  beaconID,
+		PulseID:  pulseID,
 		State:     state,
 	}
 	return mcpapi.NewToolResultStructuredOnly(result)

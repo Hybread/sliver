@@ -115,7 +115,7 @@ func (server *tcpEchoServer) close() error {
 }
 
 func (s *suite) exerciseReversePortForward(target implantTarget, transport string) (resultErr error) {
-	if target.session == nil || target.beacon != nil {
+	if target.session == nil || target.pulse != nil {
 		return errors.New("reverse port forwarding E2E requires a session target")
 	}
 	if err := s.rportfwdStep(transport, rportfwdcoverage.ScenarioInvalidDestination, "rejects invalid operator destinations", func() error {
@@ -387,7 +387,7 @@ func (s *suite) requireInvalidSessionStopIsolation(target implantTarget, listene
 }
 
 func (s *suite) exerciseReversePortForwardDisconnect(target implantTarget, transport string, process *managedProcess) (resultErr error) {
-	if target.session == nil || target.beacon != nil || process == nil {
+	if target.session == nil || target.pulse != nil || process == nil {
 		return errors.New("reverse-forward disconnect E2E requires a managed session process")
 	}
 	echoServer, err := startTCPEchoServer()

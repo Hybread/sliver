@@ -35,8 +35,8 @@ import (
 
 // MemfilesListCmd - List memfiles.
 func MemfilesListCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -48,7 +48,7 @@ func MemfilesListCmd(cmd *cobra.Command, con *console.SliverClient, args []strin
 		return
 	}
 	if memfilesList.Response != nil && memfilesList.Response.Async {
-		con.AddBeaconCallback(memfilesList.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(memfilesList.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, memfilesList)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

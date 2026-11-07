@@ -38,7 +38,7 @@ type templateRenderer struct {
 type templateData struct {
 	EventType      string
 	Session        *core.Session
-	Beacon         *models.Beacon
+	Pulse         *models.Pulse
 	Job            *core.Job
 	Client         *core.Client
 	Error          string
@@ -185,7 +185,7 @@ func buildTemplateData(event core.Event, subject, message string) templateData {
 	return templateData{
 		EventType:      event.EventType,
 		Session:        event.Session,
-		Beacon:         event.Beacon,
+		Pulse:         event.Pulse,
 		Job:            event.Job,
 		Client:         event.Client,
 		Error:          errText,

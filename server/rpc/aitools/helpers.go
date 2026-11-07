@@ -21,7 +21,7 @@ type responseMessage interface {
 func targetSchemaProperties() map[string]any {
 	return map[string]any{
 		"session_id": map[string]any{"type": "string", "description": "Interactive session ID to run the command against."},
-		"beacon_id":  map[string]any{"type": "string", "description": "Beacon ID to run the command against."},
+		"pulse_id":  map[string]any{"type": "string", "description": "Pulse ID to run the command against."},
 	}
 }
 
@@ -41,7 +41,7 @@ func callTargetRPC[T responseMessage](
 ) (T, error) {
 	var zero T
 
-	req, isBeacon, callCtx, cancel, err := buildRequestContext(ctx, target)
+	req, isPulse, callCtx, cancel, err := buildRequestContext(ctx, target)
 	if err != nil {
 		return zero, err
 	}
@@ -56,9 +56,9 @@ func callTargetRPC[T responseMessage](
 	if err := genericResponseError(resp.GetResponse()); err != nil {
 		return zero, err
 	}
-	if isBeacon && resp.GetResponse() != nil && resp.GetResponse().Async {
+	if isPulse && resp.GetResponse() != nil && resp.GetResponse().Async {
 		resolved := newResponse()
-		if err := waitForBeaconTaskResponse(callCtx, resp.GetResponse().TaskID, resolved); err != nil {
+		if err := waitForPulseTaskResponse(callCtx, resp.GetResponse().TaskID, resolved); err != nil {
 			return zero, err
 		}
 		resp = resolved
@@ -69,8 +69,8 @@ func callTargetRPC[T responseMessage](
 	return resp, nil
 }
 
-func (e *executor) lookupTargetMetadata(ctx context.Context, sessionID, beaconID string) (*clientpb.Session, *clientpb.Beacon, error) {
-	target, err := e.resolveTarget(sessionID, beaconID)
+func (e *executor) lookupTargetMetadata(ctx context.Context, sessionID, pulseID string) (*clientpb.Session, *clientpb.Pulse, error) {
+	target, err := e.resolveTarget(sessionID, pulseID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -96,21 +96,21 @@ func (e *executor) lookupTargetMetadata(ctx context.Context, sessionID, beaconID
 		return nil, nil, fmt.Errorf("session %q not found", target.SessionID)
 	}
 
-	beaconsResp, err := e.backend.GetBeacons(ctx, &commonpb.Empty{})
+	pulsesResp, err := e.backend.GetPulses(ctx, &commonpb.Empty{})
 	if err != nil {
 		return nil, nil, err
 	}
-	for _, beacon := range beaconsResp.GetBeacons() {
-		if beacon != nil && beacon.ID == target.BeaconID {
-			return nil, beacon, nil
+	for _, pulse := range pulsesResp.GetPulses() {
+		if pulse != nil && pulse.ID == target.PulseID {
+			return nil, pulse, nil
 		}
 	}
-	for _, beacon := range beaconsResp.GetBeacons() {
-		if beacon != nil && strings.HasPrefix(beacon.ID, target.BeaconID) {
-			return nil, beacon, nil
+	for _, pulse := range pulsesResp.GetPulses() {
+		if pulse != nil && strings.HasPrefix(pulse.ID, target.PulseID) {
+			return nil, pulse, nil
 		}
 	}
-	return nil, nil, fmt.Errorf("beacon %q not found", target.BeaconID)
+	return nil, nil, fmt.Errorf("pulse %q not found", target.PulseID)
 }
 
 func bytesToTextAndBase64(data []byte) (string, string) {

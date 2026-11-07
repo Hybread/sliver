@@ -30,10 +30,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// InteractiveCmd - Beacon only command to open an interactive session.
+// InteractiveCmd - Pulse only command to open an interactive session.
 func InteractiveCmd(cmd *cobra.Command, con *console.SliverClient, _ []string) {
-	beacon := con.ActiveTarget.GetBeaconInteractive()
-	if beacon == nil {
+	pulse := con.ActiveTarget.GetPulseInteractive()
+	if pulse == nil {
 		return
 	}
 
@@ -95,24 +95,24 @@ func InteractiveCmd(cmd *cobra.Command, con *console.SliverClient, _ []string) {
 	}
 	c2s = append(c2s, tcpPivotC2...)
 
-	// No flags, parse the current beacon's ActiveC2 instead
+	// No flags, parse the current pulse's ActiveC2 instead
 	if len(c2s) == 0 {
-		con.PrintInfof("Using beacon's active C2 endpoint: %s\n", beacon.ActiveC2)
-		c2url, err := url.Parse(beacon.ActiveC2)
+		con.PrintInfof("Using pulse's active C2 endpoint: %s\n", pulse.ActiveC2)
+		c2url, err := url.Parse(pulse.ActiveC2)
 		if err != nil {
 			con.PrintErrorf("%s\n", err.Error())
 			return
 		}
 		switch c2url.Scheme {
 		case "mtls":
-			mtlsC2, err = generate.ParseMTLSc2(beacon.ActiveC2)
+			mtlsC2, err = generate.ParseMTLSc2(pulse.ActiveC2)
 			if err != nil {
 				con.PrintErrorf("%s\n", err.Error())
 				return
 			}
 			c2s = append(c2s, mtlsC2...)
 		case "wg":
-			wgC2, err = generate.ParseWGc2(beacon.ActiveC2)
+			wgC2, err = generate.ParseWGc2(pulse.ActiveC2)
 			if err != nil {
 				con.PrintErrorf("%s\n", err.Error())
 				return
@@ -121,28 +121,28 @@ func InteractiveCmd(cmd *cobra.Command, con *console.SliverClient, _ []string) {
 		case "https":
 			fallthrough
 		case "http":
-			httpC2, err = generate.ParseHTTPc2(beacon.ActiveC2)
+			httpC2, err = generate.ParseHTTPc2(pulse.ActiveC2)
 			if err != nil {
 				con.PrintErrorf("%s\n", err.Error())
 				return
 			}
 			c2s = append(c2s, httpC2...)
 		case "dns":
-			dnsC2, err = generate.ParseDNSc2(beacon.ActiveC2)
+			dnsC2, err = generate.ParseDNSc2(pulse.ActiveC2)
 			if err != nil {
 				con.PrintErrorf("%s\n", err.Error())
 				return
 			}
 			c2s = append(c2s, dnsC2...)
 		case "namedpipe":
-			namedPipeC2, err = generate.ParseNamedPipec2(beacon.ActiveC2)
+			namedPipeC2, err = generate.ParseNamedPipec2(pulse.ActiveC2)
 			if err != nil {
 				con.PrintErrorf("%s\n", err.Error())
 				return
 			}
 			c2s = append(c2s, namedPipeC2...)
 		case "tcppivot":
-			tcpPivotC2, err = generate.ParseTCPPivotc2(beacon.ActiveC2)
+			tcpPivotC2, err = generate.ParseTCPPivotc2(pulse.ActiveC2)
 			if err != nil {
 				con.PrintErrorf("%s\n", err.Error())
 				return

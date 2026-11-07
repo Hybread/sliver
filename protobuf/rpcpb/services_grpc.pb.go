@@ -46,13 +46,13 @@ const (
 	SliverRPC_StartDNSListener_FullMethodName                 = "/rpcpb.SliverRPC/StartDNSListener"
 	SliverRPC_StartHTTPSListener_FullMethodName               = "/rpcpb.SliverRPC/StartHTTPSListener"
 	SliverRPC_StartHTTPListener_FullMethodName                = "/rpcpb.SliverRPC/StartHTTPListener"
-	SliverRPC_GetBeacons_FullMethodName                       = "/rpcpb.SliverRPC/GetBeacons"
-	SliverRPC_GetBeacon_FullMethodName                        = "/rpcpb.SliverRPC/GetBeacon"
-	SliverRPC_RmBeacon_FullMethodName                         = "/rpcpb.SliverRPC/RmBeacon"
-	SliverRPC_GetBeaconTasks_FullMethodName                   = "/rpcpb.SliverRPC/GetBeaconTasks"
-	SliverRPC_GetBeaconTaskContent_FullMethodName             = "/rpcpb.SliverRPC/GetBeaconTaskContent"
-	SliverRPC_CancelBeaconTask_FullMethodName                 = "/rpcpb.SliverRPC/CancelBeaconTask"
-	SliverRPC_UpdateBeaconIntegrityInformation_FullMethodName = "/rpcpb.SliverRPC/UpdateBeaconIntegrityInformation"
+	SliverRPC_GetPulses_FullMethodName                       = "/rpcpb.SliverRPC/GetPulses"
+	SliverRPC_GetPulse_FullMethodName                        = "/rpcpb.SliverRPC/GetPulse"
+	SliverRPC_RmPulse_FullMethodName                         = "/rpcpb.SliverRPC/RmPulse"
+	SliverRPC_GetPulseTasks_FullMethodName                   = "/rpcpb.SliverRPC/GetPulseTasks"
+	SliverRPC_GetPulseTaskContent_FullMethodName             = "/rpcpb.SliverRPC/GetPulseTaskContent"
+	SliverRPC_CancelPulseTask_FullMethodName                 = "/rpcpb.SliverRPC/CancelPulseTask"
+	SliverRPC_UpdatePulseIntegrityInformation_FullMethodName = "/rpcpb.SliverRPC/UpdatePulseIntegrityInformation"
 	SliverRPC_GetJobs_FullMethodName                          = "/rpcpb.SliverRPC/GetJobs"
 	SliverRPC_KillJob_FullMethodName                          = "/rpcpb.SliverRPC/KillJob"
 	SliverRPC_RestartJobs_FullMethodName                      = "/rpcpb.SliverRPC/RestartJobs"
@@ -261,14 +261,14 @@ type SliverRPCClient interface {
 	StartDNSListener(ctx context.Context, in *clientpb.DNSListenerReq, opts ...grpc.CallOption) (*clientpb.ListenerJob, error)
 	StartHTTPSListener(ctx context.Context, in *clientpb.HTTPListenerReq, opts ...grpc.CallOption) (*clientpb.ListenerJob, error)
 	StartHTTPListener(ctx context.Context, in *clientpb.HTTPListenerReq, opts ...grpc.CallOption) (*clientpb.ListenerJob, error)
-	// *** Beacons ***
-	GetBeacons(ctx context.Context, in *commonpb.Empty, opts ...grpc.CallOption) (*clientpb.Beacons, error)
-	GetBeacon(ctx context.Context, in *clientpb.Beacon, opts ...grpc.CallOption) (*clientpb.Beacon, error)
-	RmBeacon(ctx context.Context, in *clientpb.Beacon, opts ...grpc.CallOption) (*commonpb.Empty, error)
-	GetBeaconTasks(ctx context.Context, in *clientpb.Beacon, opts ...grpc.CallOption) (*clientpb.BeaconTasks, error)
-	GetBeaconTaskContent(ctx context.Context, in *clientpb.BeaconTask, opts ...grpc.CallOption) (*clientpb.BeaconTask, error)
-	CancelBeaconTask(ctx context.Context, in *clientpb.BeaconTask, opts ...grpc.CallOption) (*clientpb.BeaconTask, error)
-	UpdateBeaconIntegrityInformation(ctx context.Context, in *clientpb.BeaconIntegrity, opts ...grpc.CallOption) (*commonpb.Empty, error)
+	// *** Pulses ***
+	GetPulses(ctx context.Context, in *commonpb.Empty, opts ...grpc.CallOption) (*clientpb.Pulses, error)
+	GetPulse(ctx context.Context, in *clientpb.Pulse, opts ...grpc.CallOption) (*clientpb.Pulse, error)
+	RmPulse(ctx context.Context, in *clientpb.Pulse, opts ...grpc.CallOption) (*commonpb.Empty, error)
+	GetPulseTasks(ctx context.Context, in *clientpb.Pulse, opts ...grpc.CallOption) (*clientpb.PulseTasks, error)
+	GetPulseTaskContent(ctx context.Context, in *clientpb.PulseTask, opts ...grpc.CallOption) (*clientpb.PulseTask, error)
+	CancelPulseTask(ctx context.Context, in *clientpb.PulseTask, opts ...grpc.CallOption) (*clientpb.PulseTask, error)
+	UpdatePulseIntegrityInformation(ctx context.Context, in *clientpb.PulseIntegrity, opts ...grpc.CallOption) (*commonpb.Empty, error)
 	// *** Jobs ***
 	GetJobs(ctx context.Context, in *commonpb.Empty, opts ...grpc.CallOption) (*clientpb.Jobs, error)
 	KillJob(ctx context.Context, in *clientpb.KillJobReq, opts ...grpc.CallOption) (*clientpb.KillJob, error)
@@ -428,7 +428,7 @@ type SliverRPCClient interface {
 	StartRportFwdListener(ctx context.Context, in *sliverpb.RportFwdStartListenerReq, opts ...grpc.CallOption) (*sliverpb.RportFwdListener, error)
 	GetRportFwdListeners(ctx context.Context, in *sliverpb.RportFwdListenersReq, opts ...grpc.CallOption) (*sliverpb.RportFwdListeners, error)
 	StopRportFwdListener(ctx context.Context, in *sliverpb.RportFwdStopListenerReq, opts ...grpc.CallOption) (*sliverpb.RportFwdListener, error)
-	// *** Beacon *** -only commands
+	// *** Pulse *** -only commands
 	OpenSession(ctx context.Context, in *sliverpb.OpenSession, opts ...grpc.CallOption) (*sliverpb.OpenSession, error)
 	CloseSession(ctx context.Context, in *sliverpb.CloseSession, opts ...grpc.CallOption) (*commonpb.Empty, error)
 	// *** Extensions ***
@@ -715,70 +715,70 @@ func (c *sliverRPCClient) StartHTTPListener(ctx context.Context, in *clientpb.HT
 	return out, nil
 }
 
-func (c *sliverRPCClient) GetBeacons(ctx context.Context, in *commonpb.Empty, opts ...grpc.CallOption) (*clientpb.Beacons, error) {
+func (c *sliverRPCClient) GetPulses(ctx context.Context, in *commonpb.Empty, opts ...grpc.CallOption) (*clientpb.Pulses, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(clientpb.Beacons)
-	err := c.cc.Invoke(ctx, SliverRPC_GetBeacons_FullMethodName, in, out, cOpts...)
+	out := new(clientpb.Pulses)
+	err := c.cc.Invoke(ctx, SliverRPC_GetPulses_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sliverRPCClient) GetBeacon(ctx context.Context, in *clientpb.Beacon, opts ...grpc.CallOption) (*clientpb.Beacon, error) {
+func (c *sliverRPCClient) GetPulse(ctx context.Context, in *clientpb.Pulse, opts ...grpc.CallOption) (*clientpb.Pulse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(clientpb.Beacon)
-	err := c.cc.Invoke(ctx, SliverRPC_GetBeacon_FullMethodName, in, out, cOpts...)
+	out := new(clientpb.Pulse)
+	err := c.cc.Invoke(ctx, SliverRPC_GetPulse_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sliverRPCClient) RmBeacon(ctx context.Context, in *clientpb.Beacon, opts ...grpc.CallOption) (*commonpb.Empty, error) {
+func (c *sliverRPCClient) RmPulse(ctx context.Context, in *clientpb.Pulse, opts ...grpc.CallOption) (*commonpb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(commonpb.Empty)
-	err := c.cc.Invoke(ctx, SliverRPC_RmBeacon_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SliverRPC_RmPulse_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sliverRPCClient) GetBeaconTasks(ctx context.Context, in *clientpb.Beacon, opts ...grpc.CallOption) (*clientpb.BeaconTasks, error) {
+func (c *sliverRPCClient) GetPulseTasks(ctx context.Context, in *clientpb.Pulse, opts ...grpc.CallOption) (*clientpb.PulseTasks, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(clientpb.BeaconTasks)
-	err := c.cc.Invoke(ctx, SliverRPC_GetBeaconTasks_FullMethodName, in, out, cOpts...)
+	out := new(clientpb.PulseTasks)
+	err := c.cc.Invoke(ctx, SliverRPC_GetPulseTasks_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sliverRPCClient) GetBeaconTaskContent(ctx context.Context, in *clientpb.BeaconTask, opts ...grpc.CallOption) (*clientpb.BeaconTask, error) {
+func (c *sliverRPCClient) GetPulseTaskContent(ctx context.Context, in *clientpb.PulseTask, opts ...grpc.CallOption) (*clientpb.PulseTask, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(clientpb.BeaconTask)
-	err := c.cc.Invoke(ctx, SliverRPC_GetBeaconTaskContent_FullMethodName, in, out, cOpts...)
+	out := new(clientpb.PulseTask)
+	err := c.cc.Invoke(ctx, SliverRPC_GetPulseTaskContent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sliverRPCClient) CancelBeaconTask(ctx context.Context, in *clientpb.BeaconTask, opts ...grpc.CallOption) (*clientpb.BeaconTask, error) {
+func (c *sliverRPCClient) CancelPulseTask(ctx context.Context, in *clientpb.PulseTask, opts ...grpc.CallOption) (*clientpb.PulseTask, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(clientpb.BeaconTask)
-	err := c.cc.Invoke(ctx, SliverRPC_CancelBeaconTask_FullMethodName, in, out, cOpts...)
+	out := new(clientpb.PulseTask)
+	err := c.cc.Invoke(ctx, SliverRPC_CancelPulseTask_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sliverRPCClient) UpdateBeaconIntegrityInformation(ctx context.Context, in *clientpb.BeaconIntegrity, opts ...grpc.CallOption) (*commonpb.Empty, error) {
+func (c *sliverRPCClient) UpdatePulseIntegrityInformation(ctx context.Context, in *clientpb.PulseIntegrity, opts ...grpc.CallOption) (*commonpb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(commonpb.Empty)
-	err := c.cc.Invoke(ctx, SliverRPC_UpdateBeaconIntegrityInformation_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SliverRPC_UpdatePulseIntegrityInformation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2554,14 +2554,14 @@ type SliverRPCServer interface {
 	StartDNSListener(context.Context, *clientpb.DNSListenerReq) (*clientpb.ListenerJob, error)
 	StartHTTPSListener(context.Context, *clientpb.HTTPListenerReq) (*clientpb.ListenerJob, error)
 	StartHTTPListener(context.Context, *clientpb.HTTPListenerReq) (*clientpb.ListenerJob, error)
-	// *** Beacons ***
-	GetBeacons(context.Context, *commonpb.Empty) (*clientpb.Beacons, error)
-	GetBeacon(context.Context, *clientpb.Beacon) (*clientpb.Beacon, error)
-	RmBeacon(context.Context, *clientpb.Beacon) (*commonpb.Empty, error)
-	GetBeaconTasks(context.Context, *clientpb.Beacon) (*clientpb.BeaconTasks, error)
-	GetBeaconTaskContent(context.Context, *clientpb.BeaconTask) (*clientpb.BeaconTask, error)
-	CancelBeaconTask(context.Context, *clientpb.BeaconTask) (*clientpb.BeaconTask, error)
-	UpdateBeaconIntegrityInformation(context.Context, *clientpb.BeaconIntegrity) (*commonpb.Empty, error)
+	// *** Pulses ***
+	GetPulses(context.Context, *commonpb.Empty) (*clientpb.Pulses, error)
+	GetPulse(context.Context, *clientpb.Pulse) (*clientpb.Pulse, error)
+	RmPulse(context.Context, *clientpb.Pulse) (*commonpb.Empty, error)
+	GetPulseTasks(context.Context, *clientpb.Pulse) (*clientpb.PulseTasks, error)
+	GetPulseTaskContent(context.Context, *clientpb.PulseTask) (*clientpb.PulseTask, error)
+	CancelPulseTask(context.Context, *clientpb.PulseTask) (*clientpb.PulseTask, error)
+	UpdatePulseIntegrityInformation(context.Context, *clientpb.PulseIntegrity) (*commonpb.Empty, error)
 	// *** Jobs ***
 	GetJobs(context.Context, *commonpb.Empty) (*clientpb.Jobs, error)
 	KillJob(context.Context, *clientpb.KillJobReq) (*clientpb.KillJob, error)
@@ -2721,7 +2721,7 @@ type SliverRPCServer interface {
 	StartRportFwdListener(context.Context, *sliverpb.RportFwdStartListenerReq) (*sliverpb.RportFwdListener, error)
 	GetRportFwdListeners(context.Context, *sliverpb.RportFwdListenersReq) (*sliverpb.RportFwdListeners, error)
 	StopRportFwdListener(context.Context, *sliverpb.RportFwdStopListenerReq) (*sliverpb.RportFwdListener, error)
-	// *** Beacon *** -only commands
+	// *** Pulse *** -only commands
 	OpenSession(context.Context, *sliverpb.OpenSession) (*sliverpb.OpenSession, error)
 	CloseSession(context.Context, *sliverpb.CloseSession) (*commonpb.Empty, error)
 	// *** Extensions ***
@@ -2837,26 +2837,26 @@ func (UnimplementedSliverRPCServer) StartHTTPSListener(context.Context, *clientp
 func (UnimplementedSliverRPCServer) StartHTTPListener(context.Context, *clientpb.HTTPListenerReq) (*clientpb.ListenerJob, error) {
 	return nil, status.Error(codes.Unimplemented, "method StartHTTPListener not implemented")
 }
-func (UnimplementedSliverRPCServer) GetBeacons(context.Context, *commonpb.Empty) (*clientpb.Beacons, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetBeacons not implemented")
+func (UnimplementedSliverRPCServer) GetPulses(context.Context, *commonpb.Empty) (*clientpb.Pulses, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPulses not implemented")
 }
-func (UnimplementedSliverRPCServer) GetBeacon(context.Context, *clientpb.Beacon) (*clientpb.Beacon, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetBeacon not implemented")
+func (UnimplementedSliverRPCServer) GetPulse(context.Context, *clientpb.Pulse) (*clientpb.Pulse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPulse not implemented")
 }
-func (UnimplementedSliverRPCServer) RmBeacon(context.Context, *clientpb.Beacon) (*commonpb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method RmBeacon not implemented")
+func (UnimplementedSliverRPCServer) RmPulse(context.Context, *clientpb.Pulse) (*commonpb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RmPulse not implemented")
 }
-func (UnimplementedSliverRPCServer) GetBeaconTasks(context.Context, *clientpb.Beacon) (*clientpb.BeaconTasks, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetBeaconTasks not implemented")
+func (UnimplementedSliverRPCServer) GetPulseTasks(context.Context, *clientpb.Pulse) (*clientpb.PulseTasks, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPulseTasks not implemented")
 }
-func (UnimplementedSliverRPCServer) GetBeaconTaskContent(context.Context, *clientpb.BeaconTask) (*clientpb.BeaconTask, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetBeaconTaskContent not implemented")
+func (UnimplementedSliverRPCServer) GetPulseTaskContent(context.Context, *clientpb.PulseTask) (*clientpb.PulseTask, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPulseTaskContent not implemented")
 }
-func (UnimplementedSliverRPCServer) CancelBeaconTask(context.Context, *clientpb.BeaconTask) (*clientpb.BeaconTask, error) {
-	return nil, status.Error(codes.Unimplemented, "method CancelBeaconTask not implemented")
+func (UnimplementedSliverRPCServer) CancelPulseTask(context.Context, *clientpb.PulseTask) (*clientpb.PulseTask, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelPulseTask not implemented")
 }
-func (UnimplementedSliverRPCServer) UpdateBeaconIntegrityInformation(context.Context, *clientpb.BeaconIntegrity) (*commonpb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateBeaconIntegrityInformation not implemented")
+func (UnimplementedSliverRPCServer) UpdatePulseIntegrityInformation(context.Context, *clientpb.PulseIntegrity) (*commonpb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePulseIntegrityInformation not implemented")
 }
 func (UnimplementedSliverRPCServer) GetJobs(context.Context, *commonpb.Empty) (*clientpb.Jobs, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetJobs not implemented")
@@ -3810,128 +3810,128 @@ func _SliverRPC_StartHTTPListener_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_GetBeacons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SliverRPC_GetPulses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(commonpb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).GetBeacons(ctx, in)
+		return srv.(SliverRPCServer).GetPulses(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_GetBeacons_FullMethodName,
+		FullMethod: SliverRPC_GetPulses_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).GetBeacons(ctx, req.(*commonpb.Empty))
+		return srv.(SliverRPCServer).GetPulses(ctx, req.(*commonpb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_GetBeacon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(clientpb.Beacon)
+func _SliverRPC_GetPulse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(clientpb.Pulse)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).GetBeacon(ctx, in)
+		return srv.(SliverRPCServer).GetPulse(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_GetBeacon_FullMethodName,
+		FullMethod: SliverRPC_GetPulse_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).GetBeacon(ctx, req.(*clientpb.Beacon))
+		return srv.(SliverRPCServer).GetPulse(ctx, req.(*clientpb.Pulse))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_RmBeacon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(clientpb.Beacon)
+func _SliverRPC_RmPulse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(clientpb.Pulse)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).RmBeacon(ctx, in)
+		return srv.(SliverRPCServer).RmPulse(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_RmBeacon_FullMethodName,
+		FullMethod: SliverRPC_RmPulse_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).RmBeacon(ctx, req.(*clientpb.Beacon))
+		return srv.(SliverRPCServer).RmPulse(ctx, req.(*clientpb.Pulse))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_GetBeaconTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(clientpb.Beacon)
+func _SliverRPC_GetPulseTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(clientpb.Pulse)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).GetBeaconTasks(ctx, in)
+		return srv.(SliverRPCServer).GetPulseTasks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_GetBeaconTasks_FullMethodName,
+		FullMethod: SliverRPC_GetPulseTasks_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).GetBeaconTasks(ctx, req.(*clientpb.Beacon))
+		return srv.(SliverRPCServer).GetPulseTasks(ctx, req.(*clientpb.Pulse))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_GetBeaconTaskContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(clientpb.BeaconTask)
+func _SliverRPC_GetPulseTaskContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(clientpb.PulseTask)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).GetBeaconTaskContent(ctx, in)
+		return srv.(SliverRPCServer).GetPulseTaskContent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_GetBeaconTaskContent_FullMethodName,
+		FullMethod: SliverRPC_GetPulseTaskContent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).GetBeaconTaskContent(ctx, req.(*clientpb.BeaconTask))
+		return srv.(SliverRPCServer).GetPulseTaskContent(ctx, req.(*clientpb.PulseTask))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_CancelBeaconTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(clientpb.BeaconTask)
+func _SliverRPC_CancelPulseTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(clientpb.PulseTask)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).CancelBeaconTask(ctx, in)
+		return srv.(SliverRPCServer).CancelPulseTask(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_CancelBeaconTask_FullMethodName,
+		FullMethod: SliverRPC_CancelPulseTask_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).CancelBeaconTask(ctx, req.(*clientpb.BeaconTask))
+		return srv.(SliverRPCServer).CancelPulseTask(ctx, req.(*clientpb.PulseTask))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SliverRPC_UpdateBeaconIntegrityInformation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(clientpb.BeaconIntegrity)
+func _SliverRPC_UpdatePulseIntegrityInformation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(clientpb.PulseIntegrity)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SliverRPCServer).UpdateBeaconIntegrityInformation(ctx, in)
+		return srv.(SliverRPCServer).UpdatePulseIntegrityInformation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SliverRPC_UpdateBeaconIntegrityInformation_FullMethodName,
+		FullMethod: SliverRPC_UpdatePulseIntegrityInformation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SliverRPCServer).UpdateBeaconIntegrityInformation(ctx, req.(*clientpb.BeaconIntegrity))
+		return srv.(SliverRPCServer).UpdatePulseIntegrityInformation(ctx, req.(*clientpb.PulseIntegrity))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -7053,32 +7053,32 @@ var SliverRPC_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SliverRPC_StartHTTPListener_Handler,
 		},
 		{
-			MethodName: "GetBeacons",
-			Handler:    _SliverRPC_GetBeacons_Handler,
+			MethodName: "GetPulses",
+			Handler:    _SliverRPC_GetPulses_Handler,
 		},
 		{
-			MethodName: "GetBeacon",
-			Handler:    _SliverRPC_GetBeacon_Handler,
+			MethodName: "GetPulse",
+			Handler:    _SliverRPC_GetPulse_Handler,
 		},
 		{
-			MethodName: "RmBeacon",
-			Handler:    _SliverRPC_RmBeacon_Handler,
+			MethodName: "RmPulse",
+			Handler:    _SliverRPC_RmPulse_Handler,
 		},
 		{
-			MethodName: "GetBeaconTasks",
-			Handler:    _SliverRPC_GetBeaconTasks_Handler,
+			MethodName: "GetPulseTasks",
+			Handler:    _SliverRPC_GetPulseTasks_Handler,
 		},
 		{
-			MethodName: "GetBeaconTaskContent",
-			Handler:    _SliverRPC_GetBeaconTaskContent_Handler,
+			MethodName: "GetPulseTaskContent",
+			Handler:    _SliverRPC_GetPulseTaskContent_Handler,
 		},
 		{
-			MethodName: "CancelBeaconTask",
-			Handler:    _SliverRPC_CancelBeaconTask_Handler,
+			MethodName: "CancelPulseTask",
+			Handler:    _SliverRPC_CancelPulseTask_Handler,
 		},
 		{
-			MethodName: "UpdateBeaconIntegrityInformation",
-			Handler:    _SliverRPC_UpdateBeaconIntegrityInformation_Handler,
+			MethodName: "UpdatePulseIntegrityInformation",
+			Handler:    _SliverRPC_UpdatePulseIntegrityInformation_Handler,
 		},
 		{
 			MethodName: "GetJobs",

@@ -62,7 +62,7 @@ type Request struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Async         bool                   `protobuf:"varint,1,opt,name=Async,proto3" json:"Async,omitempty"`
 	Timeout       int64                  `protobuf:"varint,2,opt,name=Timeout,proto3" json:"Timeout,omitempty"`
-	BeaconID      string                 `protobuf:"bytes,8,opt,name=BeaconID,proto3" json:"BeaconID,omitempty"`
+	PulseID      string                 `protobuf:"bytes,8,opt,name=PulseID,proto3" json:"PulseID,omitempty"`
 	SessionID     string                 `protobuf:"bytes,9,opt,name=SessionID,proto3" json:"SessionID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -112,9 +112,9 @@ func (x *Request) GetTimeout() int64 {
 	return 0
 }
 
-func (x *Request) GetBeaconID() string {
+func (x *Request) GetPulseID() string {
 	if x != nil {
-		return x.BeaconID
+		return x.PulseID
 	}
 	return ""
 }
@@ -134,7 +134,7 @@ type Response struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Err           string                 `protobuf:"bytes,1,opt,name=Err,proto3" json:"Err,omitempty"`
 	Async         bool                   `protobuf:"varint,2,opt,name=Async,proto3" json:"Async,omitempty"`
-	BeaconID      string                 `protobuf:"bytes,8,opt,name=BeaconID,proto3" json:"BeaconID,omitempty"`
+	PulseID      string                 `protobuf:"bytes,8,opt,name=PulseID,proto3" json:"PulseID,omitempty"`
 	TaskID        string                 `protobuf:"bytes,9,opt,name=TaskID,proto3" json:"TaskID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -184,9 +184,9 @@ func (x *Response) GetAsync() bool {
 	return false
 }
 
-func (x *Response) GetBeaconID() string {
+func (x *Response) GetPulseID() string {
 	if x != nil {
-		return x.BeaconID
+		return x.PulseID
 	}
 	return ""
 }
@@ -406,12 +406,12 @@ const file_commonpb_common_proto_rawDesc = "" +
 	"\aRequest\x12\x14\n" +
 	"\x05Async\x18\x01 \x01(\bR\x05Async\x12\x18\n" +
 	"\aTimeout\x18\x02 \x01(\x03R\aTimeout\x12\x1a\n" +
-	"\bBeaconID\x18\b \x01(\tR\bBeaconID\x12\x1c\n" +
+	"\bPulseID\x18\b \x01(\tR\bPulseID\x12\x1c\n" +
 	"\tSessionID\x18\t \x01(\tR\tSessionID\"f\n" +
 	"\bResponse\x12\x10\n" +
 	"\x03Err\x18\x01 \x01(\tR\x03Err\x12\x14\n" +
 	"\x05Async\x18\x02 \x01(\bR\x05Async\x12\x1a\n" +
-	"\bBeaconID\x18\b \x01(\tR\bBeaconID\x12\x16\n" +
+	"\bPulseID\x18\b \x01(\tR\bPulseID\x12\x16\n" +
 	"\x06TaskID\x18\t \x01(\tR\x06TaskID\".\n" +
 	"\x04File\x12\x12\n" +
 	"\x04Name\x18\x01 \x01(\tR\x04Name\x12\x12\n" +

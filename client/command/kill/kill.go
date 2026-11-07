@@ -34,7 +34,7 @@ import (
 
 // KillCmd - Kill the active session (not to be confused with TerminateCmd)
 func KillCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
+	session, pulse := con.ActiveTarget.GetInteractive()
 	// Confirm with the user, just in case they confused kill with terminate
 	confirm := false
 	con.PrintWarnf("WARNING: This will kill the remote implant process\n\n")
@@ -51,21 +51,21 @@ func KillCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		con.PrintInfof("Killed %s (%s)\n", session.Name, session.ID)
 		con.ActiveTarget.Background()
 		return
-	} else if beacon != nil {
-		_ = forms.Confirm("Kill the active beacon?", &confirm)
+	} else if pulse != nil {
+		_ = forms.Confirm("Kill the active pulse?", &confirm)
 		if !confirm {
 			return
 		}
-		err := KillBeacon(beacon, cmd, con)
+		err := KillPulse(pulse, cmd, con)
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
 		}
-		con.PrintInfof("Killed %s (%s)\n", beacon.Name, beacon.ID)
+		con.PrintInfof("Killed %s (%s)\n", pulse.Name, pulse.ID)
 		con.ActiveTarget.Background()
 		return
 	}
-	con.PrintErrorf("No active session or beacon\n")
+	con.PrintErrorf("No active session or pulse\n")
 }
 
 func KillSession(session *clientpb.Session, cmd *cobra.Command, con *console.SliverClient) error {
@@ -95,8 +95,8 @@ func KillSession(session *clientpb.Session, cmd *cobra.Command, con *console.Sli
 	return err
 }
 
-func KillBeacon(beacon *clientpb.Beacon, cmd *cobra.Command, con *console.SliverClient) error {
-	if beacon == nil {
+func KillPulse(pulse *clientpb.Pulse, cmd *cobra.Command, con *console.SliverClient) error {
+	if pulse == nil {
 		return errors.New("session does not exist")
 	}
 
@@ -105,7 +105,7 @@ func KillBeacon(beacon *clientpb.Beacon, cmd *cobra.Command, con *console.Sliver
 
 	_, err := con.Rpc.Kill(context.Background(), &sliverpb.KillReq{
 		Request: &commonpb.Request{
-			BeaconID: beacon.ID,
+			PulseID: pulse.ID,
 			Timeout:  timeout,
 		},
 		Force: force,

@@ -32,10 +32,10 @@ import (
 )
 
 var (
-	// ErrInvalidBeaconID - Invalid Beacon ID in request
-	ErrInvalidBeaconID = status.Error(codes.InvalidArgument, "Invalid beacon ID")
-	// ErrInvalidBeaconTaskID - Invalid Beacon ID in request
-	ErrInvalidBeaconTaskID = status.Error(codes.InvalidArgument, "Invalid beacon task ID")
+	// ErrInvalidPulseID - Invalid Pulse ID in request
+	ErrInvalidPulseID = status.Error(codes.InvalidArgument, "Invalid pulse ID")
+	// ErrInvalidPulseTaskID - Invalid Pulse ID in request
+	ErrInvalidPulseTaskID = status.Error(codes.InvalidArgument, "Invalid pulse task ID")
 
 	// ErrInvalidSessionID - Invalid Session ID in request
 	ErrInvalidSessionID = status.Error(codes.InvalidArgument, "Invalid session ID")
@@ -52,7 +52,7 @@ var (
 	// ErrBuildExists
 	ErrBuildExists = status.Error(codes.AlreadyExists, "Build already exists")
 
-	ErrInvalidBeaconTaskCancelState = status.Error(codes.InvalidArgument, fmt.Sprintf("Invalid task state, must be '%s' to cancel", models.PENDING))
+	ErrInvalidPulseTaskCancelState = status.Error(codes.InvalidArgument, fmt.Sprintf("Invalid task state, must be '%s' to cancel", models.PENDING))
 )
 
 func rpcError(err error) error {

@@ -1,4 +1,4 @@
-package beacons
+package pulses
 
 import (
 	"regexp"
@@ -14,39 +14,39 @@ import (
 	"github.com/bishopfox/sliver/protobuf/clientpb"
 )
 
-var beaconTableTestNow = time.Date(2026, time.September, 3, 21, 25, 41, 0, time.UTC)
+var pulseTableTestNow = time.Date(2026, time.September, 3, 21, 25, 41, 0, time.UTC)
 
-func TestRenderBeaconsUsesFullProcessPathWhenItFits(t *testing.T) {
-	beacon := testWindowsBeacon()
+func TestRenderPulsesUsesFullProcessPathWhenItFits(t *testing.T) {
+	pulse := testWindowsPulse()
 	layout := targettable.Layout{IncludeIntegrity: true, IncludeLocale: true}
-	width := beaconCandidateWidth(t, []*clientpb.Beacon{beacon}, layout, true)
+	width := pulseCandidateWidth(t, []*clientpb.Pulse{pulse}, layout, true)
 
-	rendered := renderBeaconTableAtWidth(t, []*clientpb.Beacon{beacon}, "", nil, width)
-	if !strings.Contains(rendered, beacon.Filename+" (2020)") {
+	rendered := renderPulseTableAtWidth(t, []*clientpb.Pulse{pulse}, "", nil, width)
+	if !strings.Contains(rendered, pulse.Filename+" (2020)") {
 		t.Fatalf("full process path missing from table:\n%s", rendered)
 	}
 	if !strings.Contains(rendered, "(36s ago)") || !strings.Contains(rendered, "(in 24s)") {
 		t.Fatalf("wide check-in timestamps changed unexpectedly:\n%s", rendered)
 	}
-	assertBeaconTableFits(t, rendered, width)
+	assertPulseTableFits(t, rendered, width)
 }
 
-func TestRenderBeaconsUsesPortableProcessBasenameWhenRequired(t *testing.T) {
+func TestRenderPulsesUsesPortableProcessBasenameWhenRequired(t *testing.T) {
 	tests := []struct {
 		name         string
-		beacon       *clientpb.Beacon
+		pulse       *clientpb.Pulse
 		hasIntegrity bool
 		wantProcess  string
 	}{
 		{
 			name:         "windows path",
-			beacon:       testWindowsBeacon(),
+			pulse:       testWindowsPulse(),
 			hasIntegrity: true,
 			wantProcess:  "winterfell.exe (2020)",
 		},
 		{
 			name:         "posix path",
-			beacon:       testLinuxBeacon(),
+			pulse:       testLinuxPulse(),
 			hasIntegrity: false,
 			wantProcess:  "winterfell-agent (2020)",
 		},
@@ -54,34 +54,34 @@ func TestRenderBeaconsUsesPortableProcessBasenameWhenRequired(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			beacons := []*clientpb.Beacon{tt.beacon}
+			pulses := []*clientpb.Pulse{tt.pulse}
 			fullLayout := targettable.Layout{
 				IncludeIntegrity: tt.hasIntegrity,
 				IncludeLocale:    true,
 			}
 			basenameLayout := fullLayout
 			basenameLayout.ProcessBasename = true
-			fullWidth := beaconCandidateWidth(t, beacons, fullLayout, tt.hasIntegrity)
-			basenameWidth := beaconCandidateWidth(t, beacons, basenameLayout, tt.hasIntegrity)
+			fullWidth := pulseCandidateWidth(t, pulses, fullLayout, tt.hasIntegrity)
+			basenameWidth := pulseCandidateWidth(t, pulses, basenameLayout, tt.hasIntegrity)
 			if basenameWidth >= fullWidth {
 				t.Fatalf("basename candidate width %d is not narrower than full-path width %d", basenameWidth, fullWidth)
 			}
 
-			rendered := renderBeaconTableAtWidth(t, beacons, "", nil, basenameWidth)
+			rendered := renderPulseTableAtWidth(t, pulses, "", nil, basenameWidth)
 			if !strings.Contains(rendered, tt.wantProcess) {
 				t.Fatalf("process basename missing from table:\n%s", rendered)
 			}
-			if strings.Contains(rendered, tt.beacon.Filename) {
+			if strings.Contains(rendered, tt.pulse.Filename) {
 				t.Fatalf("full process path remained in basename layout:\n%s", rendered)
 			}
-			assertBeaconTableFits(t, rendered, basenameWidth)
+			assertPulseTableFits(t, rendered, basenameWidth)
 		})
 	}
 }
 
-func TestRenderBeaconsOmitsIntegrityBeforeLocale(t *testing.T) {
-	beacon := testWindowsBeacon()
-	beacons := []*clientpb.Beacon{beacon}
+func TestRenderPulsesOmitsIntegrityBeforeLocale(t *testing.T) {
+	pulse := testWindowsPulse()
+	pulses := []*clientpb.Pulse{pulse}
 	withAll := targettable.Layout{
 		ProcessBasename:  true,
 		IncludeIntegrity: true,
@@ -92,57 +92,57 @@ func TestRenderBeaconsOmitsIntegrityBeforeLocale(t *testing.T) {
 	withoutLocale := withoutIntegrity
 	withoutLocale.IncludeLocale = false
 
-	allWidth := beaconCandidateWidth(t, beacons, withAll, true)
-	withoutIntegrityWidth := beaconCandidateWidth(t, beacons, withoutIntegrity, true)
-	withoutLocaleWidth := beaconCandidateWidth(t, beacons, withoutLocale, true)
+	allWidth := pulseCandidateWidth(t, pulses, withAll, true)
+	withoutIntegrityWidth := pulseCandidateWidth(t, pulses, withoutIntegrity, true)
+	withoutLocaleWidth := pulseCandidateWidth(t, pulses, withoutLocale, true)
 	if !(withoutLocaleWidth < withoutIntegrityWidth && withoutIntegrityWidth < allWidth) {
 		t.Fatalf("candidate widths did not shrink in omission order: all=%d no-integrity=%d no-locale=%d", allWidth, withoutIntegrityWidth, withoutLocaleWidth)
 	}
 
-	withoutIntegrityRendered := renderBeaconTableAtWidth(t, beacons, "", nil, withoutIntegrityWidth)
+	withoutIntegrityRendered := renderPulseTableAtWidth(t, pulses, "", nil, withoutIntegrityWidth)
 	assertHeaderPresence(t, withoutIntegrityRendered, "Integrity", false)
 	assertHeaderPresence(t, withoutIntegrityRendered, "Locale", true)
-	assertBeaconTableFits(t, withoutIntegrityRendered, withoutIntegrityWidth)
+	assertPulseTableFits(t, withoutIntegrityRendered, withoutIntegrityWidth)
 
-	withoutLocaleRendered := renderBeaconTableAtWidth(t, beacons, "", nil, withoutLocaleWidth)
+	withoutLocaleRendered := renderPulseTableAtWidth(t, pulses, "", nil, withoutLocaleWidth)
 	assertHeaderPresence(t, withoutLocaleRendered, "Integrity", false)
 	assertHeaderPresence(t, withoutLocaleRendered, "Locale", false)
-	assertBeaconTableFits(t, withoutLocaleRendered, withoutLocaleWidth)
+	assertPulseTableFits(t, withoutLocaleRendered, withoutLocaleWidth)
 }
 
-func TestRenderBeaconsDoesNotAddIntegrityForNonWindowsTargets(t *testing.T) {
-	beacon := testLinuxBeacon()
-	beacons := []*clientpb.Beacon{beacon}
+func TestRenderPulsesDoesNotAddIntegrityForNonWindowsTargets(t *testing.T) {
+	pulse := testLinuxPulse()
+	pulses := []*clientpb.Pulse{pulse}
 	layout := targettable.Layout{IncludeLocale: true}
-	width := beaconCandidateWidth(t, beacons, layout, false)
+	width := pulseCandidateWidth(t, pulses, layout, false)
 
-	rendered := renderBeaconTableAtWidth(t, beacons, "", nil, width)
+	rendered := renderPulseTableAtWidth(t, pulses, "", nil, width)
 	assertHeaderPresence(t, rendered, "Integrity", false)
 	assertHeaderPresence(t, rendered, "Locale", true)
-	if !strings.Contains(rendered, beacon.Filename+" (2020)") {
+	if !strings.Contains(rendered, pulse.Filename+" (2020)") {
 		t.Fatalf("non-Windows full process path missing from table:\n%s", rendered)
 	}
-	assertBeaconTableFits(t, rendered, width)
+	assertPulseTableFits(t, rendered, width)
 }
 
-func TestRenderBeaconsFiltersCanonicalFullRows(t *testing.T) {
-	beacon := testWindowsBeacon()
-	beacons := []*clientpb.Beacon{beacon}
+func TestRenderPulsesFiltersCanonicalFullRows(t *testing.T) {
+	pulse := testWindowsPulse()
+	pulses := []*clientpb.Pulse{pulse}
 	basenameLayout := targettable.Layout{
 		ProcessBasename:  true,
 		IncludeIntegrity: true,
 		IncludeLocale:    true,
 	}
-	basenameWidth := beaconCandidateWidth(t, beacons, basenameLayout, true)
+	basenameWidth := pulseCandidateWidth(t, pulses, basenameLayout, true)
 	withoutLocale := basenameLayout
 	withoutLocale.IncludeIntegrity = false
 	withoutLocale.IncludeLocale = false
-	withoutLocaleWidth := beaconCandidateWidth(t, beacons, withoutLocale, true)
+	withoutLocaleWidth := pulseCandidateWidth(t, pulses, withoutLocale, true)
 
 	t.Run("full process path survives basename projection", func(t *testing.T) {
-		rendered := renderBeaconTableAtWidth(t, beacons, `AppData\Local\Temp`, nil, basenameWidth)
-		if !strings.Contains(rendered, beacon.Name) {
-			t.Fatalf("filter matching canonical process path removed beacon:\n%s", rendered)
+		rendered := renderPulseTableAtWidth(t, pulses, `AppData\Local\Temp`, nil, basenameWidth)
+		if !strings.Contains(rendered, pulse.Name) {
+			t.Fatalf("filter matching canonical process path removed pulse:\n%s", rendered)
 		}
 		if strings.Contains(rendered, `AppData\Local\Temp`) {
 			t.Fatalf("basename layout unexpectedly displayed filtered directory:\n%s", rendered)
@@ -150,35 +150,35 @@ func TestRenderBeaconsFiltersCanonicalFullRows(t *testing.T) {
 	})
 
 	t.Run("hidden integrity survives column projection", func(t *testing.T) {
-		rendered := renderBeaconTableAtWidth(t, beacons, "", regexp.MustCompile(`^High$`), withoutLocaleWidth)
-		if !strings.Contains(rendered, beacon.Name) {
-			t.Fatalf("filter matching hidden integrity removed beacon:\n%s", rendered)
+		rendered := renderPulseTableAtWidth(t, pulses, "", regexp.MustCompile(`^High$`), withoutLocaleWidth)
+		if !strings.Contains(rendered, pulse.Name) {
+			t.Fatalf("filter matching hidden integrity removed pulse:\n%s", rendered)
 		}
 		assertHeaderPresence(t, rendered, "Integrity", false)
 	})
 }
 
-func TestRenderBeaconsDoesNotMutateEmptyIntegrity(t *testing.T) {
-	beacon := testWindowsBeacon()
-	beacon.Integrity = ""
+func TestRenderPulsesDoesNotMutateEmptyIntegrity(t *testing.T) {
+	pulse := testWindowsPulse()
+	pulse.Integrity = ""
 	layout := targettable.Layout{IncludeIntegrity: true, IncludeLocale: true}
-	width := beaconCandidateWidth(t, []*clientpb.Beacon{beacon}, layout, true)
+	width := pulseCandidateWidth(t, []*clientpb.Pulse{pulse}, layout, true)
 
-	_ = renderBeaconTableAtWidth(t, []*clientpb.Beacon{beacon}, "", nil, width)
-	if beacon.Integrity != "" {
-		t.Fatalf("beacon integrity mutated to %q", beacon.Integrity)
+	_ = renderPulseTableAtWidth(t, []*clientpb.Pulse{pulse}, "", nil, width)
+	if pulse.Integrity != "" {
+		t.Fatalf("pulse integrity mutated to %q", pulse.Integrity)
 	}
 }
 
-func TestRenderBeaconsCompactFallbackPreservesLegacyColumnsAndTimes(t *testing.T) {
-	beacon := testWindowsBeacon()
-	beacons := []*clientpb.Beacon{beacon}
-	compactWidth := beaconCandidateWidth(t, beacons, targettable.Layout{Compact: true}, true)
-	withoutOptionalWidth := beaconCandidateWidth(t, beacons, targettable.Layout{ProcessBasename: true}, true)
+func TestRenderPulsesCompactFallbackPreservesLegacyColumnsAndTimes(t *testing.T) {
+	pulse := testWindowsPulse()
+	pulses := []*clientpb.Pulse{pulse}
+	compactWidth := pulseCandidateWidth(t, pulses, targettable.Layout{Compact: true}, true)
+	withoutOptionalWidth := pulseCandidateWidth(t, pulses, targettable.Layout{ProcessBasename: true}, true)
 	if compactWidth >= withoutOptionalWidth {
 		t.Fatalf("test fixture does not require compact fallback: compact=%d detailed=%d", compactWidth, withoutOptionalWidth)
 	}
-	rendered := renderBeaconTableAtWidth(t, beacons, "", nil, compactWidth)
+	rendered := renderPulseTableAtWidth(t, pulses, "", nil, compactWidth)
 
 	for _, omitted := range []string{"Tasks", "Remote Address", "Process (PID)", "Integrity", "Locale"} {
 		assertHeaderPresence(t, rendered, omitted, false)
@@ -189,11 +189,11 @@ func TestRenderBeaconsCompactFallbackPreservesLegacyColumnsAndTimes(t *testing.T
 	if strings.Contains(rendered, "36s ago") || strings.Contains(rendered, "in 24s") {
 		t.Fatalf("compact fallback did not preserve legacy timestamp format:\n%s", rendered)
 	}
-	assertBeaconTableFits(t, rendered, compactWidth)
+	assertPulseTableFits(t, rendered, compactWidth)
 }
 
-func testWindowsBeacon() *clientpb.Beacon {
-	return &clientpb.Beacon{
+func testWindowsPulse() *clientpb.Pulse {
+	return &clientpb.Pulse{
 		ID:                  "0c9f6b27-1111-2222-3333-444444444444",
 		Name:                "winterfell-session",
 		TasksCount:          3,
@@ -208,40 +208,40 @@ func testWindowsBeacon() *clientpb.Beacon {
 		OS:                  "windows",
 		Arch:                "amd64",
 		Locale:              "en-US",
-		LastCheckin:         beaconTableTestNow.Add(-36 * time.Second).Unix(),
-		NextCheckin:         beaconTableTestNow.Add(24 * time.Second).Unix(),
+		LastCheckin:         pulseTableTestNow.Add(-36 * time.Second).Unix(),
+		NextCheckin:         pulseTableTestNow.Add(24 * time.Second).Unix(),
 	}
 }
 
-func testLinuxBeacon() *clientpb.Beacon {
-	beacon := testWindowsBeacon()
-	beacon.OS = "linux"
-	beacon.Hostname = "winterfell-linux"
-	beacon.Username = "vagrant"
-	beacon.Filename = "/opt/sliver/temporary/build/output/winterfell-agent"
-	beacon.Integrity = ""
-	return beacon
+func testLinuxPulse() *clientpb.Pulse {
+	pulse := testWindowsPulse()
+	pulse.OS = "linux"
+	pulse.Hostname = "winterfell-linux"
+	pulse.Username = "vagrant"
+	pulse.Filename = "/opt/sliver/temporary/build/output/winterfell-agent"
+	pulse.Integrity = ""
+	return pulse
 }
 
-func testBeaconConsole() *console.SliverClient {
+func testPulseConsole() *console.SliverClient {
 	return &console.SliverClient{
 		Settings: &assets.ClientSettings{TableStyle: "SliverDefault"},
 	}
 }
 
-func beaconCandidateWidth(t *testing.T, beacons []*clientpb.Beacon, layout targettable.Layout, hasIntegrity bool) int {
+func pulseCandidateWidth(t *testing.T, pulses []*clientpb.Pulse, layout targettable.Layout, hasIntegrity bool) int {
 	t.Helper()
-	tw := buildBeaconTable(beacons, "", nil, testBeaconConsole(), layout, hasIntegrity, beaconTableTestNow)
+	tw := buildPulseTable(pulses, "", nil, testPulseConsole(), layout, hasIntegrity, pulseTableTestNow)
 	return text.LongestLineLen(tw.Render())
 }
 
-func renderBeaconTableAtWidth(t *testing.T, beacons []*clientpb.Beacon, filter string, filterRegex *regexp.Regexp, width int) string {
+func renderPulseTableAtWidth(t *testing.T, pulses []*clientpb.Pulse, filter string, filterRegex *regexp.Regexp, width int) string {
 	t.Helper()
-	tw := renderBeaconsAtWidth(beacons, filter, filterRegex, testBeaconConsole(), width, beaconTableTestNow)
+	tw := renderPulsesAtWidth(pulses, filter, filterRegex, testPulseConsole(), width, pulseTableTestNow)
 	return text.StripEscape(tw.Render())
 }
 
-func assertBeaconTableFits(t *testing.T, rendered string, width int) {
+func assertPulseTableFits(t *testing.T, rendered string, width int) {
 	t.Helper()
 	if got := text.LongestLineLen(rendered); got > width {
 		t.Fatalf("rendered table width %d exceeds terminal width %d:\n%s", got, width, rendered)

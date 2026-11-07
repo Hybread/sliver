@@ -12,7 +12,7 @@ import (
 	"github.com/bishopfox/sliver/protobuf/sliverpb"
 )
 
-func setBeaconTimingForTest(t *testing.T, interval time.Duration) {
+func setPulseTimingForTest(t *testing.T, interval time.Duration) {
 	t.Helper()
 	oldInterval := transports.GetInterval()
 	oldJitter := transports.GetJitter()
@@ -27,9 +27,9 @@ func setBeaconTimingForTest(t *testing.T, interval time.Duration) {
 	})
 }
 
-func TestBeaconCheckinLoopSerializesSlowCheckins(t *testing.T) {
+func TestPulseCheckinLoopSerializesSlowCheckins(t *testing.T) {
 	const interval = 10 * time.Millisecond
-	setBeaconTimingForTest(t, interval)
+	setPulseTimingForTest(t, interval)
 
 	firstStarted := make(chan struct{})
 	secondStarted := make(chan struct{})
@@ -43,7 +43,7 @@ func TestBeaconCheckinLoopSerializesSlowCheckins(t *testing.T) {
 	active := 0
 	maxActive := 0
 	calls := 0
-	checkin := func(*transports.Beacon, time.Time, *beaconResultQueue) error {
+	checkin := func(*transports.Pulse, time.Time, *pulseResultQueue) error {
 		stateMu.Lock()
 		active++
 		calls++
@@ -73,7 +73,7 @@ func TestBeaconCheckinLoopSerializesSlowCheckins(t *testing.T) {
 
 	done := make(chan error, 1)
 	go func() {
-		done <- beaconCheckinLoop(&transports.Beacon{}, &beaconResultQueue{}, checkin)
+		done <- pulseCheckinLoop(&transports.Pulse{}, &pulseResultQueue{}, checkin)
 	}()
 
 	select {
@@ -111,14 +111,14 @@ func TestBeaconCheckinLoopSerializesSlowCheckins(t *testing.T) {
 	}
 }
 
-func TestBeaconCheckinLoopShortCircuitsReconfiguredInterval(t *testing.T) {
+func TestPulseCheckinLoopShortCircuitsReconfiguredInterval(t *testing.T) {
 	const originalInterval = 500 * time.Millisecond
-	setBeaconTimingForTest(t, originalInterval)
+	setPulseTimingForTest(t, originalInterval)
 
 	stopErr := errors.New("stop check-in loop")
 	calls := 0
 	start := time.Now()
-	err := beaconCheckinLoop(&transports.Beacon{}, &beaconResultQueue{}, func(*transports.Beacon, time.Time, *beaconResultQueue) error {
+	err := pulseCheckinLoop(&transports.Pulse{}, &pulseResultQueue{}, func(*transports.Pulse, time.Time, *pulseResultQueue) error {
 		calls++
 		if calls == 1 {
 			transports.SetInterval(int64(time.Millisecond))
@@ -134,8 +134,8 @@ func TestBeaconCheckinLoopShortCircuitsReconfiguredInterval(t *testing.T) {
 	}
 }
 
-func TestBeaconResultQueuePrependPreservesOrder(t *testing.T) {
-	queue := &beaconResultQueue{}
+func TestPulseResultQueuePrependPreservesOrder(t *testing.T) {
+	queue := &pulseResultQueue{}
 	first := &sliverpb.Envelope{ID: 1}
 	second := &sliverpb.Envelope{ID: 2}
 	third := &sliverpb.Envelope{ID: 3}
@@ -151,12 +151,12 @@ func TestBeaconResultQueuePrependPreservesOrder(t *testing.T) {
 	}
 }
 
-func TestBeaconMainResultCheckinDoesNotWaitForTasks(t *testing.T) {
-	queue := &beaconResultQueue{}
+func TestPulseMainResultCheckinDoesNotWaitForTasks(t *testing.T) {
+	queue := &pulseResultQueue{}
 	queue.add(&sliverpb.Envelope{ID: 41, Data: []byte("result")})
 
 	var recvCalled bool
-	beacon := &transports.Beacon{
+	pulse := &transports.Pulse{
 		Start: func() error { return nil },
 		Send:  func(*sliverpb.Envelope) error { return nil },
 		Recv: func() (*sliverpb.Envelope, error) {
@@ -166,7 +166,7 @@ func TestBeaconMainResultCheckinDoesNotWaitForTasks(t *testing.T) {
 		Close: func() error { return nil },
 	}
 
-	if err := beaconMain(beacon, time.Now(), queue); err != nil {
+	if err := pulseMain(pulse, time.Now(), queue); err != nil {
 		t.Fatal(err)
 	}
 	if recvCalled {
@@ -177,10 +177,10 @@ func TestBeaconMainResultCheckinDoesNotWaitForTasks(t *testing.T) {
 	}
 }
 
-func TestBeaconMainEmptyCheckinWaitsForTasks(t *testing.T) {
-	queue := &beaconResultQueue{}
+func TestPulseMainEmptyCheckinWaitsForTasks(t *testing.T) {
+	queue := &pulseResultQueue{}
 	var recvCalled bool
-	beacon := &transports.Beacon{
+	pulse := &transports.Pulse{
 		Start: func() error { return nil },
 		Send:  func(*sliverpb.Envelope) error { return nil },
 		Recv: func() (*sliverpb.Envelope, error) {
@@ -190,7 +190,7 @@ func TestBeaconMainEmptyCheckinWaitsForTasks(t *testing.T) {
 		Close: func() error { return nil },
 	}
 
-	if err := beaconMain(beacon, time.Now(), queue); err != nil {
+	if err := pulseMain(pulse, time.Now(), queue); err != nil {
 		t.Fatal(err)
 	}
 	if !recvCalled {
@@ -198,19 +198,19 @@ func TestBeaconMainEmptyCheckinWaitsForTasks(t *testing.T) {
 	}
 }
 
-func TestBeaconMainRequeuesResultsAfterSendFailure(t *testing.T) {
+func TestPulseMainRequeuesResultsAfterSendFailure(t *testing.T) {
 	wantErr := errors.New("send failed")
 	result := &sliverpb.Envelope{ID: 73, Data: []byte("result")}
-	queue := &beaconResultQueue{}
+	queue := &pulseResultQueue{}
 	queue.add(result)
-	beacon := &transports.Beacon{
+	pulse := &transports.Pulse{
 		Start: func() error { return nil },
 		Send:  func(*sliverpb.Envelope) error { return wantErr },
 		Recv:  func() (*sliverpb.Envelope, error) { return nil, nil },
 		Close: func() error { return nil },
 	}
 
-	if err := beaconMain(beacon, time.Now(), queue); !errors.Is(err, wantErr) {
+	if err := pulseMain(pulse, time.Now(), queue); !errors.Is(err, wantErr) {
 		t.Fatalf("got error %v, want %v", err, wantErr)
 	}
 	actual := queue.drain()

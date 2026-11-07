@@ -34,7 +34,7 @@ func TestParseSelectionRejectsUnknownsDeterministically(t *testing.T) {
 }
 
 func TestParseSelectionRejectsEmptyInput(t *testing.T) {
-	_, err := parseSelection(" , \t,", []string{"session", "beacon"}, "implant mode")
+	_, err := parseSelection(" , \t,", []string{"session", "pulse"}, "implant mode")
 	if err == nil {
 		t.Fatal("expected empty selection error")
 	}
@@ -52,11 +52,11 @@ func TestSuiteScopeRouting(t *testing.T) {
 		wantModes []string
 		wantError bool
 	}{
-		{name: "comprehensive preserves modes", input: "comprehensive", modes: []string{"session", "beacon"}, wantScope: suiteScopeComprehensive, wantModes: []string{"session", "beacon"}},
-		{name: "focused forces sessions", input: "rportfwd", modes: []string{"session", "beacon"}, wantScope: suiteScopeRportFwd, wantModes: []string{"session"}},
-		{name: "surrounding whitespace", input: " rportfwd ", modes: []string{"beacon"}, wantScope: suiteScopeRportFwd, wantModes: []string{"session"}},
-		{name: "forward and socks forces sessions", input: "portfwd-socks5", modes: []string{"session", "beacon"}, wantScope: suiteScopePortfwdSocks5, wantModes: []string{"session"}},
-		{name: "forward and socks whitespace", input: " portfwd-socks5 ", modes: []string{"beacon"}, wantScope: suiteScopePortfwdSocks5, wantModes: []string{"session"}},
+		{name: "comprehensive preserves modes", input: "comprehensive", modes: []string{"session", "pulse"}, wantScope: suiteScopeComprehensive, wantModes: []string{"session", "pulse"}},
+		{name: "focused forces sessions", input: "rportfwd", modes: []string{"session", "pulse"}, wantScope: suiteScopeRportFwd, wantModes: []string{"session"}},
+		{name: "surrounding whitespace", input: " rportfwd ", modes: []string{"pulse"}, wantScope: suiteScopeRportFwd, wantModes: []string{"session"}},
+		{name: "forward and socks forces sessions", input: "portfwd-socks5", modes: []string{"session", "pulse"}, wantScope: suiteScopePortfwdSocks5, wantModes: []string{"session"}},
+		{name: "forward and socks whitespace", input: " portfwd-socks5 ", modes: []string{"pulse"}, wantScope: suiteScopePortfwdSocks5, wantModes: []string{"session"}},
 		{name: "unsupported", input: "other", wantError: true},
 		{name: "noncanonical case", input: "RPORTFWD", wantError: true},
 		{name: "noncanonical forward case", input: "PORTFWD-SOCKS5", wantError: true},

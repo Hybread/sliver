@@ -44,22 +44,22 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 	compileImplantFlags("session", generateCmd)
 	coreImplantFlagCompletions(generateCmd, con)
 
-	generateBeaconCmd := &cobra.Command{
-		Use:   consts.BeaconStr,
-		Short: "Generate a beacon binary",
-		Long:  help.GetHelpFor([]string{consts.GenerateStr, consts.BeaconStr}),
+	generatePulseCmd := &cobra.Command{
+		Use:   consts.PulseStr,
+		Short: "Generate a pulse binary",
+		Long:  help.GetHelpFor([]string{consts.GenerateStr, consts.PulseStr}),
 		Run: func(cmd *cobra.Command, args []string) {
-			GenerateBeaconCmd(cmd, con, args)
+			GeneratePulseCmd(cmd, con, args)
 		},
 	}
 
-	// Beacon flags and completions.
-	coreImplantFlags("beacon", generateBeaconCmd)
-	compileImplantFlags("beacon", generateBeaconCmd)
-	coreBeaconFlags("beacon", generateBeaconCmd)
-	coreImplantFlagCompletions(generateBeaconCmd, con)
+	// Pulse flags and completions.
+	coreImplantFlags("pulse", generatePulseCmd)
+	compileImplantFlags("pulse", generatePulseCmd)
+	corePulseFlags("pulse", generatePulseCmd)
+	coreImplantFlagCompletions(generatePulseCmd, con)
 
-	generateCmd.AddCommand(generateBeaconCmd)
+	generateCmd.AddCommand(generatePulseCmd)
 
 	generateInfoCmd := &cobra.Command{
 		Use:   consts.CompilerInfoStr,
@@ -207,21 +207,21 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 	compileImplantFlags("session", profilesNewCmd)
 	coreImplantFlagCompletions(profilesNewCmd, con)
 
-	profilesNewBeaconCmd := &cobra.Command{
-		Use:   consts.BeaconStr,
-		Short: "Create a new implant profile (beacon)",
-		Long:  help.GetHelpFor([]string{consts.ProfilesStr, consts.NewStr, consts.BeaconStr}),
+	profilesNewPulseCmd := &cobra.Command{
+		Use:   consts.PulseStr,
+		Short: "Create a new implant profile (pulse)",
+		Long:  help.GetHelpFor([]string{consts.ProfilesStr, consts.NewStr, consts.PulseStr}),
 		Run: func(cmd *cobra.Command, args []string) {
-			ProfilesNewBeaconCmd(cmd, con, args)
+			ProfilesNewPulseCmd(cmd, con, args)
 		},
 	}
-	profilesNewCmd.AddCommand(profilesNewBeaconCmd)
+	profilesNewCmd.AddCommand(profilesNewPulseCmd)
 
-	// Beacon flags and completions.
-	coreImplantFlags("beacon", profilesNewBeaconCmd)
-	compileImplantFlags("beacon", profilesNewBeaconCmd)
-	coreBeaconFlags("beacon", profilesNewBeaconCmd)
-	coreImplantFlagCompletions(profilesNewBeaconCmd, con)
+	// Pulse flags and completions.
+	coreImplantFlags("pulse", profilesNewPulseCmd)
+	compileImplantFlags("pulse", profilesNewPulseCmd)
+	corePulseFlags("pulse", profilesNewPulseCmd)
+	coreImplantFlagCompletions(profilesNewPulseCmd, con)
 
 	profilesRmCmd := &cobra.Command{
 		Use:   consts.RmStr,
@@ -266,7 +266,7 @@ func Commands(con *console.SliverClient) []*cobra.Command {
 		f.StringP("arch", "a", "", "filter builds by cpu architecture")
 		f.StringP("format", "f", "", "filter builds by artifact format")
 		f.BoolP("only-sessions", "s", false, "filter interactive sessions")
-		f.BoolP("only-beacons", "b", false, "filter beacons")
+		f.BoolP("only-pulses", "b", false, "filter pulses")
 		f.BoolP("no-debug", "d", false, "filter builds by debug flag")
 	})
 	flags.BindFlagCompletions(implantBuildsCmd, func(comp *carapace.ActionMap) {
@@ -457,14 +457,14 @@ func coreImplantFlagCompletions(cmd *cobra.Command, con *console.SliverClient) {
 	registerImplantTargetFlagCompletions(cmd, con)
 }
 
-// coreBeaconFlags binds all flags specific to beacon implants (profiles or compiled).
-func coreBeaconFlags(name string, cmd *cobra.Command) {
+// corePulseFlags binds all flags specific to pulse implants (profiles or compiled).
+func corePulseFlags(name string, cmd *cobra.Command) {
 	flags.Bind(name, false, cmd, func(f *pflag.FlagSet) {
-		f.Int64P("days", "D", 0, "beacon interval days")
-		f.Int64P("hours", "H", 0, "beacon interval hours")
-		f.Int64P("minutes", "M", 0, "beacon interval minutes")
-		f.Int64P("seconds", "S", 60, "beacon interval seconds")
-		f.Int64P("jitter", "J", 30, "beacon interval jitter in seconds")
+		f.Int64P("days", "D", 0, "pulse interval days")
+		f.Int64P("hours", "H", 0, "pulse interval hours")
+		f.Int64P("minutes", "M", 0, "pulse interval minutes")
+		f.Int64P("seconds", "S", 60, "pulse interval seconds")
+		f.Int64P("jitter", "J", 30, "pulse interval jitter in seconds")
 	})
 }
 

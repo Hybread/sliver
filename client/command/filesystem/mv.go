@@ -29,8 +29,8 @@ import (
 )
 
 func MvCmd(cmd *cobra.Command, con *console.SliverClient, args []string) (err error) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -61,7 +61,7 @@ func MvCmd(cmd *cobra.Command, con *console.SliverClient, args []string) (err er
 	mv.Src, mv.Dst = src, dst
 
 	if mv.Response != nil && mv.Response.Async {
-		con.AddBeaconCallback(mv.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(mv.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, mv)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)

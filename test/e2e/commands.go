@@ -61,7 +61,7 @@ func invokeRPC[T proto.Message](
 	if metadata != nil && metadata.Err != "" {
 		return result, &implantCommandError{operation: operation, message: metadata.Err}
 	}
-	if target.beacon == nil {
+	if target.pulse == nil {
 		if metadata != nil && metadata.Async {
 			return result, fmt.Errorf("%s unexpectedly returned an asynchronous session response", operation)
 		}
@@ -69,43 +69,43 @@ func invokeRPC[T proto.Message](
 	}
 
 	if metadata == nil || !metadata.Async || metadata.TaskID == "" {
-		return result, fmt.Errorf("%s did not return beacon task metadata", operation)
+		return result, fmt.Errorf("%s did not return pulse task metadata", operation)
 	}
-	if metadata.BeaconID != target.beacon.ID {
-		return result, fmt.Errorf("%s beacon metadata got beacon %q, want %q", operation, metadata.BeaconID, target.beacon.ID)
+	if metadata.PulseID != target.pulse.ID {
+		return result, fmt.Errorf("%s pulse metadata got pulse %q, want %q", operation, metadata.PulseID, target.pulse.ID)
 	}
 	taskID := metadata.TaskID
 	_, _, err = s.hub.wait(ctx, cursor, func(event *clientpb.Event) bool {
-		if event.EventType != constants.BeaconTaskResultEvent {
+		if event.EventType != constants.PulseTaskResultEvent {
 			return false
 		}
-		task := &clientpb.BeaconTask{}
-		return proto.Unmarshal(event.Data, task) == nil && task.ID == taskID && task.BeaconID == target.beacon.ID
+		task := &clientpb.PulseTask{}
+		return proto.Unmarshal(event.Data, task) == nil && task.ID == taskID && task.PulseID == target.pulse.ID
 	})
 	if err != nil {
 		diagnosticCtx, diagnosticCancel := context.WithTimeout(s.ctx, 5*time.Second)
 		defer diagnosticCancel()
-		task, fetchErr := s.rpc.GetBeaconTaskContent(diagnosticCtx, &clientpb.BeaconTask{ID: taskID})
+		task, fetchErr := s.rpc.GetPulseTaskContent(diagnosticCtx, &clientpb.PulseTask{ID: taskID})
 		if fetchErr != nil {
-			return result, fmt.Errorf("wait for %s beacon task %s: %w (fetch task state: %v)", operation, taskID, err, fetchErr)
+			return result, fmt.Errorf("wait for %s pulse task %s: %w (fetch task state: %v)", operation, taskID, err, fetchErr)
 		}
-		return result, fmt.Errorf("wait for %s beacon task %s: %w (state=%q sent_at=%d completed_at=%d response_bytes=%d)", operation, taskID, err, task.State, task.SentAt, task.CompletedAt, len(task.Response))
+		return result, fmt.Errorf("wait for %s pulse task %s: %w (state=%q sent_at=%d completed_at=%d response_bytes=%d)", operation, taskID, err, task.State, task.SentAt, task.CompletedAt, len(task.Response))
 	}
-	task, err := s.rpc.GetBeaconTaskContent(ctx, &clientpb.BeaconTask{ID: taskID})
+	task, err := s.rpc.GetPulseTaskContent(ctx, &clientpb.PulseTask{ID: taskID})
 	if err != nil {
-		return result, fmt.Errorf("fetch %s beacon task %s: %w", operation, taskID, err)
+		return result, fmt.Errorf("fetch %s pulse task %s: %w", operation, taskID, err)
 	}
-	if task == nil || task.ID != taskID || task.BeaconID != target.beacon.ID {
-		return result, fmt.Errorf("%s beacon task correlation mismatch", operation)
+	if task == nil || task.ID != taskID || task.PulseID != target.pulse.ID {
+		return result, fmt.Errorf("%s pulse task correlation mismatch", operation)
 	}
 	if task.State != "completed" || task.CompletedAt <= 0 {
-		return result, fmt.Errorf("%s beacon task incomplete: state=%q completed_at=%d response_bytes=%d", operation, task.State, task.CompletedAt, len(task.Response))
+		return result, fmt.Errorf("%s pulse task incomplete: state=%q completed_at=%d response_bytes=%d", operation, task.State, task.CompletedAt, len(task.Response))
 	}
 	// A successful zero-valued protobuf message (for example Mv) is encoded as
 	// an empty byte slice, so completion metadata is the authoritative result.
 	proto.Reset(result)
 	if err := proto.Unmarshal(task.Response, result); err != nil {
-		return result, fmt.Errorf("decode %s beacon response: %w", operation, err)
+		return result, fmt.Errorf("decode %s pulse response: %w", operation, err)
 	}
 	metadata = response(result)
 	if metadata != nil && metadata.Err != "" {
@@ -682,8 +682,8 @@ func (s *suite) exerciseProcesses(target implantTarget, transport string) error 
 	targetPID := int32(0)
 	if target.session != nil {
 		targetPID = target.session.PID
-	} else if target.beacon != nil {
-		targetPID = target.beacon.PID
+	} else if target.pulse != nil {
+		targetPID = target.pulse.PID
 	}
 	for _, fullInfo := range []bool{false, true} {
 		fullInfo := fullInfo

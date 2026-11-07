@@ -312,7 +312,7 @@ type auditUnaryLogMsg struct {
 	Request  string `json:"request"`
 	Method   string `json:"method"`
 	Session  string `json:"session,omitempty"`
-	Beacon   string `json:"beacon,omitempty"`
+	Pulse   string `json:"pulse,omitempty"`
 	RemoteIP string `json:"remote_ip"`
 	User     string `json:"user"`
 }
@@ -429,7 +429,7 @@ func auditLogUnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			middlewareLog.Errorf("Failed to serialize %s", err)
 			return
 		}
-		session, beacon, err := getActiveTarget(rawRequest)
+		session, pulse, err := getActiveTarget(rawRequest)
 		if err != nil {
 			middlewareLog.Errorf("Middleware failed to insert details: %s", err)
 		}
@@ -447,9 +447,9 @@ func auditLogUnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			sessionJSON, _ := json.Marshal(session)
 			msg.Session = string(sessionJSON)
 		}
-		if beacon != nil {
-			beaconJSON, _ := json.Marshal(beacon)
-			msg.Beacon = string(beaconJSON)
+		if pulse != nil {
+			pulseJSON, _ := json.Marshal(pulse)
+			msg.Pulse = string(pulseJSON)
 		}
 
 		msgData, _ := json.Marshal(msg)
@@ -474,9 +474,9 @@ func getUser(client *peer.Peer) string {
 	return ""
 }
 
-func getActiveTarget(rawRequest []byte) (*clientpb.Session, *clientpb.Beacon, error) {
+func getActiveTarget(rawRequest []byte) (*clientpb.Session, *clientpb.Pulse, error) {
 
-	var activeBeacon *clientpb.Beacon
+	var activePulse *clientpb.Pulse
 	var activeSession *clientpb.Session
 
 	var request map[string]interface{}
@@ -485,22 +485,22 @@ func getActiveTarget(rawRequest []byte) (*clientpb.Session, *clientpb.Beacon, er
 		return nil, nil, err
 	}
 
-	// RPC is not a session/beacon request
+	// RPC is not a session/pulse request
 	if _, ok := request["Request"]; !ok {
 		return nil, nil, nil
 	}
 
 	rpcRequest := request["Request"].(map[string]interface{})
 
-	if rawBeaconID, ok := rpcRequest["BeaconID"]; ok {
-		beaconID := rawBeaconID.(string)
-		middlewareLog.Debugf("Found Beacon ID: %s", beaconID)
-		beacon, err := db.BeaconByID(beaconID)
+	if rawPulseID, ok := rpcRequest["PulseID"]; ok {
+		pulseID := rawPulseID.(string)
+		middlewareLog.Debugf("Found Pulse ID: %s", pulseID)
+		pulse, err := db.PulseByID(pulseID)
 		middlewareLog.Infof("query complete")
 		if err != nil {
-			middlewareLog.Errorf("Failed to get beacon %s: %s", beaconID, err)
-		} else if beacon != nil {
-			activeBeacon = beacon.ToProtobuf()
+			middlewareLog.Errorf("Failed to get pulse %s: %s", pulseID, err)
+		} else if pulse != nil {
+			activePulse = pulse.ToProtobuf()
 		}
 	}
 
@@ -513,5 +513,5 @@ func getActiveTarget(rawRequest []byte) (*clientpb.Session, *clientpb.Beacon, er
 		}
 	}
 
-	return activeSession, activeBeacon, nil
+	return activeSession, activePulse, nil
 }

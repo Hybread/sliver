@@ -60,7 +60,7 @@ func ImplantsStageCmd(cmd *cobra.Command, con *console.SliverClient, args []stri
 	}
 
 	selected := []string{}
-	_ = forms.MultiSelect("Select sessions and beacons to expose:", options, &selected)
+	_ = forms.MultiSelect("Select sessions and pulses to expose:", options, &selected)
 
 	_, err = con.Rpc.StageImplantBuild(context.Background(), &clientpb.ImplantStageReq{Build: selected})
 	if err != nil {

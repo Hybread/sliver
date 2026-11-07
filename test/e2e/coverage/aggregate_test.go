@@ -262,7 +262,7 @@ func TestAggregateDirectoryRejectsDuplicateIdentityAcrossReports(t *testing.T) {
 		TargetOS:    "darwin",
 		TargetArch:  "arm64",
 		Transport:   "wg",
-		ImplantMode: "beacon",
+		ImplantMode: "pulse",
 		GRPCMethod:  "/sliverpb.Sliver/Pwd",
 		Scenario:    "working directory",
 		Status:      StatusPass,
@@ -315,7 +315,7 @@ func TestComprehensiveDimensions(t *testing.T) {
 	if got := strings.Join(dimensions.Transports, ","); got != "mtls,wg,http" {
 		t.Fatalf("transports = %q", got)
 	}
-	if got := strings.Join(dimensions.ImplantModes, ","); got != "session,beacon" {
+	if got := strings.Join(dimensions.ImplantModes, ","); got != "session,pulse" {
 		t.Fatalf("implant modes = %q", got)
 	}
 	if len(dimensions.Commands) != 56 {

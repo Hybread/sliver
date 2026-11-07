@@ -42,7 +42,7 @@ const (
 	TransportHTTP = "http"
 
 	ImplantModeSession = "session"
-	ImplantModeBeacon  = "beacon"
+	ImplantModePulse  = "pulse"
 
 	CompressionNone  = "none"
 	CompressionAPLib = "aplib"
@@ -61,7 +61,7 @@ var fixedTargets = [...]coverage.Target{
 }
 
 var fixedTransports = [...]string{TransportMTLS, TransportWG, TransportHTTP}
-var fixedImplantModes = [...]string{ImplantModeSession, ImplantModeBeacon}
+var fixedImplantModes = [...]string{ImplantModeSession, ImplantModePulse}
 var fixedCompressions = [...]string{CompressionNone, CompressionAPLib}
 var fixedEncoders = [...]string{EncoderNone, EncoderShikataGaNai, EncoderXOR, EncoderXORDynamic}
 

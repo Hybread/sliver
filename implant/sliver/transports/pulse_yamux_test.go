@@ -13,25 +13,25 @@ import (
 	"github.com/hashicorp/yamux"
 )
 
-type recordingWGBeaconDevice struct {
+type recordingWGPulseDevice struct {
 	closeCalls int
 }
 
-func (d *recordingWGBeaconDevice) Close() {
+func (d *recordingWGPulseDevice) Close() {
 	d.closeCalls++
 }
 
-func TestCloseWGBeaconDeviceUsesPermanentClose(t *testing.T) {
-	dev := &recordingWGBeaconDevice{}
-	closeWGBeaconDevice(dev.Close)
+func TestCloseWGPulseDeviceUsesPermanentClose(t *testing.T) {
+	dev := &recordingWGPulseDevice{}
+	closeWGPulseDevice(dev.Close)
 	if dev.closeCalls != 1 {
 		t.Fatalf("wireguard device Close called %d times, want 1", dev.closeCalls)
 	}
 }
 
-func TestSendWGBeaconStreamWaitsForRemoteClose(t *testing.T) {
-	client, server := newBeaconYamuxPair(t)
-	marker := []byte("beacon-result")
+func TestSendWGPulseStreamWaitsForRemoteClose(t *testing.T) {
+	client, server := newPulseYamuxPair(t)
+	marker := []byte("pulse-result")
 	serverRead := make(chan struct{})
 	releaseServer := make(chan struct{})
 	var releaseOnce sync.Once
@@ -62,7 +62,7 @@ func TestSendWGBeaconStreamWaitsForRemoteClose(t *testing.T) {
 
 	sendErr := make(chan error, 1)
 	go func() {
-		sendErr <- sendWGBeaconStream(client, time.Second, func(stream net.Conn) error {
+		sendErr <- sendWGPulseStream(client, time.Second, func(stream net.Conn) error {
 			_, err := stream.Write(marker)
 			return err
 		})
@@ -98,9 +98,9 @@ func TestSendWGBeaconStreamWaitsForRemoteClose(t *testing.T) {
 	}
 }
 
-func TestSendWGBeaconStreamReceiptTimeout(t *testing.T) {
-	client, server := newBeaconYamuxPair(t)
-	marker := []byte("beacon-result")
+func TestSendWGPulseStreamReceiptTimeout(t *testing.T) {
+	client, server := newPulseYamuxPair(t)
+	marker := []byte("pulse-result")
 	releaseServer := make(chan struct{})
 	var releaseOnce sync.Once
 	release := func() { releaseOnce.Do(func() { close(releaseServer) }) }
@@ -123,7 +123,7 @@ func TestSendWGBeaconStreamReceiptTimeout(t *testing.T) {
 		serverErr <- nil
 	}()
 
-	err := sendWGBeaconStream(client, 50*time.Millisecond, func(stream net.Conn) error {
+	err := sendWGPulseStream(client, 50*time.Millisecond, func(stream net.Conn) error {
 		_, err := stream.Write(marker)
 		return err
 	})
@@ -136,7 +136,7 @@ func TestSendWGBeaconStreamReceiptTimeout(t *testing.T) {
 	}
 }
 
-func newBeaconYamuxPair(t *testing.T) (*yamux.Session, *yamux.Session) {
+func newPulseYamuxPair(t *testing.T) (*yamux.Session, *yamux.Session) {
 	t.Helper()
 	clientConn, serverConn := net.Pipe()
 	config := yamux.DefaultConfig()

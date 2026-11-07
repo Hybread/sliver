@@ -1,5 +1,5 @@
 // Package targettable contains shared layout helpers for the sessions and
-// beacons tables.
+// pulses tables.
 package targettable
 
 import (

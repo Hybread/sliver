@@ -103,14 +103,14 @@ func (manager *Manager) newRuntime(observeBindings bool) (*opforengine.Runtime, 
 	stderr := clientWriter{output: manager.output, stderr: true}
 	options := []opforengine.Option{
 		opforengine.WithBOFPackByteOrder(opforengine.BOFPackLittleEndian),
-		opforengine.WithAggressorBeaconExecutionProvider(
-			opforengine.AggressorBeaconExecutionProviderFunc(manager.executeBeacon),
+		opforengine.WithAggressorPulseExecutionProvider(
+			opforengine.AggressorPulseExecutionProviderFunc(manager.executePulse),
 		),
 		opforengine.WithAggressorSessionQueryProvider(
 			opforengine.AggressorSessionQueryProviderFunc(manager.querySession),
 		),
-		opforengine.WithAggressorBeaconTranscriptSink(
-			opforengine.AggressorBeaconTranscriptSinkFunc(manager.publishTranscript),
+		opforengine.WithAggressorPulseTranscriptSink(
+			opforengine.AggressorPulseTranscriptSinkFunc(manager.publishTranscript),
 		),
 		opforengine.WithAggressorPromptProvider(
 			opforengine.AggressorPromptProviderFunc(manager.presentPrompt),
@@ -124,7 +124,7 @@ func (manager *Manager) newRuntime(observeBindings bool) (*opforengine.Runtime, 
 	return opforengine.New(options...)
 }
 
-// Registered observes declarations published by loaded scripts. Only Beacon
+// Registered observes declarations published by loaded scripts. Only Pulse
 // aliases become Sliver commands; other binding families remain available to
 // OPFOR internally for hooks, events, and callback composition.
 func (manager *Manager) Registered(_ context.Context, binding opforengine.Binding) error {
@@ -337,9 +337,9 @@ func (manager *Manager) aliasMetadata(name string) (opforengine.AggressorCommand
 	if reservedManagementAlias(name) || !manager.hasAlias(name) {
 		return opforengine.AggressorCommandMetadata{}, fmt.Errorf("opfor: unknown CNA alias %q", name)
 	}
-	catalog, err := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandBeacon)
+	catalog, err := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandPulse)
 	if err != nil {
-		return opforengine.AggressorCommandMetadata{}, fmt.Errorf("opfor: snapshot Beacon command help: %w", err)
+		return opforengine.AggressorCommandMetadata{}, fmt.Errorf("opfor: snapshot Pulse command help: %w", err)
 	}
 	for _, metadata := range catalog.Commands {
 		if metadata.Name == name {

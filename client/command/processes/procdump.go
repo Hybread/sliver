@@ -36,8 +36,8 @@ import (
 
 // ProcdumpCmd - Dump the memory of a remote process
 func ProcdumpCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	session, beacon := con.ActiveTarget.GetInteractive()
-	if session == nil && beacon == nil {
+	session, pulse := con.ActiveTarget.GetInteractive()
+	if session == nil && pulse == nil {
 		return
 	}
 
@@ -77,9 +77,9 @@ func ProcdumpCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
 		return
 	}
 
-	hostname := getHostname(session, beacon)
+	hostname := getHostname(session, pulse)
 	if dump.Response != nil && dump.Response.Async {
-		con.AddBeaconCallback(dump.Response.TaskID, func(task *clientpb.BeaconTask) {
+		con.AddPulseCallback(dump.Response.TaskID, func(task *clientpb.PulseTask) {
 			err = proto.Unmarshal(task.Response, dump)
 			if err != nil {
 				con.PrintErrorf("Failed to decode response %s\n", err)
@@ -128,12 +128,12 @@ func PrintProcessDump(dump *sliverpb.ProcessDump, saveTo string, hostname string
 	con.PrintInfof("Process dump stored in: %s\n", saveToFile.Name())
 }
 
-func getHostname(session *clientpb.Session, beacon *clientpb.Beacon) string {
+func getHostname(session *clientpb.Session, pulse *clientpb.Pulse) string {
 	if session != nil {
 		return session.Hostname
 	}
-	if beacon != nil {
-		return beacon.Hostname
+	if pulse != nil {
+		return pulse.Hostname
 	}
 	return ""
 }

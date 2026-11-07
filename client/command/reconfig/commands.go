@@ -13,25 +13,25 @@ import (
 func Commands(con *console.SliverClient) []*cobra.Command {
 	reconfigCmd := &cobra.Command{
 		Use:   consts.ReconfigStr,
-		Short: "Reconfigure the active beacon/session",
+		Short: "Reconfigure the active pulse/session",
 		Long:  help.GetHelpFor([]string{consts.ReconfigStr}),
 		Run: func(cmd *cobra.Command, args []string) {
 			ReconfigCmd(cmd, con, args)
 		},
 		GroupID:     consts.SliverCoreHelpGroup,
-		Annotations: flags.RestrictTargets(consts.BeaconCmdsFilter),
+		Annotations: flags.RestrictTargets(consts.PulseCmdsFilter),
 	}
 	flags.Bind("reconfig", false, reconfigCmd, func(f *pflag.FlagSet) {
 		f.StringP("reconnect-interval", "r", "", "reconnect interval for implant")
-		f.StringP("beacon-interval", "i", "", "beacon callback interval")
-		f.StringP("beacon-jitter", "j", "", "beacon callback jitter (random up to)")
+		f.StringP("pulse-interval", "i", "", "pulse callback interval")
+		f.StringP("pulse-jitter", "j", "", "pulse callback jitter (random up to)")
 		f.Int64P("timeout", "t", flags.DefaultTimeout, "grpc timeout in seconds")
 		f.StringP("c2-uri", "c", "", "C2 URI to switch to")
 	})
 
 	renameCmd := &cobra.Command{
 		Use:   consts.RenameStr,
-		Short: "Rename the active beacon/session",
+		Short: "Rename the active pulse/session",
 		Long:  help.GetHelpFor([]string{consts.RenameStr}),
 		Run: func(cmd *cobra.Command, args []string) {
 			RenameCmd(cmd, con, args)

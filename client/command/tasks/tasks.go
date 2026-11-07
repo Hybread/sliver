@@ -31,22 +31,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TasksCmd - Manage beacon tasks.
+// TasksCmd - Manage pulse tasks.
 func TasksCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	beacon := con.ActiveTarget.GetBeaconInteractive()
-	if beacon == nil {
+	pulse := con.ActiveTarget.GetPulseInteractive()
+	if pulse == nil {
 		return
 	}
-	beaconTasks, err := con.Rpc.GetBeaconTasks(context.Background(), &clientpb.Beacon{ID: beacon.ID})
+	pulseTasks, err := con.Rpc.GetPulseTasks(context.Background(), &clientpb.Pulse{ID: pulse.ID})
 	if err != nil {
 		con.PrintErrorf("%s\n", err)
 		return
 	}
-	PrintBeaconTasks(beaconTasks.Tasks, cmd, con)
+	PrintPulseTasks(pulseTasks.Tasks, cmd, con)
 }
 
-// PrintBeaconTasks - Print beacon tasks.
-func PrintBeaconTasks(tasks []*clientpb.BeaconTask, cmd *cobra.Command, con *console.SliverClient) {
+// PrintPulseTasks - Print pulse tasks.
+func PrintPulseTasks(tasks []*clientpb.PulseTask, cmd *cobra.Command, con *console.SliverClient) {
 	tw := table.NewWriter()
 	tw.SetStyle(settings.GetTableStyle(con))
 	tw.AppendHeader(table.Row{

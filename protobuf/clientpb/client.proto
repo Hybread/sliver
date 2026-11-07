@@ -58,7 +58,7 @@ message Session {
   uint64 Capabilities = 29;
 }
 
-message Beacon {
+message Pulse {
   string ID = 1;
   string Name = 2;
   string Hostname = 3;
@@ -95,11 +95,11 @@ message Beacon {
   uint64 Capabilities = 31;
 }
 
-message Beacons { repeated Beacon Beacons = 2; }
+message Pulses { repeated Pulse Pulses = 2; }
 
-message BeaconTask {
+message PulseTask {
   string ID = 1;
-  string BeaconID = 2;
+  string PulseID = 2;
   int64 CreatedAt = 3;
   string State = 4;
   int64 SentAt = 5;
@@ -109,13 +109,13 @@ message BeaconTask {
   string Description = 9;
 }
 
-message BeaconTasks {
-  string BeaconID = 1;
-  repeated BeaconTask Tasks = 2;
+message PulseTasks {
+  string PulseID = 1;
+  repeated PulseTask Tasks = 2;
 }
 
-message BeaconIntegrity {
-  string BeaconID = 1;
+message PulseIntegrity {
+  string PulseID = 1;
   string Integrity = 2;
 }
 
@@ -162,9 +162,9 @@ message ImplantConfig {
   string ID = 1;
   repeated ImplantBuild ImplantBuilds = 2;
   string ImplantProfileID = 3;
-  bool IsBeacon = 4;
-  int64 BeaconInterval = 5;
-  int64 BeaconJitter = 6;
+  bool IsPulse = 4;
+  int64 PulseInterval = 5;
+  int64 PulseJitter = 6;
 
   string GOOS = 7;
   string GOARCH = 8;
@@ -534,7 +534,7 @@ message Sessions {
 
 message RenameReq {
   string SessionID = 1;
-  string BeaconID = 2;
+  string PulseID = 2;
   string Name = 3;
 }
 
@@ -2239,7 +2239,7 @@ message AIConversation {
   string ActiveTurnID = 11;
   AIConversationTurnState TurnState = 12;
   string TargetSessionID = 13;
-  string TargetBeaconID = 14;
+  string TargetPulseID = 14;
   string ThinkingLevel = 15;
   AIContextWindowUsage ContextWindowUsage = 16;
 }

@@ -38,8 +38,8 @@ message Envelope {
   bool UnknownMessageType = 4; // Set if the implant did not understand the message
 }
 
-// BeaconTasks - DO NOT CONFUSE WITH clientpb.BeaconTasks
-message BeaconTasks {
+// PulseTasks - DO NOT CONFUSE WITH clientpb.PulseTasks
+message PulseTasks {
   string ID = 1;
   repeated Envelope Tasks = 2;
   int64 NextCheckin = 3;
@@ -67,7 +67,7 @@ message Register {
   uint64 Capabilities = 19;
 }
 
-message BeaconRegister {
+message PulseRegister {
   string ID = 1;
   int64 Interval = 2;
   int64 Jitter = 3;
@@ -1086,8 +1086,8 @@ message WGTCPForwarders {
 // ReconfigureReq - Request the implant to reconfigure itself
 message ReconfigureReq {
   int64 ReconnectInterval = 1;
-  int64 BeaconInterval = 2;
-  int64 BeaconJitter = 3;
+  int64 PulseInterval = 2;
+  int64 PulseJitter = 3;
   string C2URI = 4;
 
   commonpb.Request Request = 9;
@@ -1181,7 +1181,7 @@ message CallExtension {
   // Output is the legacy ordered concatenation of BOF record data.
   bytes Output = 1;
   bool ServerStore = 2;
-  // BOFOutputs preserves record boundaries and raw Beacon output channels
+  // BOFOutputs preserves record boundaries and raw Pulse output channels
   // when requested by CallExtensionReq.WantBOFOutputs.
   repeated BOFOutput BOFOutputs = 3;
 
@@ -1429,7 +1429,7 @@ message StartServiceByNameReq {
   commonpb.Request Request = 9;
 }
 
-// BOFOutput preserves one ordered record emitted through a Beacon output
+// BOFOutput preserves one ordered record emitted through a Pulse output
 // callback. Type is the raw Cobalt-compatible output channel value.
 message BOFOutput {
   int32 Type = 1;

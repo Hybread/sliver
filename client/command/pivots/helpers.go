@@ -49,7 +49,7 @@ func SelectPivotListener(listeners []*sliverpb.PivotListener, con *console.Slive
 	}
 
 	selected := ""
-	err := forms.Select("Select a beacon task:", options, &selected)
+	err := forms.Select("Select a pulse task:", options, &selected)
 	if err != nil {
 		return nil, err
 	}

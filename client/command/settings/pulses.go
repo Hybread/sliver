@@ -1,4 +1,4 @@
-package beacons
+package settings
 
 /*
 	Sliver Implant Framework
@@ -19,24 +19,21 @@ package beacons
 */
 
 import (
-	"github.com/spf13/cobra"
-
+	"github.com/bishopfox/sliver/client/assets"
 	"github.com/bishopfox/sliver/client/console"
+	"github.com/spf13/cobra"
 )
 
-// BeaconsRmCmd - Display/interact with beacons
-func BeaconsRmCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	beacon, err := SelectBeacon(con)
-	if err != nil {
-		con.PrintErrorf("%s\n", err)
-		return
+// SettingsPulsesAutoResultCmd - The client settings command.
+func SettingsPulsesAutoResultCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
+	var err error
+	if con.Settings == nil {
+		con.Settings, err = assets.LoadSettings()
+		if err != nil {
+			con.PrintErrorf("%s\n", err)
+			return
+		}
 	}
-	grpcCtx, cancel := con.GrpcContext(cmd)
-	defer cancel()
-	_, err = con.Rpc.RmBeacon(grpcCtx, beacon)
-	if err != nil {
-		con.PrintErrorf("%s\n", err)
-		return
-	}
-	con.PrintInfof("Beacon removed (%s)\n", beacon.ID)
+	con.Settings.PulseAutoResults = !con.Settings.PulseAutoResults
+	con.PrintInfof("Pulse Auto Result = %v\n", con.Settings.PulseAutoResults)
 }

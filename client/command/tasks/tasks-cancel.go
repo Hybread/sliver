@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TasksCancelCmd - Cancel a beacon task before it's sent to the implant.
+// TasksCancelCmd - Cancel a pulse task before it's sent to the implant.
 func TasksCancelCmd(cmd *cobra.Command, con *console.SliverClient, args []string) {
-	beacon := con.ActiveTarget.GetBeaconInteractive()
-	if beacon == nil {
+	pulse := con.ActiveTarget.GetPulseInteractive()
+	if pulse == nil {
 		return
 	}
 
@@ -19,33 +19,33 @@ func TasksCancelCmd(cmd *cobra.Command, con *console.SliverClient, args []string
 	if len(args) > 0 {
 		idArg = args[0]
 	}
-	var task *clientpb.BeaconTask
+	var task *clientpb.PulseTask
 	var err error
 	if idArg == "" {
-		beaconTasks, err := con.Rpc.GetBeaconTasks(context.Background(), &clientpb.Beacon{ID: beacon.ID})
+		pulseTasks, err := con.Rpc.GetPulseTasks(context.Background(), &clientpb.Pulse{ID: pulse.ID})
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
 		}
-		tasks := []*clientpb.BeaconTask{}
-		for _, task := range beaconTasks.Tasks {
+		tasks := []*clientpb.PulseTask{}
+		for _, task := range pulseTasks.Tasks {
 			if task.State == "pending" {
 				tasks = append(tasks, task)
 			}
 		}
 		if len(tasks) == 0 {
-			con.PrintErrorf("No pending tasks for beacon\n")
+			con.PrintErrorf("No pending tasks for pulse\n")
 			return
 		}
 
-		task, err = SelectBeaconTask(tasks)
+		task, err = SelectPulseTask(tasks)
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
 		}
 		con.Printf(console.UpN+console.Clearln, 1)
 	} else {
-		task, err = con.Rpc.GetBeaconTaskContent(context.Background(), &clientpb.BeaconTask{ID: idArg})
+		task, err = con.Rpc.GetPulseTaskContent(context.Background(), &clientpb.PulseTask{ID: idArg})
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
@@ -56,7 +56,7 @@ func TasksCancelCmd(cmd *cobra.Command, con *console.SliverClient, args []string
 	}
 
 	if task != nil {
-		task, err := con.Rpc.CancelBeaconTask(context.Background(), task)
+		task, err := con.Rpc.CancelPulseTask(context.Background(), task)
 		if err != nil {
 			con.PrintErrorf("%s\n", err)
 			return
