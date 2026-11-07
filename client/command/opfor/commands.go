@@ -321,7 +321,7 @@ func (manager *Manager) syncRootLocked(root *cobra.Command) {
 		wanted[name] = struct{}{}
 	}
 
-	catalog, _ := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandPulse)
+	catalog, _ := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandBeacon)
 	help := make(map[string]opforengine.AggressorCommandMetadata, len(catalog.Commands))
 	for _, metadata := range catalog.Commands {
 		help[metadata.Name] = metadata

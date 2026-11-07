@@ -33,10 +33,10 @@ func TestOPFORCallbackFixtureLoadsAndValidatesContract(t *testing.T) {
 	var transcript []string
 	runtime, err := opforengine.New(
 		opforengine.WithBOFPackByteOrder(opforengine.BOFPackLittleEndian),
-		opforengine.WithAggressorPulseTranscriptSink(
-			opforengine.AggressorPulseTranscriptSinkFunc(func(_ context.Context, record opforengine.AggressorPulseTranscriptRecord) error {
-				if record.Kind != opforengine.AggressorPulseTranscriptLog || record.PulseID.String() != "fixture-session" {
-					return fmt.Errorf("unexpected OPFOR fixture transcript: %s %q", record.Kind, record.PulseID.String())
+		opforengine.WithAggressorBeaconTranscriptSink(
+			opforengine.AggressorBeaconTranscriptSinkFunc(func(_ context.Context, record opforengine.AggressorBeaconTranscriptRecord) error {
+				if record.Kind != opforengine.AggressorBeaconTranscriptLog || record.BeaconID.String() != "fixture-session" {
+					return fmt.Errorf("unexpected OPFOR fixture transcript: %s %q", record.Kind, record.BeaconID.String())
 				}
 				transcript = append(transcript, record.Text.String())
 				return nil
@@ -44,16 +44,16 @@ func TestOPFORCallbackFixtureLoadsAndValidatesContract(t *testing.T) {
 		),
 		opforengine.WithAggressorSessionQueryProvider(
 			opforengine.AggressorSessionQueryProviderFunc(func(_ context.Context, query opforengine.AggressorSessionQuery) (opforengine.Value, error) {
-				if query.Kind != opforengine.AggressorSessionQueryPulseArchitecture || query.SessionID.String() != "fixture-session" {
+				if query.Kind != opforengine.AggressorSessionQueryBeaconArchitecture || query.SessionID.String() != "fixture-session" {
 					return opforengine.Null(), fmt.Errorf("unexpected OPFOR fixture session query: %s %q", query.Kind, query.SessionID.String())
 				}
 				return opforengine.String("x64"), nil
 			}),
 		),
-		opforengine.WithAggressorPulseExecutionProvider(
-			opforengine.AggressorPulseExecutionProviderFunc(func(ctx context.Context, request opforengine.AggressorPulseExecutionRequest) (opforengine.Value, error) {
-				if request.Kind != opforengine.AggressorPulseInlineExecute || request.PulseID.String() != "fixture-session" {
-					return opforengine.Null(), fmt.Errorf("unexpected OPFOR fixture execution request: %s %q", request.Kind, request.PulseID.String())
+		opforengine.WithAggressorBeaconExecutionProvider(
+			opforengine.AggressorBeaconExecutionProviderFunc(func(ctx context.Context, request opforengine.AggressorBeaconExecutionRequest) (opforengine.Value, error) {
+				if request.Kind != opforengine.AggressorBeaconInlineExecute || request.BeaconID.String() != "fixture-session" {
+					return opforengine.Null(), fmt.Errorf("unexpected OPFOR fixture execution request: %s %q", request.Kind, request.BeaconID.String())
 				}
 				content, ok := request.Content.Bytes()
 				if !ok || !bytes.Equal(content, objectData) {
@@ -133,7 +133,7 @@ func TestOPFORCallbackFixtureLoadsAndValidatesContract(t *testing.T) {
 	if _, err := runtime.Load(context.Background(), program); err != nil {
 		t.Fatalf("load OPFOR callback fixture: %v", err)
 	}
-	catalog, err := runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandPulse)
+	catalog, err := runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandBeacon)
 	if err != nil {
 		t.Fatalf("snapshot OPFOR fixture command catalog: %v", err)
 	}
@@ -172,7 +172,7 @@ func TestOPFORCallbackFixtureLoadsAndValidatesContract(t *testing.T) {
 
 func invokeOPFORFixtureDataCallback(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 	typeID int32,
 	data []byte,
 	chunkNumber int,
@@ -189,7 +189,7 @@ func invokeOPFORFixtureDataCallback(
 	information.Set("is_final", opforengine.Bool(isFinal))
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.PulseID,
+		request.BeaconID,
 		opforengine.BinaryString(data),
 		opforengine.HashValue(information),
 	)
@@ -198,7 +198,7 @@ func invokeOPFORFixtureDataCallback(
 
 func invokeOPFORFixtureLifecycleCallback(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 	kind string,
 	result []byte,
 ) error {
@@ -206,7 +206,7 @@ func invokeOPFORFixtureLifecycleCallback(
 	information.Set("type", opforengine.String(kind))
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.PulseID,
+		request.BeaconID,
 		opforengine.BinaryString(result),
 		opforengine.HashValue(information),
 	)

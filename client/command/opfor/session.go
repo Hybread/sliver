@@ -20,8 +20,8 @@ func (manager *Manager) querySession(
 	}
 
 	switch query.Kind {
-	case opforengine.AggressorSessionQueryPulses,
-		opforengine.AggressorSessionQueryPulseIDs:
+	case opforengine.AggressorSessionQueryBeacons,
+		opforengine.AggressorSessionQueryBeaconIDs:
 		return manager.queryAllSessions(ctx, query.Kind)
 	default:
 		return manager.querySingleSession(ctx, query)
@@ -38,7 +38,7 @@ func (manager *Manager) queryAllSessions(
 	}
 	values := make([]opforengine.Value, 0, len(targets))
 	for _, target := range targets {
-		if kind == opforengine.AggressorSessionQueryPulseIDs {
+		if kind == opforengine.AggressorSessionQueryBeaconIDs {
 			values = append(values, opforengine.String(target.id()))
 		} else {
 			values = append(values, opforengine.HashValue(targetMetadata(target)))
@@ -57,14 +57,14 @@ func (manager *Manager) querySingleSession(
 	}
 	metadata := targetMetadata(target)
 	switch query.Kind {
-	case opforengine.AggressorSessionQueryPulseArchitecture,
-		opforengine.AggressorSessionQueryPulseData,
-		opforengine.AggressorSessionQueryPulseInfo,
+	case opforengine.AggressorSessionQueryBeaconArchitecture,
+		opforengine.AggressorSessionQueryBeaconData,
+		opforengine.AggressorSessionQueryBeaconInfo,
 		opforengine.AggressorSessionQueryIs64:
 		return querySessionMetadata(target, metadata, query)
 	case opforengine.AggressorSessionQueryIsActive,
 		opforengine.AggressorSessionQueryIsAdmin,
-		opforengine.AggressorSessionQueryIsPulse,
+		opforengine.AggressorSessionQueryIsBeacon,
 		opforengine.AggressorSessionQueryIsSSH:
 		return querySessionStatus(target, query)
 	default:
@@ -78,15 +78,15 @@ func querySessionMetadata(
 	query opforengine.AggressorSessionQuery,
 ) (opforengine.Value, error) {
 	switch query.Kind {
-	case opforengine.AggressorSessionQueryPulseArchitecture:
+	case opforengine.AggressorSessionQueryBeaconArchitecture:
 		architecture, err := pulseArchitecture(target.arch())
 		if err != nil {
 			return opforengine.Null(), err
 		}
 		return opforengine.String(architecture), nil
-	case opforengine.AggressorSessionQueryPulseData:
+	case opforengine.AggressorSessionQueryBeaconData:
 		return opforengine.HashValue(metadata), nil
-	case opforengine.AggressorSessionQueryPulseInfo:
+	case opforengine.AggressorSessionQueryBeaconInfo:
 		value, found := metadata.Get(strings.ToLower(query.Key.String()))
 		if !found {
 			return opforengine.Null(), nil
@@ -116,7 +116,7 @@ func querySessionStatus(
 	case opforengine.AggressorSessionQueryIsAdmin:
 		integrity := strings.ToLower(targetIntegrity(target))
 		return opforengine.Bool(strings.Contains(integrity, "high") || strings.Contains(integrity, "system") || strings.Contains(integrity, "admin")), nil
-	case opforengine.AggressorSessionQueryIsPulse:
+	case opforengine.AggressorSessionQueryIsBeacon:
 		return opforengine.Bool(target.pulse != nil), nil
 	case opforengine.AggressorSessionQueryIsSSH:
 		return opforengine.Bool(false), nil

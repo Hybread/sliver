@@ -103,14 +103,14 @@ func (manager *Manager) newRuntime(observeBindings bool) (*opforengine.Runtime, 
 	stderr := clientWriter{output: manager.output, stderr: true}
 	options := []opforengine.Option{
 		opforengine.WithBOFPackByteOrder(opforengine.BOFPackLittleEndian),
-		opforengine.WithAggressorPulseExecutionProvider(
-			opforengine.AggressorPulseExecutionProviderFunc(manager.executePulse),
+		opforengine.WithAggressorBeaconExecutionProvider(
+			opforengine.AggressorBeaconExecutionProviderFunc(manager.executePulse),
 		),
 		opforengine.WithAggressorSessionQueryProvider(
 			opforengine.AggressorSessionQueryProviderFunc(manager.querySession),
 		),
-		opforengine.WithAggressorPulseTranscriptSink(
-			opforengine.AggressorPulseTranscriptSinkFunc(manager.publishTranscript),
+		opforengine.WithAggressorBeaconTranscriptSink(
+			opforengine.AggressorBeaconTranscriptSinkFunc(manager.publishTranscript),
 		),
 		opforengine.WithAggressorPromptProvider(
 			opforengine.AggressorPromptProviderFunc(manager.presentPrompt),
@@ -337,7 +337,7 @@ func (manager *Manager) aliasMetadata(name string) (opforengine.AggressorCommand
 	if reservedManagementAlias(name) || !manager.hasAlias(name) {
 		return opforengine.AggressorCommandMetadata{}, fmt.Errorf("opfor: unknown CNA alias %q", name)
 	}
-	catalog, err := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandPulse)
+	catalog, err := manager.runtime.SnapshotAggressorCommandCatalog(opforengine.AggressorCommandBeacon)
 	if err != nil {
 		return opforengine.AggressorCommandMetadata{}, fmt.Errorf("opfor: snapshot Pulse command help: %w", err)
 	}

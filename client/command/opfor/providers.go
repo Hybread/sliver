@@ -51,8 +51,8 @@ func (target resolvedTarget) id() string {
 	if target.session != nil {
 		return target.session.ID
 	}
-	if target.pulse != nil {
-		return target.pulse.ID
+	if target.beacon != nil {
+		return target.beacon.ID
 	}
 	return ""
 }
@@ -61,8 +61,8 @@ func (target resolvedTarget) capabilities() uint64 {
 	if target.session != nil {
 		return target.session.Capabilities
 	}
-	if target.pulse != nil {
-		return target.pulse.Capabilities
+	if target.beacon != nil {
+		return target.beacon.Capabilities
 	}
 	return 0
 }
@@ -71,8 +71,8 @@ func (target resolvedTarget) arch() string {
 	if target.session != nil {
 		return target.session.Arch
 	}
-	if target.pulse != nil {
-		return target.pulse.Arch
+	if target.beacon != nil {
+		return target.beacon.Arch
 	}
 	return ""
 }
@@ -115,7 +115,7 @@ func (manager *Manager) resolveTarget(ctx context.Context, id string) (resolvedT
 
 func (manager *Manager) executePulse(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 ) (opforengine.Value, error) {
 	targetID, call, err := manager.preparePulseExecution(ctx, request)
 	if err != nil {
@@ -145,15 +145,15 @@ func (manager *Manager) executePulse(
 
 func (manager *Manager) preparePulseExecution(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 ) (string, *sliverpb.CallExtensionReq, error) {
-	if request.Kind != opforengine.AggressorPulseInlineExecute {
+	if request.Kind != opforengine.AggressorBeaconInlineExecute {
 		return "", nil, fmt.Errorf("opfor: unsupported Pulse execution function %q", request.Name)
 	}
 	if err := ctx.Err(); err != nil {
 		return "", nil, err
 	}
-	targetID := request.PulseID.String()
+	targetID := request.BeaconID.String()
 	target, err := manager.resolveTarget(ctx, targetID)
 	if err != nil {
 		return "", nil, err
@@ -193,7 +193,7 @@ func (manager *Manager) preparePulseExecution(
 
 func (manager *Manager) completePulseExecution(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 	taskID string,
 	response *sliverpb.CallExtension,
 ) (opforengine.Value, error) {
@@ -259,7 +259,7 @@ func bofOutputRecords(response *sliverpb.CallExtension) []*sliverpb.BOFOutput {
 // is_final marks the final data record, independently of task lifecycle events.
 func invokeBOFOutputCallback(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 	record *sliverpb.BOFOutput,
 	chunkNumber int,
 	isFinal bool,
@@ -281,7 +281,7 @@ func invokeBOFOutputCallback(
 	information.Set("is_final", opforengine.Bool(isFinal))
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.PulseID,
+		request.BeaconID,
 		opforengine.BinaryString(record.GetData()),
 		opforengine.HashValue(information),
 	)
@@ -290,7 +290,7 @@ func invokeBOFOutputCallback(
 
 func invokeBOFLifecycleCallback(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 	kind string,
 	taskID string,
 	result []byte,
@@ -305,7 +305,7 @@ func invokeBOFLifecycleCallback(
 	}
 	_, err := request.Callback.Invoke(
 		ctx,
-		request.PulseID,
+		request.BeaconID,
 		opforengine.BinaryString(result),
 		opforengine.HashValue(information),
 	)
@@ -314,7 +314,7 @@ func invokeBOFLifecycleCallback(
 
 func notifyBOFLifecycleError(
 	ctx context.Context,
-	request opforengine.AggressorPulseExecutionRequest,
+	request opforengine.AggressorBeaconExecutionRequest,
 	taskID string,
 	executionErr error,
 ) error {
@@ -397,8 +397,8 @@ func targetRequest(ctx context.Context, target resolvedTarget) *commonpb.Request
 	if target.session != nil {
 		request.SessionID = target.session.ID
 		request.Async = false
-	} else if target.pulse != nil {
-		request.PulseID = target.pulse.ID
+	} else if target.beacon != nil {
+		request.BeaconID = target.beacon.ID
 		request.Async = true
 	}
 	return request
@@ -476,20 +476,20 @@ func (manager *Manager) resolveCallExtensionResponse(
 
 func (manager *Manager) publishTranscript(
 	_ context.Context,
-	record opforengine.AggressorPulseTranscriptRecord,
+	record opforengine.AggressorBeaconTranscriptRecord,
 ) error {
-	target := record.PulseID.String()
+	target := record.BeaconID.String()
 	text := record.Text.String()
 	prefix := ""
 	if target != "" {
 		prefix = "[" + target + "] "
 	}
 	switch record.Kind {
-	case opforengine.AggressorPulseTranscriptError,
-		opforengine.AggressorPulseTranscriptJobError:
+	case opforengine.AggressorBeaconTranscriptError,
+		opforengine.AggressorBeaconTranscriptJobError:
 		manager.output.PrintErrorf("%s%s\n", prefix, text)
-	case opforengine.AggressorPulseTranscriptTask,
-		opforengine.AggressorPulseTranscriptTaskCompleted:
+	case opforengine.AggressorBeaconTranscriptTask,
+		opforengine.AggressorBeaconTranscriptTaskCompleted:
 		manager.output.PrintInfof("%s%s\n", prefix, text)
 	default:
 		manager.output.Printf("%s%s\n", prefix, text)

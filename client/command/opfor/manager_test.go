@@ -841,8 +841,8 @@ func TestExecutePulseRejectsMissingCapability(t *testing.T) {
 		pulses:  &clientpb.Pulses{},
 	}
 	manager, _ := newTestManager(t, rpc)
-	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("old-session"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -865,8 +865,8 @@ func TestExecutePulseRejectsUnsupportedArchitecture(t *testing.T) {
 		pulses: &clientpb.Pulses{},
 	}
 	manager, _ := newTestManager(t, rpc)
-	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("arm-session"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -955,8 +955,8 @@ func TestExecutePulsePollsAsyncTaskAndInvokesOrderedLegacyCallbacks(t *testing.T
 	manager.client.Settings.PulseAutoResults = false
 
 	recorder := &callbackRecorder{}
-	_, err = manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err = manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("pulse-1"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -981,7 +981,7 @@ func assertAsyncPulseRequest(t *testing.T, calls []*sliverpb.CallExtensionReq, t
 	if len(calls) != 1 || taskCalls != 1 {
 		t.Fatalf("CallExtension/task polls = %d/%d, want 1/1", len(calls), taskCalls)
 	}
-	if !calls[0].Request.Async || calls[0].Request.PulseID != "pulse-1" || calls[0].Request.SessionID != "" {
+	if !calls[0].Request.Async || calls[0].Request.BeaconID != "pulse-1" || calls[0].Request.SessionID != "" {
 		t.Fatalf("asynchronous target request = %#v", calls[0].Request)
 	}
 	if !bytes.Equal(calls[0].Args, []byte{2, 0, 0, 0, 1, 2}) {
@@ -1088,8 +1088,8 @@ func TestExecutePulseInvokesTypedOutputBeforeLifecycleError(t *testing.T) {
 	manager, output := newTestManager(t, rpc)
 	recorder := &callbackRecorder{}
 
-	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("session-typed"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -1183,8 +1183,8 @@ func TestExecutePulseRendersTypedChannelsSafelyWithoutCallback(t *testing.T) {
 		},
 	}
 	manager, output := newTestManager(t, rpc)
-	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("session-render"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -1218,8 +1218,8 @@ func TestExecutePulseSyncEmptyResultInvokesSuccessLifecycle(t *testing.T) {
 		callbackCalls = append(callbackCalls, append([]opforengine.Value(nil), values...))
 		return opforengine.Null(), nil
 	})
-	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("session-empty"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -1274,8 +1274,8 @@ func TestExecutePulseDoesNotReinvokeFailingDataCallback(t *testing.T) {
 		callbackCalls++
 		return opforengine.Null(), errors.New("script callback failure")
 	})
-	_, err := manager.executePulse(context.Background(), opforengine.AggressorPulseExecutionRequest{
-		Kind:            opforengine.AggressorPulseInlineExecute,
+	_, err := manager.executePulse(context.Background(), opforengine.AggressorBeaconExecutionRequest{
+		Kind:            opforengine.AggressorBeaconInlineExecute,
 		Name:            "pulse_inline_execute",
 		PulseID:        opforengine.String("session-callback-error"),
 		Content:         opforengine.BinaryString([]byte("OBJ")),
@@ -1303,7 +1303,7 @@ func TestNotifyBOFLifecycleErrorSkipsCanceledCallback(t *testing.T) {
 		return opforengine.Null(), nil
 	})
 	executionErr := errors.New("polling canceled")
-	got := notifyBOFLifecycleError(ctx, opforengine.AggressorPulseExecutionRequest{
+	got := notifyBOFLifecycleError(ctx, opforengine.AggressorBeaconExecutionRequest{
 		PulseID: opforengine.String("pulse-canceled"),
 		Callback: callback,
 	}, "task-canceled", executionErr)
