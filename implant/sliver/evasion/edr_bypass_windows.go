@@ -146,6 +146,7 @@ func findTextSection(moduleBase uintptr) (uintptr, uint32, error) {
 	return 0, 0, fmt.Errorf(".text section not found")
 }
 
+// TODO: integrate into implant command handlers or loader
 // PPIDSpoof creates a process with a spoofed parent PID.
 // Makes the new process appear as a child of the specified parent
 // in process tree views and EDR telemetry.
@@ -217,6 +218,7 @@ func PPIDSpoof(parentPID uint32, commandLine string, suspended bool) (*windows.P
 	return pi, nil
 }
 
+// TODO: integrate into loader for small payloads (payload must fit in .text)
 // ModuleStomp loads a legitimate signed DLL, then overwrites its .text
 // section with shellcode. Memory scanners see a signed Microsoft module
 // instead of suspicious VirtualAlloc'd memory.
@@ -262,6 +264,7 @@ func ModuleStomp(dllPath string, shellcode []byte) (uintptr, error) {
 	return textAddr, nil
 }
 
+// TODO: integrate into loader as alternative execution method
 // CallbackExec triggers shellcode execution through benign Windows API
 // callbacks instead of CreateThread. EDRs monitor thread creation but
 // not these callback mechanisms.
